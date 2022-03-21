@@ -1,7 +1,13 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
+
 public class Main {
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
 
         System.out.println("test");
 
@@ -11,12 +17,45 @@ public class Main {
         int nr_of_columns = 100;
 
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
-        
+
+        int source_x = 25;
+        int source_y = 25;
+
+        ArrayList items = read_input();
+
+        Iterator it = items.iterator();
+
+        while (it.hasNext()) {
+
+            System.out.println(it.next());
+
+        }
 
 
     }
 
-    public static Cell[][] initialize_grid(int number_of_rows, int number_of_columns){
+    public static ArrayList read_input() throws FileNotFoundException {
+
+        //parsing a CSV file into Scanner class constructor
+        //System.out.println("Working Directory = " + System.getProperty("user.dir"));
+
+        Scanner sc = new Scanner(new File("./input/1_s_2_t.csv"));
+        sc.useDelimiter(",");   //sets the delimiter pattern
+
+        ArrayList items = new ArrayList();
+
+        while (sc.hasNext()) {
+            //System.out.print(sc.next());
+
+            items.add(sc.next());
+
+        }
+        sc.close();  //closes the scanner
+
+        return items;
+    }
+
+    public static Cell[][] initialize_grid(int number_of_rows, int number_of_columns) {
 
         Cell[][] grid = new Cell[number_of_rows][number_of_columns];
 
