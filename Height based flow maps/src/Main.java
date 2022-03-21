@@ -23,16 +23,67 @@ public class Main {
 
         ArrayList items = read_input();
 
-        Iterator it = items.iterator();
+        ArrayList points_list = process_input(items);
 
-        while (it.hasNext()) {
 
-            System.out.println(it.next());
-
-        }
+        System.out.println();
 
 
     }
+
+    public static ArrayList process_input(ArrayList items) {
+
+        Iterator it = items.iterator();
+
+        ArrayList point_list = new ArrayList();
+
+        while (it.hasNext()) {
+
+            String input_line = it.next().toString();
+            List<String> components = Arrays.asList(input_line.split(";"));
+
+            Point point = new Point();
+            point.name = components.get(0);
+            point.x = Float.parseFloat(components.get(1));
+            point.y = Float.parseFloat(components.get(2));
+
+            point_list.add(point);
+
+        }
+
+        return point_list;
+    }
+
+    public static ArrayList obtain_bounds(ArrayList input_points) {
+
+//        for item in input_points:
+//
+//        if input_points.index(item) == 0:
+//        minx = item[1]
+//        miny = item[2]
+//        maxx = item[1]
+//        maxy = item[2]
+//
+//        if item[1] < minx:
+//        minx = item[1]
+//        if item[1] > maxx:
+//        maxx = item[1]
+//        if item[2] < miny:
+//        miny = item[2]
+//        if item[2] > maxy:
+//        maxy = item[2]
+//
+//        return minx, maxx, miny, maxy
+
+        Iterator it = input_points.iterator();
+
+        while (it.hasNext()) {
+
+
+        }
+        return null;
+    }
+
 
     public static ArrayList read_input() throws FileNotFoundException {
 
@@ -40,7 +91,7 @@ public class Main {
         //System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
         Scanner sc = new Scanner(new File("./input/1_s_2_t.csv"));
-        sc.useDelimiter(",");   //sets the delimiter pattern
+        sc.useDelimiter("\n");   //sets the delimiter pattern
 
         ArrayList items = new ArrayList();
 
