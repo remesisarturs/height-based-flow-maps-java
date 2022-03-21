@@ -25,6 +25,7 @@ public class Main {
 
         ArrayList points_list = process_input(items);
 
+        Bounds bounds = obtain_bounds(points_list);
 
         System.out.println();
 
@@ -54,34 +55,41 @@ public class Main {
         return point_list;
     }
 
-    public static ArrayList obtain_bounds(ArrayList input_points) {
-
-//        for item in input_points:
-//
-//        if input_points.index(item) == 0:
-//        minx = item[1]
-//        miny = item[2]
-//        maxx = item[1]
-//        maxy = item[2]
-//
-//        if item[1] < minx:
-//        minx = item[1]
-//        if item[1] > maxx:
-//        maxx = item[1]
-//        if item[2] < miny:
-//        miny = item[2]
-//        if item[2] > maxy:
-//        maxy = item[2]
-//
-//        return minx, maxx, miny, maxy
+    public static Bounds obtain_bounds(ArrayList<Point> input_points) {
 
         Iterator it = input_points.iterator();
 
+        float min_x = input_points.get(0).x;
+        float min_y = input_points.get(0).y;
+        float max_x = input_points.get(0).x;
+        float max_y = input_points.get(0).y;
+
         while (it.hasNext()) {
 
+            Point next_point = (Point) it.next();
+
+            if (next_point.x < min_x) {
+                min_x = next_point.x;
+            }
+            if (next_point.x > max_x) {
+                max_x = next_point.x;
+            }
+            if (next_point.y < min_y) {
+                min_y = next_point.y;
+            }
+            if (next_point.y > max_y) {
+                max_y = next_point.y;
+            }
 
         }
-        return null;
+
+        Bounds result = new Bounds();
+        result.max_x = max_x;
+        result.min_x = min_x;
+        result.min_y = min_y;
+        result.max_y = max_y;
+
+        return result;
     }
 
 
