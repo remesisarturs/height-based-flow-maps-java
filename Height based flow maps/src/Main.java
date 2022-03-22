@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 300;
-    public static int nr_of_columns = 300;
+    public static int nr_of_rows = 500;
+    public static int nr_of_columns = 500;
 
     public static int source_x;
     public static int source_y;
@@ -45,20 +45,17 @@ public class Main extends JFrame {
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
+        draw(grid, paths);
+
+
+    }
+
+    public static void draw(Cell[][] grid, ArrayList paths) {
 
         jframe = new JFrame("panel");
-        jframe.setSize(300, 300);
+        jframe.setSize(nr_of_rows, nr_of_columns);
 
-        //JPanel jpanel = new JPanel();
-
-
-        //jpanel.setBackground(Color.green);
-
-        //jpanel.setSize(300, 300);
-
-        //BufferedImage img = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
-
-        BufferedImage image = new BufferedImage(300, 300,
+        BufferedImage image = new BufferedImage(nr_of_rows, nr_of_columns,
                 BufferedImage.TYPE_INT_ARGB);
 
         float max_height = grid[0][0].height;
@@ -111,14 +108,6 @@ public class Main extends JFrame {
             }
         }
 
-        Graphics2D g = image.createGraphics();
-
-
-        //jpanel.paintComponents(g);
-        //g.drawImage();
-
-        //jframe.add();
-
         JPanel pane = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -127,12 +116,11 @@ public class Main extends JFrame {
             }
         };
 
-
         jframe.add(pane);
 
-        //jframe.pack();
         jframe.setVisible(true);
         jframe.show();
+
 
     }
 
