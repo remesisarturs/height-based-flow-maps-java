@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 300;
-    public static int nr_of_columns = 300;
+    public static int nr_of_rows = 10;
+    public static int nr_of_columns = 10;
 
     public static int source_x;
     public static int source_y;
@@ -40,20 +40,115 @@ public class Main extends JFrame {
 
         ArrayList paths = compute_paths(points_list, grid);
 
-        draw(grid, paths);
-
+        //compute_shortest_paths_naive(grid, paths);
 
         long startTime = System.currentTimeMillis();
 
-        compute_shortest_paths_naive(grid, paths);
+        ArrayList distances_for_paths = compute_expansive_fbs(grid, paths);
 
         long endTime = System.currentTimeMillis();
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
+
+        draw(grid, paths);
+
+
+    }
+
+    public static ArrayList compute_expansive_fbs(Cell[][] grid, ArrayList paths) {
+
+
+        Iterator path_iterator = paths.iterator();
+
+        boolean[][] visited = new boolean[nr_of_rows][nr_of_columns];
+
+        float[][] distances = new float[nr_of_rows][nr_of_columns];
+
+        for (int i = 0; i < nr_of_rows; i++) {
+            for (int j = 0; j < nr_of_columns; j++) {
+
+                distances[i][j] = 0.0f;
+
+            }
+        }
+        
+        // Direction vectors
+        int dRow[] = {-1, 0, 1, 0};
+        int dCol[] = {0, 1, 0, -1};
+
+        ArrayList distances_for_paths = new ArrayList();
+
+        while (path_iterator.hasNext()) {
+
+            ArrayList path = (ArrayList) path_iterator.next();
+
+            Queue<Cell> queue = new LinkedList<>();
+
+            Iterator cell_iterator = path.iterator();
+
+            while (cell_iterator.hasNext()) {
+
+                Cell cell = (Cell) cell_iterator.next();
+
+                // add all cells of a path to queue
+                queue.add(cell);
+
+                visited[cell.cell_x][cell.cell_y] = true;
+
+            }
+
+            while (!queue.isEmpty()) {
+
+                Cell cell = queue.peek();
+
+                int x = cell.cell_x;
+                int y = cell.cell_y;
+
+                queue.remove();
+
+                for (int i = 0; i < 4; i++) {
+
+                    int adj_x = x + dRow[i];
+                    int adj_y = y + dCol[i];
+
+                    if (isValid(visited, adj_x, adj_y)) {
+
+                        queue.add(grid[adj_x][adj_y]);
+                        visited[adj_x][adj_y] = true;
+
+                        distances[adj_x][adj_y] = distances[x][y] + 1;
+
+                    }
+                }
+            }
+
+            distances_for_paths.add(distances);
+        }
+
+        return distances_for_paths;
+    }
+
+
+    static boolean isValid(boolean visited[][], int row, int col) {
+
+        // If cell lies out of bounds
+        if (row < 0 || col < 0 ||
+                row >= nr_of_rows || col >= nr_of_columns)
+            return false;
+
+        // If cell is already visited
+        if (visited[row][col])
+            return false;
+
+        // Otherwise
+        return true;
     }
 
     public static void compute_shortest_paths_naive(Cell[][] grid, ArrayList paths) {
+
+        //https://programmer.ink/think/graph-theory-search-how-to-use-multi-source-bfs-to-reduce-time-complexity.html
+        //https://www.geeksforgeeks.org/multi-source-shortest-path-in-unweighted-graph/
 
         for (int i = 0; i < nr_of_columns; i++) {
 
@@ -75,7 +170,7 @@ public class Main extends JFrame {
 
                         Cell path_cell = (Cell) path_iter.next();
 
-                        float distance = (float) (Math.sqrt (Math.pow(path_cell.cell_x - current_cell.cell_x, 2)  + Math.pow(path_cell.cell_y - current_cell.cell_y, 2)));
+                        float distance = (float) (Math.sqrt(Math.pow(path_cell.cell_x - current_cell.cell_x, 2) + Math.pow(path_cell.cell_y - current_cell.cell_y, 2)));
 
                         distances.add(distance);
 
@@ -121,9 +216,6 @@ public class Main extends JFrame {
             for (int j = 0; j < nr_of_rows; j++) {
 
                 int c = (int) (grid[i][j].height * 255.0 / max_height);
-                //int Pixel = (int) grid[i][j].height << 16 | (int) grid[i][j].height << 8 | (int) grid[i][j].height;
-                //System.out.println(c);
-                //image.setRGB(i, j, Pixel);
                 image.setRGB(i, j, new Color(c, 0, 0).getRGB());
 
                 if (!grid[i][j].title.equals("")) {
@@ -467,21 +559,17 @@ public class Main extends JFrame {
 
     public static ArrayList read_input() throws FileNotFoundException {
 
-        //parsing a CSV file into Scanner class constructor
-        //System.out.println("Working Directory = " + System.getProperty("user.dir"));
-
         Scanner sc = new Scanner(new File("./input/1_s_2_t.csv"));
-        sc.useDelimiter("\n");   //sets the delimiter pattern
+        sc.useDelimiter("\n");
 
         ArrayList items = new ArrayList();
 
         while (sc.hasNext()) {
-            //System.out.print(sc.next());
 
             items.add(sc.next());
 
         }
-        sc.close();  //closes the scanner
+        sc.close();
 
         return items;
     }
@@ -504,8 +592,6 @@ public class Main extends JFrame {
 
                 grid[i][j] = cell;
 
-                //System.out.println(grid[i][j].temp);
-                //grid[i][j]
             }
         }
 
