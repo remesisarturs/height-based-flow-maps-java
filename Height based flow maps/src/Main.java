@@ -32,9 +32,69 @@ public class Main {
 
         compute_flow(grid);
 
+        ArrayList paths = compute_paths(points_list, grid);
+
         System.out.println();
 
 
+    }
+
+    public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) {
+
+
+        Iterator it = points_list.iterator();
+
+        ArrayList paths = new ArrayList();
+
+        while (it.hasNext()) {
+
+            Point point = (Point) it.next();
+
+            if (point.name.equals(target_name)) {
+                continue;
+            }
+
+            Cell grid_cell = grid[point.grid_x][point.grid_y];
+
+            Cell current_cell = grid_cell;
+
+            ArrayList path = new ArrayList();
+
+            path.add(current_cell);
+
+            while (!(current_cell.title.equals(target_name))) {
+
+                int node_x = (int) current_cell.cell_x;
+                int node_y = (int) current_cell.cell_y;
+
+                float flow = current_cell.flow_direction;
+
+                if (flow == 1) {
+                    current_cell = grid[node_x + 1][node_y];
+                } else if (flow == 2) {
+                    current_cell = grid[node_x + 1][node_y + 1];
+                } else if (flow == 4) {
+                    current_cell = grid[node_x][node_y + 1];
+                } else if (flow == 8) {
+                    current_cell = grid[node_x - 1][node_y + 1];
+                } else if (flow == 16) {
+                    current_cell = grid[node_x - 1][node_y];
+                } else if (flow == 32) {
+                    current_cell = grid[node_x - 1][node_y - 1];
+                } else if (flow == 64) {
+                    current_cell = grid[node_x][node_y - 1];
+                } else if (flow == 128) {
+                    current_cell = grid[node_x + 1][node_y - 1];
+                }
+
+                path.add(current_cell);
+
+            }
+
+            paths.add(path);
+
+        }
+        return paths;
     }
 
     public static void compute_flow(Cell[][] grid) {
