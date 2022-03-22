@@ -8,21 +8,12 @@ public class Main {
     public static int nr_of_rows = 100;
     public static int nr_of_columns = 100;
 
-    public static int source_x = 0;
-    public static int source_y = 0;
+    public static int source_x;
+    public static int source_y;
 
     public static String target_name = "A";
 
     public static void main(String[] args) throws FileNotFoundException {
-
-        System.out.println("test");
-
-        //Cell cell = new Cell();
-
-        //int nr_of_rows = 100;
-        //int nr_of_columns = 100;
-
-        //String target_name = "A";
 
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
@@ -35,14 +26,128 @@ public class Main {
 
         compute_cell_for_point(bounds, points_list);
 
+        initialize_points_in_grid(grid, points_list);
 
         assign_height_to_grid(grid);
 
+        compute_flow(grid);
 
         System.out.println();
 
 
     }
+
+    public static void compute_flow(Cell[][] grid) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                int x = (int) grid[i][j].cell_x;
+                int y = (int) grid[i][j].cell_y;
+
+                ArrayList neighbors = new ArrayList();
+
+                Cell left = null;
+                Cell right = null;
+                Cell top = null;
+                Cell bottom = null;
+                Cell top_left = null;
+                Cell top_right = null;
+                Cell bottom_left = null;
+                Cell bottom_right = null;
+
+                if (x - 1 >= 0) {
+                    left = grid[x - 1][y];
+                    neighbors.add(left);
+                }
+
+                if (y + 1 < nr_of_rows) {
+                    bottom = grid[x][y + 1];
+                    neighbors.add(bottom);
+                }
+
+                if (x + 1 < nr_of_columns) {
+                    right = grid[x + 1][y];
+                    neighbors.add(right);
+                }
+
+                if (y - 1 >= 0) {
+                    top = grid[x][y - 1];
+                    neighbors.add(top);
+                }
+
+                if (x - 1 >= 0 && y - 1 >= 0) {
+                    top_left = grid[x - 1][y - 1];
+                    neighbors.add(top_left);
+                }
+
+                if (y - 1 >= 0 && x + 1 < nr_of_columns) {
+                    top_right = grid[x + 1][y - 1];
+                    neighbors.add(top_right);
+                }
+
+                if (x - 1 >= 0 && y + 1 < nr_of_rows) {
+                    bottom_left = grid[x - 1][y + 1];
+                    neighbors.add(bottom_left);
+                }
+
+                if (x + 1 < nr_of_columns && y + 1 < nr_of_rows) {
+                    bottom_right = grid[x + 1][y + 1];
+                    neighbors.add(bottom_right);
+                }
+
+                Iterator it = neighbors.iterator();
+
+                ArrayList drop_for_neighbors = new ArrayList();
+
+                while (it.hasNext()) {
+
+                    Cell neighbor = (Cell) it.next();
+
+                    float change_in_height = grid[x][y].height - neighbor.height;
+
+                    float distance = 0f;
+
+                    if (neighbor == left || neighbor == right || neighbor == top || neighbor == bottom) {
+
+                        distance = 1f;
+
+                    } else if (neighbor == top_left || neighbor == top_right || neighbor == bottom_left || neighbor == bottom_right) {
+                        distance = (float) Math.sqrt(2);
+                    }
+
+                    float drop = (change_in_height / distance);
+                    drop_for_neighbors.add(drop);
+
+                }
+
+                int max_drop_index = drop_for_neighbors.indexOf(Collections.max(drop_for_neighbors));
+
+                Cell max_drop_neighbor = (Cell) neighbors.get(max_drop_index);
+
+                if (max_drop_neighbor == left) {
+                    grid[x][y].flow_direction = 16;
+                } else if (max_drop_neighbor == right) {
+                    grid[x][y].flow_direction = 1;
+                } else if (max_drop_neighbor == bottom) {
+                    grid[x][y].flow_direction = 4;
+                } else if (max_drop_neighbor == top) {
+                    grid[x][y].flow_direction = 64;
+                } else if (max_drop_neighbor == top_left) {
+                    grid[x][y].flow_direction = 32;
+                } else if (max_drop_neighbor == top_right) {
+                    grid[x][y].flow_direction = 128;
+                } else if (max_drop_neighbor == bottom_left) {
+                    grid[x][y].flow_direction = 8;
+                } else if (max_drop_neighbor == bottom_right) {
+                    grid[x][y].flow_direction = 2;
+                }
+
+            }
+        }
+    }
+
 
     public static void initialize_points_in_grid(Cell[][] grid, ArrayList<Point> points_list) {
 
