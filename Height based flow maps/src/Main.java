@@ -14,10 +14,12 @@ public class Main {
         int nr_of_rows = 100;
         int nr_of_columns = 100;
 
+        String target_name = "A";
+
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
-        int source_x = 25;
-        int source_y = 25;
+        int source_x = 0;
+        int source_y = 0;
 
         ArrayList items = read_input();
 
@@ -27,6 +29,34 @@ public class Main {
 
         compute_cell_for_point(bounds, nr_of_rows, nr_of_columns, points_list);
 
+        Iterator it = points_list.iterator();
+
+
+        // setting the names of source/targets and setting height of source
+        while (it.hasNext()) {
+
+            Point point = (Point) it.next();
+
+            grid[point.grid_x][point.grid_y].title = point.name;
+
+            if (point.name.equals(target_name)) {
+                grid[point.grid_x][point.grid_y].height = -20;
+
+                source_x = point.grid_x;
+                source_y = point.grid_y;
+
+            }
+        }
+
+
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[i][j].height = (float) (grid[i][j].height + 0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+
+            }
+        }
 
 
         System.out.println();
@@ -159,12 +189,12 @@ public class Main {
 
                 Cell cell = new Cell();
 
-                cell.x = 0;
-                cell.y = 0;
+                cell.cell_x = i;
+                cell.cell_y = j;
                 cell.flow_direction = 0;
                 cell.height = 0;
 
-                cell.temp = Integer.toString(i) + " " + Integer.toString(j);
+                cell.title = Integer.toString(i) + " " + Integer.toString(j);
 
                 grid[i][j] = cell;
 

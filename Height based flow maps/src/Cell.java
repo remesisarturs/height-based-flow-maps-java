@@ -3,8 +3,8 @@ public class Cell {
     //String test;
     float height;
     int flow_direction;
-    float x;
-    float y;
-    String temp;
+    float cell_x;
+    float cell_y;
+    String title;
 
 }
