@@ -1,22 +1,29 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.List;
 
-public class Main {
+public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 100;
-    public static int nr_of_columns = 100;
+    public static int nr_of_rows = 300;
+    public static int nr_of_columns = 300;
 
     public static int source_x;
     public static int source_y;
 
     public static String target_name = "A";
 
+    static JFrame jframe;
+
+
     public static void main(String[] args) throws FileNotFoundException {
 
+        long startTime = System.currentTimeMillis();
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
-
 
         ArrayList items = read_input();
 
@@ -34,8 +41,98 @@ public class Main {
 
         ArrayList paths = compute_paths(points_list, grid);
 
-        System.out.println();
+        long endTime = System.currentTimeMillis();
 
+        System.out.println("That took " + (endTime - startTime) + " milliseconds");
+
+
+        jframe = new JFrame("panel");
+        jframe.setSize(300, 300);
+
+        //JPanel jpanel = new JPanel();
+
+
+        //jpanel.setBackground(Color.green);
+
+        //jpanel.setSize(300, 300);
+
+        //BufferedImage img = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
+
+        BufferedImage image = new BufferedImage(300, 300,
+                BufferedImage.TYPE_INT_ARGB);
+
+        float max_height = grid[0][0].height;
+        float min_hieght = grid[0][0].height;
+
+        for (int i = 0; i < nr_of_columns; i++) {
+
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                if (grid[i][j].height > max_height) {
+                    max_height = grid[i][j].height;
+                }
+                if (grid[i][j].height < min_hieght) {
+                    min_hieght = grid[i][j].height;
+                }
+            }
+        }
+
+        System.out.println("min : " + min_hieght + " max: " + max_height);
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                int c = (int) (grid[i][j].height * 255.0 / max_height);
+                //int Pixel = (int) grid[i][j].height << 16 | (int) grid[i][j].height << 8 | (int) grid[i][j].height;
+                //System.out.println(c);
+                //image.setRGB(i, j, Pixel);
+                image.setRGB(i, j, new Color(c, 0, 0).getRGB());
+
+                if (!grid[i][j].title.equals("")) {
+                    image.setRGB(i,j, new Color(0, 255, 0).getRGB());
+                }
+            }
+        }
+
+        Iterator iter = paths.iterator();
+
+        while (iter.hasNext()) {
+
+            ArrayList path = (ArrayList) iter.next();
+
+            Iterator cell_iter = path.iterator();
+
+            while (cell_iter.hasNext()) {
+
+                Cell cell = (Cell) cell_iter.next();
+
+                image.setRGB((int)cell.cell_x, (int)cell.cell_y, new Color(255, 255, 255).getRGB());
+
+            }
+        }
+
+        Graphics2D g = image.createGraphics();
+
+
+        //jpanel.paintComponents(g);
+        //g.drawImage();
+
+        //jframe.add();
+
+        JPanel pane = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(image, 0, 0, null);
+            }
+        };
+
+
+        jframe.add(pane);
+
+        //jframe.pack();
+        jframe.setVisible(true);
+        jframe.show();
 
     }
 
@@ -221,7 +318,7 @@ public class Main {
             grid[point.grid_x][point.grid_y].title = point.name;
 
             if (point.name.equals(target_name)) {
-                grid[point.grid_x][point.grid_y].height = -20;
+                grid[point.grid_x][point.grid_y].height = 0;
 
                 source_x = point.grid_x;
                 source_y = point.grid_y;
@@ -374,7 +471,7 @@ public class Main {
                 cell.flow_direction = 0;
                 cell.height = 0;
 
-                cell.title = Integer.toString(i) + " " + Integer.toString(j);
+                cell.title = "";
 
                 grid[i][j] = cell;
 
