@@ -5,21 +5,27 @@ import java.util.*;
 public class Main {
 
 
+    public static int nr_of_rows = 100;
+    public static int nr_of_columns = 100;
+
+    public static int source_x = 0;
+    public static int source_y = 0;
+
+    public static String target_name = "A";
+
     public static void main(String[] args) throws FileNotFoundException {
 
         System.out.println("test");
 
         //Cell cell = new Cell();
 
-        int nr_of_rows = 100;
-        int nr_of_columns = 100;
+        //int nr_of_rows = 100;
+        //int nr_of_columns = 100;
 
-        String target_name = "A";
+        //String target_name = "A";
 
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
-        int source_x = 0;
-        int source_y = 0;
 
         ArrayList items = read_input();
 
@@ -27,10 +33,20 @@ public class Main {
 
         Bounds bounds = obtain_bounds(points_list);
 
-        compute_cell_for_point(bounds, nr_of_rows, nr_of_columns, points_list);
+        compute_cell_for_point(bounds, points_list);
+
+
+        assign_height_to_grid(grid);
+
+
+        System.out.println();
+
+
+    }
+
+    public static void initialize_points_in_grid(Cell[][] grid, ArrayList<Point> points_list) {
 
         Iterator it = points_list.iterator();
-
 
         // setting the names of source/targets and setting height of source
         while (it.hasNext()) {
@@ -47,8 +63,10 @@ public class Main {
 
             }
         }
+    }
 
 
+    public static void assign_height_to_grid(Cell[][] grid) {
 
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
@@ -58,13 +76,10 @@ public class Main {
             }
         }
 
-
-        System.out.println();
-
-
     }
 
-    public static void compute_cell_for_point(Bounds bounds, int nr_of_rows, int nr_of_columns, ArrayList points) {
+
+    public static void compute_cell_for_point(Bounds bounds, ArrayList points) {
 
         Iterator it = points.iterator();
 
@@ -180,12 +195,12 @@ public class Main {
         return items;
     }
 
-    public static Cell[][] initialize_grid(int number_of_rows, int number_of_columns) {
+    public static Cell[][] initialize_grid(int nr_of_rows, int nr_of_columns) {
 
-        Cell[][] grid = new Cell[number_of_rows][number_of_columns];
+        Cell[][] grid = new Cell[nr_of_rows][nr_of_columns];
 
-        for (int i = 0; i < number_of_rows; i++) {
-            for (int j = 0; j < number_of_columns; j++) {
+        for (int i = 0; i < nr_of_rows; i++) {
+            for (int j = 0; j < nr_of_columns; j++) {
 
                 Cell cell = new Cell();
 
