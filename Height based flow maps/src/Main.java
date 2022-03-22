@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 500;
-    public static int nr_of_columns = 500;
+    public static int nr_of_rows = 300;
+    public static int nr_of_columns = 300;
 
     public static int source_x;
     public static int source_y;
@@ -22,7 +22,6 @@ public class Main extends JFrame {
 
     public static void main(String[] args) throws FileNotFoundException {
 
-        long startTime = System.currentTimeMillis();
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
         ArrayList items = read_input();
@@ -41,14 +40,56 @@ public class Main extends JFrame {
 
         ArrayList paths = compute_paths(points_list, grid);
 
+        draw(grid, paths);
+
+
+        long startTime = System.currentTimeMillis();
+
+        compute_shortest_paths_naive(grid, paths);
+
         long endTime = System.currentTimeMillis();
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-        draw(grid, paths);
-
-
     }
+
+    public static void compute_shortest_paths_naive(Cell[][] grid, ArrayList paths) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                Cell current_cell = grid[i][j];
+
+                Iterator path_it = paths.iterator();
+
+                while (path_it.hasNext()) {
+
+                    ArrayList path = (ArrayList) path_it.next();
+
+                    Iterator path_iter = path.iterator();
+
+                    ArrayList distances = new ArrayList();
+
+                    while (path_iter.hasNext()) {
+
+                        Cell path_cell = (Cell) path_iter.next();
+
+                        float distance = (float) (Math.sqrt (Math.pow(path_cell.cell_x - current_cell.cell_x, 2)  + Math.pow(path_cell.cell_y - current_cell.cell_y, 2)));
+
+                        distances.add(distance);
+
+                    }
+
+                    int min_distance_index = distances.indexOf(Collections.min(distances));
+
+                    Cell min_distance_cell = (Cell) path.get(min_distance_index);
+
+                }
+            }
+        }
+    }
+
 
     public static void draw(Cell[][] grid, ArrayList paths) {
 
@@ -86,7 +127,7 @@ public class Main extends JFrame {
                 image.setRGB(i, j, new Color(c, 0, 0).getRGB());
 
                 if (!grid[i][j].title.equals("")) {
-                    image.setRGB(i,j, new Color(0, 255, 0).getRGB());
+                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
                 }
             }
         }
@@ -103,7 +144,7 @@ public class Main extends JFrame {
 
                 Cell cell = (Cell) cell_iter.next();
 
-                image.setRGB((int)cell.cell_x, (int)cell.cell_y, new Color(255, 255, 255).getRGB());
+                image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
 
             }
         }
