@@ -97,7 +97,7 @@ public class Main extends JFrame {
                 // add all cells of a path to queue
                 queue.add(cell);
 
-                visited[cell.cell_x][cell.cell_y] = true;
+                visited[cell.cell_y][cell.cell_x] = true;
 
             }
 
@@ -112,15 +112,15 @@ public class Main extends JFrame {
 
                 for (int i = 0; i < 4; i++) {
 
-                    int adj_x = x + dRow[i];
-                    int adj_y = y + dCol[i];
+                    int adj_x = x + dCol[i];
+                    int adj_y = y + dRow[i];
 
-                    if (isValid(visited, adj_x, adj_y)) {
+                    if (isValid(visited, adj_y, adj_x)) {
 
                         queue.add(grid[adj_x][adj_y]);
-                        visited[adj_x][adj_y] = true;
+                        visited[adj_y][adj_x] = true;
 
-                        distances[adj_x][adj_y] = distances[x][y] + 1;
+                        distances[adj_y][adj_x] = distances[y][x] + 1;
 
                     }
                 }
