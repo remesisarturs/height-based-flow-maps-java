@@ -61,18 +61,8 @@ public class Main extends JFrame {
 
         Iterator path_iterator = paths.iterator();
 
-        boolean[][] visited = new boolean[nr_of_rows][nr_of_columns];
 
-        float[][] distances = new float[nr_of_rows][nr_of_columns];
 
-        for (int i = 0; i < nr_of_rows; i++) {
-            for (int j = 0; j < nr_of_columns; j++) {
-
-                distances[i][j] = 0.0f;
-
-            }
-        }
-        
         // Direction vectors
         int dRow[] = {-1, 0, 1, 0};
         int dCol[] = {0, 1, 0, -1};
@@ -80,6 +70,19 @@ public class Main extends JFrame {
         ArrayList distances_for_paths = new ArrayList();
 
         while (path_iterator.hasNext()) {
+
+
+            boolean[][] visited = new boolean[nr_of_columns][nr_of_rows];
+
+            float[][] distances = new float[nr_of_columns][nr_of_rows];
+
+            for (int i = 0; i < nr_of_columns; i++) {
+                for (int j = 0; j < nr_of_rows; j++) {
+
+                    distances[i][j] = 0.0f;
+
+                }
+            }
 
             ArrayList path = (ArrayList) path_iterator.next();
 
@@ -133,8 +136,7 @@ public class Main extends JFrame {
     static boolean isValid(boolean visited[][], int row, int col) {
 
         // If cell lies out of bounds
-        if (row < 0 || col < 0 ||
-                row >= nr_of_rows || col >= nr_of_columns)
+        if (row < 0 || col < 0 || row >= nr_of_rows || col >= nr_of_columns)
             return false;
 
         // If cell is already visited
