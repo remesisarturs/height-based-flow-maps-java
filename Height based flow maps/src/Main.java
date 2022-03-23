@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 10;
-    public static int nr_of_columns = 10;
+    public static int nr_of_rows = 100;
+    public static int nr_of_columns = 100;
 
     public static int source_x;
     public static int source_y;
@@ -21,6 +21,8 @@ public class Main extends JFrame {
 
 
     public static void main(String[] args) throws FileNotFoundException {
+
+        long startTime = System.currentTimeMillis();
 
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
@@ -42,25 +44,107 @@ public class Main extends JFrame {
 
         //compute_shortest_paths_naive(grid, paths);
 
-        long startTime = System.currentTimeMillis();
-
         ArrayList distances_for_paths = compute_expansive_fbs(grid, paths);
 
         long endTime = System.currentTimeMillis();
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
+        adjust_height(grid, distances_for_paths);
 
+
+        for (int i = 0 ; i < 4; i ++) {
+            System.out.println("iteration : " + i);
+            System.out.println("computing flow");
+            compute_flow(grid);
+            System.out.println("computing paths");
+            paths = compute_paths(points_list, grid);
+            System.out.println("computing bfs");
+            distances_for_paths = compute_expansive_fbs(grid, paths);
+            System.out.println("adjusting height");
+            adjust_height(grid, distances_for_paths);
+
+        }
+
+        //System.out.println("here");
         draw(grid, paths);
 
 
     }
 
+    public static float gaussian(float x, float mu, float sigma) {
+
+        return (float) (1.f / (Math.sqrt(2.f * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.f) / 2));
+
+    }
+
+    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths) {
+
+        // TODO
+
+        float[][] dist = (float[][]) distances_for_paths.get(0);
+        float min = dist[0][0];
+        float max = dist[0][0];
+
+        for (int i = 0; i < nr_of_rows; i++) {
+
+            for (int j = 0; j < nr_of_columns; j++) {
+
+                if (dist[i][j] > max) {
+                    max = dist[i][j];
+                }
+                if (dist[i][j] < min) {
+                    min = dist[i][j];
+                }
+
+            }
+        }
+
+        for (int i = 0; i < nr_of_columns; i++) {
+
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                Cell cell = grid[i][j];
+
+                Iterator path_iterator = distances_for_paths.iterator();
+
+                ArrayList distances_for_cell = new ArrayList();
+
+
+                while (path_iterator.hasNext()) {
+
+                    float[][] distances = (float[][]) path_iterator.next();
+
+                    distances_for_cell.add(distances[cell.cell_x][cell.cell_y]);
+
+                }
+
+                float mu_1 = 0.25f;
+                float mu_2 = -0.25f;
+
+                float sigma_1 = 0.5f;
+                float sigma_2 = 0.5f;
+
+                float step = 1/max;
+
+                float x_1 = (float) (0.25f + (float) distances_for_cell.get(0) * step);
+                float x_2 = (float) (-0.25f + (float) distances_for_cell.get(1) * step);
+
+                float height = -((gaussian(x_1 + x_2, mu_1, sigma_1)) + gaussian(x_1 + x_2, mu_2, sigma_2));
+
+                grid[i][j].height = grid[i][j].height + height;
+
+                //System.out.println(grid[i][j].height);
+
+            }
+        }
+    }
+
+
     public static ArrayList compute_expansive_fbs(Cell[][] grid, ArrayList paths) {
 
 
         Iterator path_iterator = paths.iterator();
-
 
 
         // Direction vectors
