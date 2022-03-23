@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 100;
-    public static int nr_of_columns = 100;
+    public static int nr_of_rows = 10;
+    public static int nr_of_columns = 10;
 
     public static int source_x;
     public static int source_y;
@@ -53,7 +53,7 @@ public class Main extends JFrame {
         adjust_height(grid, distances_for_paths);
 
 
-        for (int i = 0 ; i < 4; i ++) {
+        for (int i = 0 ; i < 5; i ++) {
             System.out.println("iteration : " + i);
             System.out.println("computing flow");
             compute_flow(grid);
@@ -119,18 +119,18 @@ public class Main extends JFrame {
 
                 }
 
-                float mu_1 = 0.25f;
-                float mu_2 = -0.25f;
+                float mu_1 = 0.75f;
+                float mu_2 = 1.25f;
 
                 float sigma_1 = 0.5f;
                 float sigma_2 = 0.5f;
 
                 float step = 1/max;
 
-                float x_1 = (float) (0.25f + (float) distances_for_cell.get(0) * step);
-                float x_2 = (float) (-0.25f + (float) distances_for_cell.get(1) * step);
+                float x_1 = (float) (mu_1 + (float) distances_for_cell.get(0) * step);
+                float x_2 = (float) (mu_2 + (float) distances_for_cell.get(1) * step);
 
-                float height = -((gaussian(x_1 + x_2, mu_1, sigma_1)) + gaussian(x_1 + x_2, mu_2, sigma_2));
+                float height = -((gaussian((x_1 + x_2) / 2, mu_1, sigma_1)) + gaussian((x_1 + x_2) / 2, mu_2, sigma_2));
 
                 grid[i][j].height = grid[i][j].height + height;
 
@@ -302,9 +302,18 @@ public class Main extends JFrame {
             for (int j = 0; j < nr_of_rows; j++) {
 
                 int c = (int) (grid[i][j].height * 255.0 / max_height);
-                image.setRGB(i, j, new Color(c, 0, 0).getRGB());
+
+
+                if (c < 0) {
+                    image.setRGB(i, j, new Color(0, 0, -c).getRGB());
+                } else {
+                    image.setRGB(i, j, new Color(c, 0, 0).getRGB());
+                }
+
+
 
                 if (!grid[i][j].title.equals("")) {
+
                     image.setRGB(i, j, new Color(0, 255, 0).getRGB());
                 }
             }
