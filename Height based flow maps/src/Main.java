@@ -9,8 +9,8 @@ import java.util.List;
 public class Main extends JFrame {
 
 
-    public static int nr_of_rows = 10;
-    public static int nr_of_columns = 10;
+    public static int nr_of_rows = 100;
+    public static int nr_of_columns = 100;
 
     public static int source_x;
     public static int source_y;
@@ -53,7 +53,7 @@ public class Main extends JFrame {
         adjust_height(grid, distances_for_paths);
 
 
-        for (int i = 0 ; i < 5; i ++) {
+        for (int i = 0 ; i < 224; i ++) {
             System.out.println("iteration : " + i);
             System.out.println("computing flow");
             compute_flow(grid);
@@ -96,7 +96,6 @@ public class Main extends JFrame {
                 if (dist[i][j] < min) {
                     min = dist[i][j];
                 }
-
             }
         }
 
@@ -119,18 +118,20 @@ public class Main extends JFrame {
 
                 }
 
-                float mu_1 = 0.75f;
-                float mu_2 = 1.25f;
+                float mu_1 = -10f;
+                float mu_2 = 10f;
 
-                float sigma_1 = 0.5f;
-                float sigma_2 = 0.5f;
+                float sigma_1 = 30f;
+                float sigma_2 = 30f;
 
-                float step = 1/max;
+                // float step = 1/max; // max - largest distance from cell to path
 
-                float x_1 = (float) (mu_1 + (float) distances_for_cell.get(0) * step);
-                float x_2 = (float) (mu_2 + (float) distances_for_cell.get(1) * step);
+                float x_1 = mu_1 + (float) distances_for_cell.get(0); // (float) (mu_1 + (float)  * step);
+                float x_2 = mu_2 + (float) distances_for_cell.get(1); // * step);
 
-                float height = -((gaussian((x_1 + x_2) / 2, mu_1, sigma_1)) + gaussian((x_1 + x_2) / 2, mu_2, sigma_2));
+                float height = -(gaussian((x_1 + x_2)/2, mu_1, sigma_1) + gaussian((x_1 + x_2)/2, mu_2, sigma_2));// + gaussian(x_2, mu_2, sigma_2));//((gaussian(x_1, mu_1, sigma_1)) + gaussian(x_2, mu_2, sigma_2));
+
+                //System.out.println(height);
 
                 grid[i][j].height = grid[i][j].height + height;
 
