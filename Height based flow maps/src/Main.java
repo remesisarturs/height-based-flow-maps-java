@@ -1,16 +1,19 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.List;
 
-public class Main extends JFrame {
+public class Main extends JFrame implements MouseWheelListener {
 
 
-    public static int nr_of_rows = 100;
-    public static int nr_of_columns = 100;
+    public static int nr_of_rows = 500;
+    public static int nr_of_columns = 500;
 
     public static int source_x;
     public static int source_y;
@@ -19,6 +22,10 @@ public class Main extends JFrame {
 
     static JFrame jframe;
 
+
+    private double zoomFactor = 1;
+    private double prevZoomFactor = 1;
+    private boolean zoomer;
 
     public static void main(String[] args) throws FileNotFoundException {
 
@@ -44,31 +51,38 @@ public class Main extends JFrame {
 
         //compute_shortest_paths_naive(grid, paths);
 
-        ArrayList distances_for_paths = compute_expansive_fbs(grid, paths);
+        ArrayList distances_for_paths = compute_bfs(grid, paths);
 
         long endTime = System.currentTimeMillis();
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
         adjust_height(grid, distances_for_paths);
+//        compute_flow(grid);
+//        paths = compute_paths(points_list, grid);
 
 
-        for (int i = 0 ; i < 224; i ++) {
+        for (int i = 0; i < 10; i++) {
             System.out.println("iteration : " + i);
             System.out.println("computing flow");
             compute_flow(grid);
             System.out.println("computing paths");
             paths = compute_paths(points_list, grid);
             System.out.println("computing bfs");
-            distances_for_paths = compute_expansive_fbs(grid, paths);
+            distances_for_paths = compute_bfs(grid, paths);
             System.out.println("adjusting height");
+            assign_height_to_grid(grid);
             adjust_height(grid, distances_for_paths);
 
         }
 
-        //System.out.println("here");
+
+        compute_flow(grid);
+        paths = compute_paths(points_list, grid);
         draw(grid, paths);
 
+
+        //draw_distances(grid, paths, distances_for_paths);
 
     }
 
@@ -86,24 +100,24 @@ public class Main extends JFrame {
         float min = dist[0][0];
         float max = dist[0][0];
 
-        for (int i = 0; i < nr_of_rows; i++) {
-
-            for (int j = 0; j < nr_of_columns; j++) {
-
-                if (dist[i][j] > max) {
-                    max = dist[i][j];
-                }
-                if (dist[i][j] < min) {
-                    min = dist[i][j];
-                }
-            }
-        }
+//        for (int i = 0; i < nr_of_rows; i++) {
+//
+//            for (int j = 0; j < nr_of_columns; j++) {
+//
+//                if (dist[i][j] > max) {
+//                    max = dist[i][j];
+//                }
+//                if (dist[i][j] < min) {
+//                    min = dist[i][j];
+//                }
+//            }
+//        }
 
         for (int i = 0; i < nr_of_columns; i++) {
 
             for (int j = 0; j < nr_of_rows; j++) {
 
-                Cell cell = grid[i][j];
+                Cell cell = grid[j][i];
 
                 Iterator path_iterator = distances_for_paths.iterator();
 
@@ -114,35 +128,59 @@ public class Main extends JFrame {
 
                     float[][] distances = (float[][]) path_iterator.next();
 
-                    distances_for_cell.add(distances[cell.cell_x][cell.cell_y]);
+                    distances_for_cell.add(distances[cell.cell_y][cell.cell_x]);
 
                 }
 
-                float mu_1 = -10f;
-                float mu_2 = 10f;
 
-                float sigma_1 = 30f;
-                float sigma_2 = 30f;
+                float width = 50f;
+                float scale = 200000f;
 
-                // float step = 1/max; // max - largest distance from cell to path
+                float distance_1 = (float) distances_for_cell.get(0);
+                float distance_2 = (float) distances_for_cell.get(1);
 
-                float x_1 = mu_1 + (float) distances_for_cell.get(0); // (float) (mu_1 + (float)  * step);
-                float x_2 = mu_2 + (float) distances_for_cell.get(1); // * step);
+                float height = -scale * (gaussian(distance_1, 0, width) + gaussian(distance_2, 0, width));
 
-                float height = -(gaussian((x_1 + x_2)/2, mu_1, sigma_1) + gaussian((x_1 + x_2)/2, mu_2, sigma_2));// + gaussian(x_2, mu_2, sigma_2));//((gaussian(x_1, mu_1, sigma_1)) + gaussian(x_2, mu_2, sigma_2));
+                if (distance_1 <= 2 || distance_2 <= 2) {
+                    System.out.println("before : " + grid[j][i].height);
+                }
 
-                //System.out.println(height);
+                grid[j][i].height = grid[j][i].height + height;
 
-                grid[i][j].height = grid[i][j].height + height;
+                if (distance_1 <= 2 || distance_2 <= 2) {
 
-                //System.out.println(grid[i][j].height);
+                    System.out.println("after : " + grid[j][i].height);
+                }
+
+
+            }
+        }
+    }
+
+    public static void assign_height_to_grid(Cell[][] grid) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[i][j].height = (float) (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+
+            }
+        }
+    }
+
+    public static void assign_zeros_to_grid(Cell[][] grid) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[i][j].height = (float) 0;
 
             }
         }
     }
 
 
-    public static ArrayList compute_expansive_fbs(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) {
 
 
         Iterator path_iterator = paths.iterator();
@@ -272,6 +310,82 @@ public class Main extends JFrame {
         }
     }
 
+    public static void draw_distances(Cell[][] grid, ArrayList paths, ArrayList distances_for_paths) {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(nr_of_rows, nr_of_columns);
+
+        BufferedImage image = new BufferedImage(nr_of_rows, nr_of_columns,
+                BufferedImage.TYPE_INT_ARGB);
+
+        float[][] dist = (float[][]) distances_for_paths.get(1);
+
+        float max_dist = dist[0][0];
+        float min_dist = 0;
+
+        for (int i = 0; i < nr_of_columns; i++) {
+
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                if (dist[i][j] > max_dist) {
+                    max_dist = dist[i][j];
+                }
+            }
+        }
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                int c = (int) (dist[i][j] * 255.0 / max_dist);
+
+
+                if (c < 0) {
+                    image.setRGB(i, j, new Color(0, 0, -c).getRGB());
+                } else {
+                    image.setRGB(i, j, new Color(c, 0, 0).getRGB());
+                }
+
+
+//                if (!grid[i][j].title.equals("")) {
+//
+//                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
+//                }
+            }
+        }
+
+        Iterator iter = paths.iterator();
+
+        while (iter.hasNext()) {
+
+            ArrayList path = (ArrayList) iter.next();
+
+            Iterator cell_iter = path.iterator();
+
+            while (cell_iter.hasNext()) {
+
+                Cell cell = (Cell) cell_iter.next();
+
+                image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+
+            }
+        }
+
+        JPanel pane = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(image, 0, 0, null);
+            }
+        };
+
+        jframe.add(pane);
+
+        jframe.setVisible(true);
+        jframe.show();
+
+
+    }
+
 
     public static void draw(Cell[][] grid, ArrayList paths) {
 
@@ -306,11 +420,11 @@ public class Main extends JFrame {
 
 
                 if (c < 0) {
-                    image.setRGB(i, j, new Color(0, 0, -c).getRGB());
+                    c = (int) (grid[i][j].height * 255.0 / min_hieght);
+                    image.setRGB(i, j, new Color(0, 0, c).getRGB());
                 } else {
                     image.setRGB(i, j, new Color(c, 0, 0).getRGB());
                 }
-
 
 
                 if (!grid[i][j].title.equals("")) {
@@ -352,6 +466,21 @@ public class Main extends JFrame {
 
 
     }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        Graphics2D g2 = (Graphics2D) g;
+        if (zoomer) {
+            AffineTransform at = new AffineTransform();
+            at.scale(zoomFactor, zoomFactor);
+            prevZoomFactor = zoomFactor;
+            g2.transform(at);
+            zoomer = false;
+        }
+        // All drawings go here
+    }
+
 
     public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) {
 
@@ -545,19 +674,6 @@ public class Main extends JFrame {
     }
 
 
-    public static void assign_height_to_grid(Cell[][] grid) {
-
-        for (int i = 0; i < nr_of_columns; i++) {
-            for (int j = 0; j < nr_of_rows; j++) {
-
-                grid[i][j].height = (float) (grid[i][j].height + 0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
-
-            }
-        }
-
-    }
-
-
     public static void compute_cell_for_point(Bounds bounds, ArrayList points) {
 
         Iterator it = points.iterator();
@@ -694,4 +810,18 @@ public class Main extends JFrame {
         return grid;
     }
 
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
+        zoomer = true;
+        //Zoom in
+        if (mouseWheelEvent.getWheelRotation() < 0) {
+            zoomFactor *= 1.1;
+            repaint();
+        }
+        //Zoom out
+        if (mouseWheelEvent.getWheelRotation() > 0) {
+            zoomFactor /= 1.1;
+            repaint();
+        }
+    }
 }
