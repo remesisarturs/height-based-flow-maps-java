@@ -1,7 +1,7 @@
 public class Cell {
 
     //String test;
-    float height;
+    double height;
     int flow_direction;
     int cell_x;
     int cell_y;

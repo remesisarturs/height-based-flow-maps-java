@@ -49,8 +49,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList paths = compute_paths(points_list, grid);
 
-        //compute_shortest_paths_naive(grid, paths);
-
         ArrayList distances_for_paths = compute_bfs(grid, paths);
 
         long endTime = System.currentTimeMillis();
@@ -86,32 +84,15 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static float gaussian(float x, float mu, float sigma) {
+    public static double gaussian(double x, double mu, double sigma) {
 
-        return (float) (1.f / (Math.sqrt(2.f * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.f) / 2));
+        return (double) (1.f / (Math.sqrt(2.f * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.f) / 2));
 
     }
 
     public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths) {
 
-        // TODO
-
-        float[][] dist = (float[][]) distances_for_paths.get(0);
-        float min = dist[0][0];
-        float max = dist[0][0];
-
-//        for (int i = 0; i < nr_of_rows; i++) {
-//
-//            for (int j = 0; j < nr_of_columns; j++) {
-//
-//                if (dist[i][j] > max) {
-//                    max = dist[i][j];
-//                }
-//                if (dist[i][j] < min) {
-//                    min = dist[i][j];
-//                }
-//            }
-//        }
+        double[][] dist = (double[][]) distances_for_paths.get(0);
 
         for (int i = 0; i < nr_of_columns; i++) {
 
@@ -126,20 +107,20 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 while (path_iterator.hasNext()) {
 
-                    float[][] distances = (float[][]) path_iterator.next();
+                    double[][] distances = (double[][]) path_iterator.next();
 
                     distances_for_cell.add(distances[cell.cell_y][cell.cell_x]);
 
                 }
 
 
-                float width = 50f;
-                float scale = 200000f;
+                double width = 50f;
+                double scale = 200000f;
 
-                float distance_1 = (float) distances_for_cell.get(0);
-                float distance_2 = (float) distances_for_cell.get(1);
+                double distance_1 = (double) distances_for_cell.get(0);
+                double distance_2 = (double) distances_for_cell.get(1);
 
-                float height = -scale * (gaussian(distance_1, 0, width) + gaussian(distance_2, 0, width));
+                double height = -scale * (gaussian(distance_1, 0, width) + gaussian(distance_2, 0, width));
 
                 if (distance_1 <= 2 || distance_2 <= 2) {
                     System.out.println("before : " + grid[j][i].height);
@@ -151,8 +132,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     System.out.println("after : " + grid[j][i].height);
                 }
-
-
             }
         }
     }
@@ -162,7 +141,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                grid[i][j].height = (float) (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+                grid[i][j].height = (double) (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
 
             }
         }
@@ -173,7 +152,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                grid[i][j].height = (float) 0;
+                grid[i][j].height = (double) 0;
 
             }
         }
@@ -197,7 +176,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             boolean[][] visited = new boolean[nr_of_columns][nr_of_rows];
 
-            float[][] distances = new float[nr_of_columns][nr_of_rows];
+            double[][] distances = new double[nr_of_columns][nr_of_rows];
 
             for (int i = 0; i < nr_of_columns; i++) {
                 for (int j = 0; j < nr_of_rows; j++) {
@@ -295,7 +274,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         Cell path_cell = (Cell) path_iter.next();
 
-                        float distance = (float) (Math.sqrt(Math.pow(path_cell.cell_x - current_cell.cell_x, 2) + Math.pow(path_cell.cell_y - current_cell.cell_y, 2)));
+                        double distance = (double) (Math.sqrt(Math.pow(path_cell.cell_x - current_cell.cell_x, 2) + Math.pow(path_cell.cell_y - current_cell.cell_y, 2)));
 
                         distances.add(distance);
 
@@ -318,10 +297,10 @@ public class Main extends JFrame implements MouseWheelListener {
         BufferedImage image = new BufferedImage(nr_of_rows, nr_of_columns,
                 BufferedImage.TYPE_INT_ARGB);
 
-        float[][] dist = (float[][]) distances_for_paths.get(1);
+        double[][] dist = (double[][]) distances_for_paths.get(1);
 
-        float max_dist = dist[0][0];
-        float min_dist = 0;
+        double max_dist = dist[0][0];
+        double min_dist = 0;
 
         for (int i = 0; i < nr_of_columns; i++) {
 
@@ -395,8 +374,8 @@ public class Main extends JFrame implements MouseWheelListener {
         BufferedImage image = new BufferedImage(nr_of_rows, nr_of_columns,
                 BufferedImage.TYPE_INT_ARGB);
 
-        float max_height = grid[0][0].height;
-        float min_hieght = grid[0][0].height;
+        double max_height = grid[0][0].height;
+        double min_hieght = grid[0][0].height;
 
         for (int i = 0; i < nr_of_columns; i++) {
 
@@ -510,7 +489,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 int node_x = (int) current_cell.cell_x;
                 int node_y = (int) current_cell.cell_y;
 
-                float flow = current_cell.flow_direction;
+                double flow = current_cell.flow_direction;
 
                 if (flow == 1) {
                     current_cell = grid[node_x + 1][node_y];
@@ -608,19 +587,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell neighbor = (Cell) it.next();
 
-                    float change_in_height = grid[x][y].height - neighbor.height;
+                    double change_in_height = grid[x][y].height - neighbor.height;
 
-                    float distance = 0f;
+                    double distance = 0f;
 
                     if (neighbor == left || neighbor == right || neighbor == top || neighbor == bottom) {
 
                         distance = 1f;
 
                     } else if (neighbor == top_left || neighbor == top_right || neighbor == bottom_left || neighbor == bottom_right) {
-                        distance = (float) Math.sqrt(2);
+                        distance = (double) Math.sqrt(2);
                     }
 
-                    float drop = (change_in_height / distance);
+                    double drop = (change_in_height / distance);
                     drop_for_neighbors.add(drop);
 
                 }
@@ -735,10 +714,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator it = input_points.iterator();
 
-        float min_x = input_points.get(0).x;
-        float min_y = input_points.get(0).y;
-        float max_x = input_points.get(0).x;
-        float max_y = input_points.get(0).y;
+        double min_x = input_points.get(0).x;
+        double min_y = input_points.get(0).y;
+        double max_x = input_points.get(0).x;
+        double max_y = input_points.get(0).y;
 
         while (it.hasNext()) {
 
