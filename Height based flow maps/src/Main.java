@@ -60,22 +60,24 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList paths = compute_paths(points_list, grid);
 
+        draw(grid, paths, 0, false);
+
         ArrayList distances_for_paths = compute_bfs(grid, paths);
 
         long endTime = System.currentTimeMillis();
 
         //System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-        int NR_OF_ITERATIONS = 2;
+        int NR_OF_ITERATIONS = 5;
 
         Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                BASE_HEIGHT_TYPE, scale, false);
+                BASE_HEIGHT_TYPE, scale, true, false);
 
         grid = result.first;
         paths = result.second;
 
 
-        draw(grid, paths);
+        //draw(grid, paths, 1);
 
 
         //draw_distances(grid, paths, distances_for_paths);
@@ -84,7 +86,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
                                                      ArrayList distances_for_paths, int NR_OF_ITERATIONS,
-                                                     String BASE_HEIGHT_TYPE, double scale, boolean save_outputs) {
+                                                     String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
+                                                     boolean show_intermediate_results)
+            throws IOException {
 
         adjust_height(grid, distances_for_paths);
 
@@ -96,6 +100,10 @@ public class Main extends JFrame implements MouseWheelListener {
             compute_flow(grid);
 
             paths = compute_paths(points_list, grid);
+
+            if (save_outputs == true) {
+                draw(grid, paths, i, show_intermediate_results);
+            }
 
             distances_for_paths = compute_bfs(grid, paths);
 
@@ -416,7 +424,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
-    public static void draw(Cell[][] grid, ArrayList paths) throws IOException {
+    public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results)
+            throws IOException {
 
         jframe = new JFrame("panel");
         jframe.setSize(nr_of_rows, nr_of_columns);
@@ -480,20 +489,26 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        JPanel pane = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(image, 0, 0, null);
-            }
-        };
 
-        jframe.add(pane);
+        if (show_intermediate_results) {
 
-        jframe.setVisible(true);
-        jframe.show();
+            JPanel pane = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(image, 0, 0, null);
+                }
+            };
 
-        ImageIO.write(image, "png", new File( "image.png"));
+            jframe.add(pane);
+
+            jframe.setVisible(true);
+
+            jframe.show();
+        }
+
+
+        ImageIO.write(image, "png", new File( "image_" + image_index + ".png"));
 
 
 
