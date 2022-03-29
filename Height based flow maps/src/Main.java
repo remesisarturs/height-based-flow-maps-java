@@ -43,9 +43,14 @@ public class Main extends JFrame implements MouseWheelListener {
 
         initialize_points_in_grid(grid, points_list);
 
-        initialize_grid_height(grid);
+        String BASE_HEIGHT_TYPE = "SQRT";
+        BASE_HEIGHT_TYPE = "OTHER";
 
-        //initialize_grid_height_sqrt(grid);
+        if (BASE_HEIGHT_TYPE.equals("SQRT")) {
+            initialize_grid_height_sqrt(grid);
+        } else {
+            initialize_grid_height(grid);
+        }
 
         compute_flow(grid);
 
@@ -55,12 +60,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
         long endTime = System.currentTimeMillis();
 
-        System.out.println("That took " + (endTime - startTime) + " milliseconds");
+        //System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-        int nr_of_iterations = 3;
+        int NR_OF_ITERATIONS = 1;
 
-
-        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, nr_of_iterations);
+        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS, BASE_HEIGHT_TYPE);
 
         grid = result.first;
         paths = result.second;
@@ -74,22 +78,26 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
-                                                     ArrayList distances_for_paths, int nr_of_iterations) {
+                                                     ArrayList distances_for_paths, int NR_OF_ITERATIONS, String BASE_HEIGHT_TYPE) {
 
         adjust_height(grid, distances_for_paths);
 
-
         // Iterate a number of times:
-        for (int i = 0; i < nr_of_iterations; i++) {
+        for (int i = 1; i < NR_OF_ITERATIONS; i++) {
             System.out.println("iteration : " + i);
-            System.out.println("computing flow");
+
+
             compute_flow(grid);
-            System.out.println("computing paths");
+
             paths = compute_paths(points_list, grid);
-            System.out.println("computing bfs");
+
             distances_for_paths = compute_bfs(grid, paths);
-            System.out.println("adjusting height");
-            initialize_grid_height(grid);
+
+            if (BASE_HEIGHT_TYPE.equals("SQRT")) {
+                initialize_grid_height_sqrt(grid);
+            } else {
+                initialize_grid_height(grid);
+            }
             adjust_height(grid, distances_for_paths);
 
         }
@@ -110,6 +118,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths) {
+
+        System.out.println("adjusting height");
 
         double[][] dist = (double[][]) distances_for_paths.get(0);
 
@@ -141,16 +151,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 double height = -scale * (gaussian(distance_1, 0, width) + gaussian(distance_2, 0, width));
 
-                if (distance_1 <= 2 || distance_2 <= 2) {
-                    System.out.println("before : " + grid[j][i].height);
-                }
+//                if (distance_1 <= 2 || distance_2 <= 2) {
+//                    System.out.println("before : " + grid[j][i].height);
+//                }
 
                 grid[j][i].height = grid[j][i].height + height;
 
-                if (distance_1 <= 2 || distance_2 <= 2) {
+//                if (distance_1 <= 2 || distance_2 <= 2) {
+//
+//                    System.out.println("after : " + grid[j][i].height);
+//                }
 
-                    System.out.println("after : " + grid[j][i].height);
-                }
             }
         }
     }
@@ -192,6 +203,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) {
 
+        System.out.println("computing bfs");
 
         Iterator path_iterator = paths.iterator();
 
@@ -494,6 +506,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) {
 
+        System.out.println("computing paths");
 
         Iterator it = points_list.iterator();
 
@@ -551,7 +564,7 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void compute_flow(Cell[][] grid) {
-
+        System.out.println("computing flow");
         for (int i = 0; i < nr_of_columns; i++) {
 
             for (int j = 0; j < nr_of_rows; j++) {
