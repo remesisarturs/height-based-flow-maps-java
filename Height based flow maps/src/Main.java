@@ -1,3 +1,4 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
@@ -6,6 +7,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class Main extends JFrame implements MouseWheelListener {
     private double prevZoomFactor = 1;
     private boolean zoomer;
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
 
         long startTime = System.currentTimeMillis();
 
@@ -44,12 +46,14 @@ public class Main extends JFrame implements MouseWheelListener {
         initialize_points_in_grid(grid, points_list);
 
         String BASE_HEIGHT_TYPE = "SQRT";
-        BASE_HEIGHT_TYPE = "OTHER";
+        //BASE_HEIGHT_TYPE = "OTHER";
+
+        double scale = 0.05;
 
         if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-            initialize_grid_height_sqrt(grid);
+            initialize_grid_height_sqrt(grid, scale);
         } else {
-            initialize_grid_height(grid);
+            initialize_grid_height(grid, scale);
         }
 
         compute_flow(grid);
@@ -62,9 +66,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         //System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-        int NR_OF_ITERATIONS = 1;
+        int NR_OF_ITERATIONS = 2;
 
-        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS, BASE_HEIGHT_TYPE);
+        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
+                BASE_HEIGHT_TYPE, scale, false);
 
         grid = result.first;
         paths = result.second;
@@ -78,7 +83,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
-                                                     ArrayList distances_for_paths, int NR_OF_ITERATIONS, String BASE_HEIGHT_TYPE) {
+                                                     ArrayList distances_for_paths, int NR_OF_ITERATIONS,
+                                                     String BASE_HEIGHT_TYPE, double scale, boolean save_outputs) {
 
         adjust_height(grid, distances_for_paths);
 
@@ -94,9 +100,9 @@ public class Main extends JFrame implements MouseWheelListener {
             distances_for_paths = compute_bfs(grid, paths);
 
             if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-                initialize_grid_height_sqrt(grid);
+                initialize_grid_height_sqrt(grid, scale);
             } else {
-                initialize_grid_height(grid);
+                initialize_grid_height(grid, scale);
             }
             adjust_height(grid, distances_for_paths);
 
@@ -113,7 +119,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static double gaussian(double x, double mu, double sigma) {
 
-        return (double) (1.f / (Math.sqrt(2.f * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.f) / 2));
+        return (double) (1.0 / (Math.sqrt(2.0 * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
 
     }
 
@@ -166,7 +172,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void initialize_grid_height(Cell[][] grid) {
+    public static void initialize_grid_height(Cell[][] grid, double scale) {
 
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
@@ -177,7 +183,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void initialize_grid_height_sqrt(Cell[][] grid) {
+    public static void initialize_grid_height_sqrt(Cell[][] grid, double scale) {
 
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
@@ -332,7 +338,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void draw_distances(Cell[][] grid, ArrayList paths, ArrayList distances_for_paths) {
+    public static void draw_distances(Cell[][] grid, ArrayList paths, ArrayList distances_for_paths) throws IOException {
 
         jframe = new JFrame("panel");
         jframe.setSize(nr_of_rows, nr_of_columns);
@@ -405,11 +411,12 @@ public class Main extends JFrame implements MouseWheelListener {
         jframe.setVisible(true);
         jframe.show();
 
+        ImageIO.write(image, "png", new File( "image.png"));
 
     }
 
 
-    public static void draw(Cell[][] grid, ArrayList paths) {
+    public static void draw(Cell[][] grid, ArrayList paths) throws IOException {
 
         jframe = new JFrame("panel");
         jframe.setSize(nr_of_rows, nr_of_columns);
@@ -485,6 +492,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         jframe.setVisible(true);
         jframe.show();
+
+        ImageIO.write(image, "png", new File( "image.png"));
+
 
 
     }
