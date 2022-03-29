@@ -43,7 +43,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         initialize_points_in_grid(grid, points_list);
 
-        assign_height_to_grid(grid);
+        initialize_grid_height(grid);
+
+        //initialize_grid_height_sqrt(grid);
 
         compute_flow(grid);
 
@@ -55,12 +57,30 @@ public class Main extends JFrame implements MouseWheelListener {
 
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
+        int nr_of_iterations = 3;
+
+
+        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, nr_of_iterations);
+
+        grid = result.first;
+        paths = result.second;
+
+
+        draw(grid, paths);
+
+
+        //draw_distances(grid, paths, distances_for_paths);
+
+    }
+
+    public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
+                                                     ArrayList distances_for_paths, int nr_of_iterations) {
+
         adjust_height(grid, distances_for_paths);
-//        compute_flow(grid);
-//        paths = compute_paths(points_list, grid);
 
 
-        for (int i = 0; i < 10; i++) {
+        // Iterate a number of times:
+        for (int i = 0; i < nr_of_iterations; i++) {
             System.out.println("iteration : " + i);
             System.out.println("computing flow");
             compute_flow(grid);
@@ -69,18 +89,17 @@ public class Main extends JFrame implements MouseWheelListener {
             System.out.println("computing bfs");
             distances_for_paths = compute_bfs(grid, paths);
             System.out.println("adjusting height");
-            assign_height_to_grid(grid);
+            initialize_grid_height(grid);
             adjust_height(grid, distances_for_paths);
 
         }
 
-
         compute_flow(grid);
         paths = compute_paths(points_list, grid);
-        draw(grid, paths);
 
+        Tuple<Cell[][], ArrayList> tuple = new Tuple<Cell[][], ArrayList>(grid, paths);
 
-        //draw_distances(grid, paths, distances_for_paths);
+        return tuple;
 
     }
 
@@ -136,15 +155,27 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void assign_height_to_grid(Cell[][] grid) {
+    public static void initialize_grid_height(Cell[][] grid) {
 
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                grid[i][j].height = (double) (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+                grid[i][j].height = (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
 
             }
         }
+    }
+
+    public static void initialize_grid_height_sqrt(Cell[][] grid) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[i][j].height = (0.05 * Math.sqrt(Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+
+            }
+        }
+
     }
 
     public static void assign_zeros_to_grid(Cell[][] grid) {
