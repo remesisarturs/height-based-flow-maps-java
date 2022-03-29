@@ -1,4 +1,8 @@
+import javafx.event.EventDispatchChain;
+
 import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
@@ -28,6 +32,9 @@ public class Main extends JFrame implements MouseWheelListener {
     private double zoomFactor = 1;
     private double prevZoomFactor = 1;
     private boolean zoomer;
+
+
+    public static ArrayList gif_array = new ArrayList();
 
     public static void main(String[] args) throws IOException {
 
@@ -82,6 +89,34 @@ public class Main extends JFrame implements MouseWheelListener {
 
         //draw_distances(grid, paths, distances_for_paths);
 
+        generate_gif(NR_OF_ITERATIONS);
+
+    }
+
+    public static void generate_gif(int iterations) throws IOException {
+
+        Iterator iterator = gif_array.iterator();
+
+        BufferedImage first = ImageIO.read(new File("image_0.png"));
+        ImageOutputStream output = new FileImageOutputStream(new File("output_gif.gif"));
+
+
+        GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
+        writer.writeToSequence(first);
+
+        File[] images = new File[iterations];
+
+        for (int i = 0; i < iterations; i++) {
+            images[i] = new File("image_" + i + ".png");
+        }
+
+        for (File image : images) {
+            BufferedImage next = ImageIO.read(image);
+            writer.writeToSequence(next);
+        }
+
+        writer.close();
+        output.close();
     }
 
     public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
@@ -419,7 +454,7 @@ public class Main extends JFrame implements MouseWheelListener {
         jframe.setVisible(true);
         jframe.show();
 
-        ImageIO.write(image, "png", new File( "image.png"));
+        ImageIO.write(image, "png", new File("image.png"));
 
     }
 
@@ -508,8 +543,8 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
 
-        ImageIO.write(image, "png", new File( "image_" + image_index + ".png"));
-
+        ImageIO.write(image, "png", new File("image_" + image_index + ".png"));
+        gif_array.add(image);
 
 
     }
