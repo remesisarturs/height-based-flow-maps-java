@@ -42,12 +42,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void main(String[] args) throws IOException {
 
+        String BASE_HEIGHT_TYPE = "SQRT";
+        BASE_HEIGHT_TYPE = "OTHER";
 
         storage_location_name = dtf.format(now);
 
         currentWorkingPath = System.getProperty("user.dir").concat("\\experiments\\");
 
+        storage_location_name = storage_location_name.concat("_" + BASE_HEIGHT_TYPE);
+
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
+        
         dir.mkdir();
 
 
@@ -63,8 +68,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         initialize_points_in_grid(grid, points_list);
 
-        String BASE_HEIGHT_TYPE = "SQRT";
-        //BASE_HEIGHT_TYPE = "OTHER";
+
 
         double scale = 0.05;
 
@@ -82,7 +86,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList<double[][]> distances_for_paths = compute_bfs(grid, paths);
 
-        int NR_OF_ITERATIONS = 20;
+        int NR_OF_ITERATIONS = 3;
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                 BASE_HEIGHT_TYPE, scale, true, false);
@@ -97,7 +101,7 @@ public class Main extends JFrame implements MouseWheelListener {
         generate_gif();
 
     }
-    
+
     public static void generate_gif() throws IOException {
 
 
@@ -580,7 +584,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator it = points_list.iterator();
 
-        ArrayList paths = new ArrayList();
+        ArrayList<ArrayList<Cell>> paths = new ArrayList();
 
         while (it.hasNext()) {
 
@@ -594,7 +598,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Cell current_cell = grid_cell;
 
-            ArrayList path = new ArrayList();
+            ArrayList<Cell> path = new ArrayList();
 
             path.add(current_cell);
 
@@ -642,7 +646,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 int x = (int) grid[i][j].cell_x;
                 int y = (int) grid[i][j].cell_y;
 
-                ArrayList neighbors = new ArrayList();
+                ArrayList<Cell> neighbors = new ArrayList();
 
                 Cell left = null;
                 Cell right = null;
