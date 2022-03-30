@@ -1,5 +1,3 @@
-import javafx.event.EventDispatchChain;
-
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
@@ -31,9 +29,9 @@ public class Main extends JFrame implements MouseWheelListener {
     static JFrame jframe;
 
 
-    private double zoomFactor = 1;
-    private double prevZoomFactor = 1;
-    private boolean zoomer;
+    private static double zoomFactor = 1;
+    private static double prevZoomFactor = 1;
+    private static boolean zoomer;
 
 
     public static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
@@ -41,26 +39,23 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String storage_location_name;
     public static String currentWorkingPath;
 
-    public static ArrayList gif_array = new ArrayList();
 
     public static void main(String[] args) throws IOException {
 
 
-        storage_location_name = dtf.format(now).toString();
+        storage_location_name = dtf.format(now);
 
         currentWorkingPath = System.getProperty("user.dir").concat("\\experiments\\");
 
-        File dir = new File(currentWorkingPath.concat("\\"+ storage_location_name +"\\"));
+        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
         dir.mkdir();
 
 
-        long startTime = System.currentTimeMillis();
-
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
-        ArrayList items = read_input();
+        ArrayList<String> items = read_input();
 
-        ArrayList points_list = process_input(items);
+        ArrayList<Point> points_list = process_input(items);
 
         Bounds bounds = obtain_bounds(points_list);
 
@@ -81,19 +76,15 @@ public class Main extends JFrame implements MouseWheelListener {
 
         compute_flow(grid);
 
-        ArrayList paths = compute_paths(points_list, grid);
+        ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
 
         draw(grid, paths, 0, false);
 
-        ArrayList distances_for_paths = compute_bfs(grid, paths);
-
-        long endTime = System.currentTimeMillis();
-
-        //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+        ArrayList<double[][]> distances_for_paths = compute_bfs(grid, paths);
 
         int NR_OF_ITERATIONS = 20;
 
-        Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
+        Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                 BASE_HEIGHT_TYPE, scale, true, false);
 
         grid = result.first;
@@ -103,11 +94,11 @@ public class Main extends JFrame implements MouseWheelListener {
         draw(grid, paths, NR_OF_ITERATIONS, false);
 
 
-        generate_gif(NR_OF_ITERATIONS);
+        generate_gif();
 
     }
-
-    public static void generate_gif(int iterations) throws IOException {
+    
+    public static void generate_gif() throws IOException {
 
 
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
@@ -117,10 +108,19 @@ public class Main extends JFrame implements MouseWheelListener {
         BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_0.png")));
         ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\output_gif.gif")));
 
-
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
         writer.writeToSequence(first);
-        
+
+
+        Arrays.sort(files, new Comparator<File>(){
+            @Override
+            public int compare(File f1, File f2) {
+                String s1 = f1.getName().substring(6,  f1.getName().indexOf("."));
+                String s2 = f2.getName().substring(6, f2.getName().indexOf("."));
+                return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
+            }
+        });
+
         for (File image : files) {
             BufferedImage next = ImageIO.read(image);
             writer.writeToSequence(next);
@@ -130,10 +130,10 @@ public class Main extends JFrame implements MouseWheelListener {
         output.close();
     }
 
-    public static Tuple<Cell[][], ArrayList> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
-                                                     ArrayList distances_for_paths, int NR_OF_ITERATIONS,
-                                                     String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
-                                                     boolean show_intermediate_results)
+    public static Tuple<Cell[][], ArrayList<ArrayList<Cell>>> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
+                                                                      ArrayList distances_for_paths, int NR_OF_ITERATIONS,
+                                                                      String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
+                                                                      boolean show_intermediate_results)
             throws IOException {
 
         adjust_height(grid, distances_for_paths);
@@ -165,7 +165,7 @@ public class Main extends JFrame implements MouseWheelListener {
         compute_flow(grid);
         paths = compute_paths(points_list, grid);
 
-        Tuple<Cell[][], ArrayList> tuple = new Tuple<Cell[][], ArrayList>(grid, paths);
+        Tuple<Cell[][], ArrayList<ArrayList<Cell>>> tuple = new Tuple<Cell[][], ArrayList<ArrayList<Cell>>>(grid, paths);
 
         return tuple;
 
@@ -556,8 +556,6 @@ public class Main extends JFrame implements MouseWheelListener {
         File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/image_" + image_index + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
-        gif_array.add(image);
-
 
     }
 
