@@ -19,8 +19,8 @@ import java.util.List;
 public class Main extends JFrame implements MouseWheelListener {
 
 
-    public static int nr_of_rows = 500;
-    public static int nr_of_columns = 500;
+    public static int nr_of_rows = 10;
+    public static int nr_of_columns = 10;
 
     public static int source_x;
     public static int source_y;
@@ -77,8 +77,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         if (BASE_HEIGHT_TYPE.equals("SQRT")) {
             initialize_grid_height_sqrt(grid, BASE_SCALE);
-        } else {
+        } else if (BASE_HEIGHT_TYPE.equals("default")){
             initialize_grid_height(grid, BASE_SCALE);
+        } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
+            initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
         }
 
         compute_flow(grid);
@@ -107,17 +109,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        BASE_HEIGHT_TYPE = "SQRT";
-        BASE_HEIGHT_TYPE = "OTHER";
-        BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 10;
-        HEIGHT_FUNCTION_WIDTH = 50;
-        HEIGHT_FUNCTION_SCALE = 200000;
+        //BASE_HEIGHT_TYPE = "SQRT";
+        //BASE_HEIGHT_TYPE = "OTHER";
+        BASE_HEIGHT_TYPE = "chebyshev";
+        BASE_SCALE = 0.001;
+        NR_OF_ITERATIONS = 30;
+        HEIGHT_FUNCTION_WIDTH = 75;
+        HEIGHT_FUNCTION_SCALE = 275000;//200000;
 
     }
 
-    public static void write_output_configuration () throws IOException {
-        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name) +"\\config.txt");
+    public static void write_output_configuration() throws IOException {
+        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name) + "\\config.txt");
         fileWriter.write("GRID_SIZE = " + nr_of_rows + " rows x " + nr_of_columns + " columns" + "\n");
         fileWriter.write("NR_OF_ITERATIONS = " + NR_OF_ITERATIONS + "\n");
         fileWriter.write("BASE_HEIGHT_TYPE = " + BASE_HEIGHT_TYPE + "\n");
@@ -141,10 +144,10 @@ public class Main extends JFrame implements MouseWheelListener {
         writer.writeToSequence(first);
 
 
-        Arrays.sort(files, new Comparator<File>(){
+        Arrays.sort(files, new Comparator<File>() {
             @Override
             public int compare(File f1, File f2) {
-                String s1 = f1.getName().substring(6,  f1.getName().indexOf("."));
+                String s1 = f1.getName().substring(6, f1.getName().indexOf("."));
                 String s2 = f2.getName().substring(6, f2.getName().indexOf("."));
                 return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
             }
@@ -262,6 +265,69 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
     }
+
+    public static void initialize_grid_height_chebyshev_distance(Cell[][] grid, double scale) {
+
+        // Direction vectors
+        int dRow[] = {-1, 0, 1, 0};
+        int dCol[] = {0, 1, 0, -1};
+
+        boolean[][] visited = new boolean[nr_of_columns][nr_of_rows];
+
+        double[][] distances = new double[nr_of_columns][nr_of_rows];
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                distances[i][j] = 0.0f;
+
+            }
+        }
+
+        Queue<Cell> queue = new LinkedList<>();
+
+
+        Cell source_cell = grid[source_y][source_x];
+
+        // add all cells of a path to queue
+        queue.add(source_cell);
+
+        visited[source_cell.cell_y][source_cell.cell_x] = true;
+
+        while (!queue.isEmpty()) {
+
+            Cell cell = queue.peek();
+
+            int x = cell.cell_x;
+            int y = cell.cell_y;
+
+            queue.remove();
+
+            for (int i = 0; i < 4; i++) {
+
+                int adj_x = x + dCol[i];
+                int adj_y = y + dRow[i];
+
+                if (isValid(visited, adj_y, adj_x)) {
+
+                    queue.add(grid[adj_x][adj_y]);
+                    visited[adj_y][adj_x] = true;
+
+                    distances[adj_y][adj_x] = distances[y][x] + 1;
+
+                }
+            }
+        }
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[j][i].height = distances[j][i];
+
+            }
+        }
+    }
+
 
     public static void initialize_grid_height_sqrt(Cell[][] grid, double scale) {
 
