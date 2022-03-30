@@ -100,10 +100,8 @@ public class Main extends JFrame implements MouseWheelListener {
         paths = result.second;
 
 
-        //draw(grid, paths, 1);
+        draw(grid, paths, NR_OF_ITERATIONS, false);
 
-
-        //draw_distances(grid, paths, distances_for_paths);
 
         generate_gif(NR_OF_ITERATIONS);
 
@@ -111,7 +109,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void generate_gif(int iterations) throws IOException {
 
-        Iterator iterator = gif_array.iterator();
+
+        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
+        File[] files = dir.listFiles((dir1, name) -> name.endsWith(".png"));
+
 
         BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_0.png")));
         ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\output_gif.gif")));
@@ -119,14 +120,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
         writer.writeToSequence(first);
-
-        File[] images = new File[iterations];
-
-        for (int i = 0; i < iterations; i++) {
-            images[i] = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_" + i + ".png"));
-        }
-
-        for (File image : images) {
+        
+        for (File image : files) {
             BufferedImage next = ImageIO.read(image);
             writer.writeToSequence(next);
         }
