@@ -12,6 +12,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
@@ -34,9 +36,23 @@ public class Main extends JFrame implements MouseWheelListener {
     private boolean zoomer;
 
 
+    public static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+    public static LocalDateTime now = LocalDateTime.now();
+    public static String storage_location_name;
+    public static String currentWorkingPath;
+
     public static ArrayList gif_array = new ArrayList();
 
     public static void main(String[] args) throws IOException {
+
+
+        storage_location_name = dtf.format(now).toString();
+
+        currentWorkingPath = System.getProperty("user.dir").concat("\\experiments\\");
+
+        File dir = new File(currentWorkingPath.concat("\\"+ storage_location_name +"\\"));
+        dir.mkdir();
+
 
         long startTime = System.currentTimeMillis();
 
@@ -75,7 +91,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         //System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-        int NR_OF_ITERATIONS = 5;
+        int NR_OF_ITERATIONS = 20;
 
         Tuple<Cell[][], ArrayList> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                 BASE_HEIGHT_TYPE, scale, true, false);
@@ -97,8 +113,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator iterator = gif_array.iterator();
 
-        BufferedImage first = ImageIO.read(new File("image_0.png"));
-        ImageOutputStream output = new FileImageOutputStream(new File("output_gif.gif"));
+        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_0.png")));
+        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\output_gif.gif")));
 
 
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
@@ -107,7 +123,7 @@ public class Main extends JFrame implements MouseWheelListener {
         File[] images = new File[iterations];
 
         for (int i = 0; i < iterations; i++) {
-            images[i] = new File("image_" + i + ".png");
+            images[i] = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_" + i + ".png"));
         }
 
         for (File image : images) {
@@ -542,8 +558,9 @@ public class Main extends JFrame implements MouseWheelListener {
             jframe.show();
         }
 
-
-        ImageIO.write(image, "png", new File("image_" + image_index + ".png"));
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/image_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
         gif_array.add(image);
 
 
