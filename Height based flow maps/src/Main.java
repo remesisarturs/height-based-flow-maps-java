@@ -41,19 +41,16 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String currentWorkingPath;
 
 
-    public static double height_function_width;
-    public static double height_function_scale;
-
+    public static double HEIGHT_FUNCTION_WIDTH;
+    public static double HEIGHT_FUNCTION_SCALE;
     public static int NR_OF_ITERATIONS;
-
     public static String BASE_HEIGHT_TYPE;
+    public static double BASE_SCALE;
 
-    public static double base_scale;
 
     public static void main(String[] args) throws IOException {
 
-        BASE_HEIGHT_TYPE = "SQRT";
-        BASE_HEIGHT_TYPE = "OTHER";
+        initialize_parameters();
 
         storage_location_name = dtf.format(now);
 
@@ -77,12 +74,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
         initialize_points_in_grid(grid, points_list);
 
-        base_scale = 0.5;
 
         if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-            initialize_grid_height_sqrt(grid, base_scale);
+            initialize_grid_height_sqrt(grid, BASE_SCALE);
         } else {
-            initialize_grid_height(grid, base_scale);
+            initialize_grid_height(grid, BASE_SCALE);
         }
 
         compute_flow(grid);
@@ -93,10 +89,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList<double[][]> distances_for_paths = compute_bfs(grid, paths);
 
-        NR_OF_ITERATIONS = 10;
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                BASE_HEIGHT_TYPE, base_scale, true, false);
+                BASE_HEIGHT_TYPE, BASE_SCALE, true, false);
 
         grid = result.first;
         paths = result.second;
@@ -110,13 +105,25 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static void initialize_parameters() {
+
+        BASE_HEIGHT_TYPE = "SQRT";
+        BASE_HEIGHT_TYPE = "OTHER";
+        BASE_SCALE = 0.5;
+        NR_OF_ITERATIONS = 10;
+        HEIGHT_FUNCTION_WIDTH = 50;
+        HEIGHT_FUNCTION_SCALE = 200000;
+
+    }
+
     public static void write_output_configuration () throws IOException {
         FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name) +"\\config.txt");
+        fileWriter.write("GRID_SIZE = " + nr_of_rows + " rows x " + nr_of_columns + " columns" + "\n");
         fileWriter.write("NR_OF_ITERATIONS = " + NR_OF_ITERATIONS + "\n");
         fileWriter.write("BASE_HEIGHT_TYPE = " + BASE_HEIGHT_TYPE + "\n");
-        fileWriter.write("base_scale = " + base_scale + "\n");
-        fileWriter.write("height_function_scale = " + height_function_scale + "\n");
-        fileWriter.write("height_function_width = " + height_function_width + "\n");
+        fileWriter.write("BASE_SCALE = " + BASE_SCALE + "\n");
+        fileWriter.write("HEIGHT_FUNCTION_SCALE = " + HEIGHT_FUNCTION_SCALE + "\n");
+        fileWriter.write("HEIGHT_FUNCTION_WIDTH = " + HEIGHT_FUNCTION_WIDTH + "\n");
         fileWriter.close();
     }
 
@@ -225,13 +232,10 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
 
-                height_function_width = 50;
-                height_function_scale = 200000;
-
                 double distance_1 = (double) distances_for_cell.get(0);
                 double distance_2 = (double) distances_for_cell.get(1);
 
-                double height = -height_function_scale * (gaussian(distance_1, 0, height_function_width) + gaussian(distance_2, 0, height_function_width));
+                double height = -HEIGHT_FUNCTION_SCALE * (gaussian(distance_1, 0, HEIGHT_FUNCTION_WIDTH) + gaussian(distance_2, 0, HEIGHT_FUNCTION_WIDTH));
 
 //                if (distance_1 <= 2 || distance_2 <= 2) {
 //                    System.out.println("before : " + grid[j][i].height);
