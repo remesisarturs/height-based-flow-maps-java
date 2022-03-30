@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,9 +41,18 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String currentWorkingPath;
 
 
+    public static double height_function_width;
+    public static double height_function_scale;
+
+    public static int NR_OF_ITERATIONS;
+
+    public static String BASE_HEIGHT_TYPE;
+
+    public static double base_scale;
+
     public static void main(String[] args) throws IOException {
 
-        String BASE_HEIGHT_TYPE = "SQRT";
+        BASE_HEIGHT_TYPE = "SQRT";
         BASE_HEIGHT_TYPE = "OTHER";
 
         storage_location_name = dtf.format(now);
@@ -52,9 +62,8 @@ public class Main extends JFrame implements MouseWheelListener {
         storage_location_name = storage_location_name.concat("_" + BASE_HEIGHT_TYPE);
 
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
-        
-        dir.mkdir();
 
+        dir.mkdir();
 
         Cell[][] grid = initialize_grid(nr_of_rows, nr_of_columns);
 
@@ -68,14 +77,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
         initialize_points_in_grid(grid, points_list);
 
-
-
-        double scale = 0.05;
+        base_scale = 0.5;
 
         if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-            initialize_grid_height_sqrt(grid, scale);
+            initialize_grid_height_sqrt(grid, base_scale);
         } else {
-            initialize_grid_height(grid, scale);
+            initialize_grid_height(grid, base_scale);
         }
 
         compute_flow(grid);
@@ -86,10 +93,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList<double[][]> distances_for_paths = compute_bfs(grid, paths);
 
-        int NR_OF_ITERATIONS = 3;
+        NR_OF_ITERATIONS = 10;
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                BASE_HEIGHT_TYPE, scale, true, false);
+                BASE_HEIGHT_TYPE, base_scale, true, false);
 
         grid = result.first;
         paths = result.second;
@@ -97,9 +104,20 @@ public class Main extends JFrame implements MouseWheelListener {
 
         draw(grid, paths, NR_OF_ITERATIONS, false);
 
-
         generate_gif();
 
+        write_output_configuration();
+
+    }
+
+    public static void write_output_configuration () throws IOException {
+        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name) +"\\config.txt");
+        fileWriter.write("NR_OF_ITERATIONS = " + NR_OF_ITERATIONS + "\n");
+        fileWriter.write("BASE_HEIGHT_TYPE = " + BASE_HEIGHT_TYPE + "\n");
+        fileWriter.write("base_scale = " + base_scale + "\n");
+        fileWriter.write("height_function_scale = " + height_function_scale + "\n");
+        fileWriter.write("height_function_width = " + height_function_width + "\n");
+        fileWriter.close();
     }
 
     public static void generate_gif() throws IOException {
@@ -207,13 +225,13 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
 
-                double width = 50f;
-                double scale = 200000f;
+                height_function_width = 50;
+                height_function_scale = 200000;
 
                 double distance_1 = (double) distances_for_cell.get(0);
                 double distance_2 = (double) distances_for_cell.get(1);
 
-                double height = -scale * (gaussian(distance_1, 0, width) + gaussian(distance_2, 0, width));
+                double height = -height_function_scale * (gaussian(distance_1, 0, height_function_width) + gaussian(distance_2, 0, height_function_width));
 
 //                if (distance_1 <= 2 || distance_2 <= 2) {
 //                    System.out.println("before : " + grid[j][i].height);
