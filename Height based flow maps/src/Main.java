@@ -19,8 +19,8 @@ import java.util.List;
 public class Main extends JFrame implements MouseWheelListener {
 
 
-    public static int nr_of_rows = 10;
-    public static int nr_of_columns = 10;
+    public static int nr_of_rows = 500;        // 500
+    public static int nr_of_columns = 500;     // 500
 
     public static int source_x;
     public static int source_y;
@@ -77,7 +77,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         if (BASE_HEIGHT_TYPE.equals("SQRT")) {
             initialize_grid_height_sqrt(grid, BASE_SCALE);
-        } else if (BASE_HEIGHT_TYPE.equals("default")){
+        } else if (BASE_HEIGHT_TYPE.equals("default")) {
             initialize_grid_height(grid, BASE_SCALE);
         } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
             initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
@@ -109,13 +109,13 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        //BASE_HEIGHT_TYPE = "SQRT";
-        //BASE_HEIGHT_TYPE = "OTHER";
-        BASE_HEIGHT_TYPE = "chebyshev";
-        BASE_SCALE = 0.001;
-        NR_OF_ITERATIONS = 30;
-        HEIGHT_FUNCTION_WIDTH = 75;
-        HEIGHT_FUNCTION_SCALE = 275000;//200000;
+        BASE_HEIGHT_TYPE = "SQRT";
+        //BASE_HEIGHT_TYPE = "default";
+        //BASE_HEIGHT_TYPE = "chebyshev";
+        BASE_SCALE = 0.5;
+        NR_OF_ITERATIONS = 50;
+        HEIGHT_FUNCTION_WIDTH = 100;
+        HEIGHT_FUNCTION_SCALE = 70000;//200000;
 
     }
 
@@ -187,8 +187,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (BASE_HEIGHT_TYPE.equals("SQRT")) {
                 initialize_grid_height_sqrt(grid, scale);
-            } else {
+            } else if (BASE_HEIGHT_TYPE.equals("default")) {
                 initialize_grid_height(grid, scale);
+            } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
+                initialize_grid_height_chebyshev_distance(grid, scale);
             }
             adjust_height(grid, distances_for_paths);
 
@@ -561,6 +563,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static Color getValueBetweenTwoFixedColors(float value) {
+        int aR = 0;   int aG = 0; int aB=255;  // RGB for our 1st color (blue in this case).
+        int bR = 255; int bG = 0; int bB=0;    // RGB for our 2nd color (red in this case).
+
+        int red = (int) ((float)(bR - aR) * value + aR);      // Evaluated as -255*value + 255.
+        int green = (int) ((float)(bG - aG) * value + aG);      // Evaluates as 0.
+        int blue= (int) ((float)(bB - aB) * value + aB);      // Evaluates as 255*value + 0.
+
+        Color color = new Color(red, green, blue);
+
+        return color;
+    }
 
     public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results)
             throws IOException {
@@ -592,15 +606,30 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                int c = (int) (grid[i][j].height * 255.0 / max_height);
+                float value = (float)((grid[i][j].height - min_hieght) / (max_height - min_hieght));
 
+                Color color = getValueBetweenTwoFixedColors(value);
+//                Color colorOfYourDataPoint = null;
+//                try {
+//                    colorOfYourDataPoint = new Color((int) value*255, (int)value*255, (int)value*255);
+//                } catch (Exception e ) {
+//                    System.out.println();
+//                }
 
-                if (c < 0) {
-                    c = (int) (grid[i][j].height * 255.0 / min_hieght);
-                    image.setRGB(i, j, new Color(0, 0, c).getRGB());
-                } else {
-                    image.setRGB(i, j, new Color(c, 0, 0).getRGB());
-                }
+                image.setRGB(i, j, color.getRGB());
+
+                //int c = (int) (grid[i][j].height * 255.0 / max_height);
+//                if (c < 0) {
+//                    c = (int) (grid[i][j].height * 255.0 / min_hieght);
+//                    image.setRGB(i, j, new Color(0, 0, c).getRGB());
+//                } else {
+//                    c = (int) (grid[i][j].height * 255.0 / max_height);
+//                    try {
+//                        image.setRGB(i, j, new Color(c, 0, 0).getRGB());
+//                    } catch (Exception e) {
+//                        System.out.println();
+//                    }
+//                }
 
 
                 if (!grid[i][j].title.equals("")) {
