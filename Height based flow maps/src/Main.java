@@ -564,16 +564,54 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static Color getValueBetweenTwoFixedColors(float value) {
-        int aR = 0;   int aG = 0; int aB=255;  // RGB for our 1st color (blue in this case).
-        int bR = 255; int bG = 0; int bB=0;    // RGB for our 2nd color (red in this case).
+        int aR = 0;
+        int aG = 0;
+        int aB = 255;  // RGB for our 1st color (blue in this case).
+        int bR = 255;
+        int bG = 0;
+        int bB = 0;    // RGB for our 2nd color (red in this case).
 
-        int red = (int) ((float)(bR - aR) * value + aR);      // Evaluated as -255*value + 255.
-        int green = (int) ((float)(bG - aG) * value + aG);      // Evaluates as 0.
-        int blue= (int) ((float)(bB - aB) * value + aB);      // Evaluates as 255*value + 0.
+        int red = (int) ((float) (bR - aR) * value + aR);      // Evaluated as -255*value + 255.
+        int green = (int) ((float) (bG - aG) * value + aG);      // Evaluates as 0.
+        int blue = (int) ((float) (bB - aB) * value + aB);      // Evaluates as 255*value + 0.
 
         Color color = new Color(red, green, blue);
 
         return color;
+    }
+
+    public static Color getHeatMapColor(float value) {
+
+        // TODO: fix, low priority
+        int NUM_COLORS = 4;
+
+        float color[][] = {{0, 0, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}};
+        // A static array of 4 colors:  (blue,   green,  yellow,  red) using {r,g,b} for each.
+
+        int idx1;        // |-- Our desired color will be between these two indexes in "color".
+        int idx2;        // |
+        float fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
+
+        if (value <= 0) {
+            idx1 = idx2 = 0;
+        }    // accounts for an input <=0
+        else if (value >= 1) {
+            idx1 = idx2 = NUM_COLORS - 1;
+        }    // accounts for an input >=0
+        else {
+            value = value * (NUM_COLORS - 1);        // Will multiply value by 3.
+            idx1 = (int) Math.floor(value);                  // Our desired color will be after this index.
+            idx2 = idx1 + 1;                        // ... and before this index (inclusive).
+            fractBetween = value - idx1;    // Distance between the two indexes (0-1).
+        }
+
+        int red = (int) ((color[idx2][0] - color[idx1][0]) * fractBetween + color[idx1][0]);
+        int green = (int) ((color[idx2][1] - color[idx1][1]) * fractBetween + color[idx1][1]);
+        int blue = (int) ((color[idx2][2] - color[idx1][2]) * fractBetween + color[idx1][2]);
+
+        Color result_color = new Color(255*red , 255*green, 255*blue);
+
+        return result_color;
     }
 
     public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results)
@@ -606,7 +644,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                float value = (float)((grid[i][j].height - min_hieght) / (max_height - min_hieght));
+                float value = (float) ((grid[i][j].height - min_hieght) / (max_height - min_hieght));
 
                 Color color = getValueBetweenTwoFixedColors(value);
 //                Color colorOfYourDataPoint = null;
