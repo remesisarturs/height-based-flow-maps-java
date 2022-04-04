@@ -75,12 +75,14 @@ public class Main extends JFrame implements MouseWheelListener {
         initialize_points_in_grid(grid, points_list);
 
 
-        if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-            initialize_grid_height_sqrt(grid, BASE_SCALE);
+        if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
+            initialize_grid_height_Euclidean_dist(grid, BASE_SCALE);
         } else if (BASE_HEIGHT_TYPE.equals("default")) {
             initialize_grid_height(grid, BASE_SCALE);
         } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
             initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
+        } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
+            initialize_grid_height_Euclidean_dist_sqrt(grid, BASE_SCALE);
         }
 
         compute_flow(grid);
@@ -109,9 +111,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        BASE_HEIGHT_TYPE = "SQRT";
+        //BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
+        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         BASE_SCALE = 0.5;
         NR_OF_ITERATIONS = 20;
         HEIGHT_FUNCTION_WIDTH = 90; //90;
@@ -185,12 +188,14 @@ public class Main extends JFrame implements MouseWheelListener {
 
             distances_for_paths = compute_bfs(grid, paths);
 
-            if (BASE_HEIGHT_TYPE.equals("SQRT")) {
-                initialize_grid_height_sqrt(grid, scale);
+            if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
+                initialize_grid_height_Euclidean_dist(grid, scale);
             } else if (BASE_HEIGHT_TYPE.equals("default")) {
                 initialize_grid_height(grid, scale);
             } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                 initialize_grid_height_chebyshev_distance(grid, scale);
+            } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
+                initialize_grid_height_Euclidean_dist_sqrt(grid, scale);
             }
 
             adjust_height(grid, distances_for_paths);
@@ -273,6 +278,18 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
+    public static void initialize_grid_height_Euclidean_dist_sqrt(Cell[][] grid, double scale) {
+
+        for (int i = 0; i < nr_of_columns; i++) {
+            for (int j = 0; j < nr_of_rows; j++) {
+
+                grid[j][i].height = (0.05 *Math.sqrt(Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2))));
+
+            }
+        }
+
+    }
+
     public static void initialize_grid_height_chebyshev_distance(Cell[][] grid, double scale) {
 
         // Direction vectors
@@ -336,7 +353,7 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
-    public static void initialize_grid_height_sqrt(Cell[][] grid, double scale) {
+    public static void initialize_grid_height_Euclidean_dist(Cell[][] grid, double scale) {
 
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
