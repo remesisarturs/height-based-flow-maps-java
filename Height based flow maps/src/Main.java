@@ -96,8 +96,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 BASE_HEIGHT_TYPE, BASE_SCALE, true, false);
 
         grid = result.first;
-        paths = result.second;
 
+        paths = result.second;
 
         draw(grid, paths, NR_OF_ITERATIONS, false);
 
@@ -113,9 +113,9 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 50;
-        HEIGHT_FUNCTION_WIDTH = 100;
-        HEIGHT_FUNCTION_SCALE = 70000;//200000;
+        NR_OF_ITERATIONS = 20;
+        HEIGHT_FUNCTION_WIDTH = 90; //90;
+        HEIGHT_FUNCTION_SCALE = 10000;//10000.0; //27000000;//200000;
 
     }
 
@@ -192,6 +192,7 @@ public class Main extends JFrame implements MouseWheelListener {
             } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                 initialize_grid_height_chebyshev_distance(grid, scale);
             }
+
             adjust_height(grid, distances_for_paths);
 
         }
@@ -236,11 +237,15 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 }
 
+                double sum = 0;
+                for (int k = 0; k < distances_for_cell.size(); k ++) {
+                    sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+                }
 
-                double distance_1 = (double) distances_for_cell.get(0);
-                double distance_2 = (double) distances_for_cell.get(1);
+//                double distance_1 = (double) distances_for_cell.get(0);
+//                double distance_2 = (double) distances_for_cell.get(1);
 
-                double height = -HEIGHT_FUNCTION_SCALE * (gaussian(distance_1, 0, HEIGHT_FUNCTION_WIDTH) + gaussian(distance_2, 0, HEIGHT_FUNCTION_WIDTH));
+                double height = -HEIGHT_FUNCTION_SCALE * sum;
 
 //                if (distance_1 <= 2 || distance_2 <= 2) {
 //                    System.out.println("before : " + grid[j][i].height);
@@ -262,7 +267,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                grid[i][j].height = (0.05 * (Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+                grid[j][i].height = (0.05 * (Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
 
             }
         }
@@ -336,7 +341,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < nr_of_columns; i++) {
             for (int j = 0; j < nr_of_rows; j++) {
 
-                grid[i][j].height = (0.05 * Math.sqrt(Math.pow(grid[i][j].cell_x - source_x, 2) + Math.pow(grid[i][j].cell_y - source_y, 2)));
+                grid[j][i].height = (0.05 * Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
 
             }
         }
@@ -363,8 +368,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
         // Direction vectors
-        int dRow[] = {-1, 0, 1, 0};
+        int dRow[] = {-1, 0, 1, 0}; // extend these with 2 (horse jumps)
         int dCol[] = {0, 1, 0, -1};
+
+        // dw = weight of the edge
 
         ArrayList distances_for_paths = new ArrayList();
 
@@ -1023,7 +1030,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList read_input() throws FileNotFoundException {
 
-        Scanner sc = new Scanner(new File("./input/1_s_2_t.csv"));
+        Scanner sc = new Scanner(new File("./input/1_s_2_t_3_2.csv"));
         sc.useDelimiter("\n");
 
         ArrayList items = new ArrayList();
