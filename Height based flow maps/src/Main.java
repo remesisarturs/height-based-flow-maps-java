@@ -121,11 +121,11 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         DISTANCE_METRIC = "DIJKSTRA";
-        DISTANCE_METRIC = "BFS";
+        //DISTANCE_METRIC = "BFS";
         BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 30;
         HEIGHT_FUNCTION_WIDTH = 90; //90;
-        HEIGHT_FUNCTION_SCALE = 10000;//10000.0; //27000000;//200000;
+        HEIGHT_FUNCTION_SCALE = 200000;//10000.0; //27000000;//200000;
 
     }
 
@@ -416,14 +416,20 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator path_iterator = paths.iterator();
 
-        // Direction vectors
-//        int dRow[] = {-1, 0, 1, 0}; // extend these with 2 (horse jumps)
-//        int dCol[] = {0, 1, 0, -1};
+        double sqrt_2 = Math.sqrt(2);
+        double sqrt_5 = Math.sqrt(5);
 
-        int dRow[] = {-1, -1, 0, 1, 1, 1, 0, -1};
-        int dCol[] = {0, 1, 1, 1, 0, -1, -1, -1};
-        double sqrt = Math.sqrt(2);
-        double weights[] = {1, sqrt, 1, sqrt, 1, sqrt, 1, sqrt};
+//        int dRow[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+//        int dCol[] = {0, 1, 1, 1, 0, -1, -1, -1};
+//        double weights[] = {1, sqrt_2, 1, sqrt_2, 1, sqrt_2, 1, sqrt_2};
+
+        // horse moves:
+
+        int dRow[] = {-1, -1, 0, 1, 1, 1, 0, -1, -2, -1, 1, 2, 2, 1, -1, -2}; // y
+        int dCol[] = {0, 1, 1, 1, 0, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2, -1}; // x
+
+        double weights[] = {1, sqrt_2, 1, sqrt_2, 1, sqrt_2, 1, sqrt_2,
+                sqrt_5, sqrt_5, sqrt_5, sqrt_5, sqrt_5, sqrt_5, sqrt_5, sqrt_5};
 
         // for each path we will have a matrix, in which each cell contains distance to the closest point of a path (for n paths)
         ArrayList distances_for_paths = new ArrayList();
@@ -1198,7 +1204,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList read_input() throws FileNotFoundException {
 
-        Scanner sc = new Scanner(new File("./input/1_s_2_t_2.csv"));
+        Scanner sc = new Scanner(new File("./input/1_s_2_t_3_2.csv"));
         sc.useDelimiter("\n");
 
         ArrayList items = new ArrayList();
