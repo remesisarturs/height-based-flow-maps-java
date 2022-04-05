@@ -116,7 +116,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 4;
         HEIGHT_FUNCTION_WIDTH = 90; //90;
         HEIGHT_FUNCTION_SCALE = 10000;//10000.0; //27000000;//200000;
 
@@ -406,10 +406,13 @@ public class Main extends JFrame implements MouseWheelListener {
         Iterator path_iterator = paths.iterator();
 
         // Direction vectors
-        int dRow[] = {-1, 0, 1, 0}; // extend these with 2 (horse jumps)
-        int dCol[] = {0, 1, 0, -1};
+//        int dRow[] = {-1, 0, 1, 0}; // extend these with 2 (horse jumps)
+//        int dCol[] = {0, 1, 0, -1};
 
-        double dWeights[] = {};
+        int dRow[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+        int dCol[] = {0, 1, 1, 1, 0, -1, -1, -1};
+        double sqrt = Math.sqrt(2);
+        double weights[] = {1, sqrt, 1, sqrt, 1, sqrt, 1, sqrt};
 
         // for each path we will have a matrix, in which each cell contains distance to the closest point of a path (for n paths)
         ArrayList distances_for_paths = new ArrayList();
@@ -462,19 +465,20 @@ public class Main extends JFrame implements MouseWheelListener {
 //                    continue;
 //                }
 
-                for (int i = 0; i < 4; i++) {
+//                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 8; i++) {
 
                     int adj_x = x + dCol[i];
                     int adj_y = y + dRow[i];
+                    double weight = weights[i];
 
                     if (is_inside_grid(adj_x, adj_y)) {
 
-                        if (distances[adj_x][adj_y] > distances[x][y] + 1.0) { // todo : weights for diagonal moves
+                        if (distances[adj_x][adj_y] > distances[x][y] + weight) { // todo : weights for diagonal moves
 
                             // If Cell is already been reached once,
                             // remove it from priority queue
-                            if (distances[adj_x][adj_y] != Integer.MAX_VALUE)
-                            {
+                            if (distances[adj_x][adj_y] != Integer.MAX_VALUE) {
                                 Cell adj = grid[adj_x][adj_y];//new Cell(rows, cols, dist[rows][cols]);
                                 adj.distance = distances[adj_x][adj_y];
                                 Q.remove(adj);
@@ -482,7 +486,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             // Insert cell with updated distance
-                            distances[adj_x][adj_y] = distances[cell.cell_x][cell.cell_y] + 1.0; // todo: diagonal moves
+                            distances[adj_x][adj_y] = distances[cell.cell_x][cell.cell_y] + weight; // todo: diagonal moves
 
                             grid[adj_x][adj_y].distance = distances[adj_x][adj_y];
                             Q.add(grid[adj_x][adj_y]); //new Cell(rows, cols, dist[rows][cols]));
@@ -498,14 +502,14 @@ public class Main extends JFrame implements MouseWheelListener {
         return distances_for_paths;
     }
 
-    public static double[][] transposeMatrix(double[][] matrix){
+    public static double[][] transposeMatrix(double[][] matrix) {
         int m = matrix.length;
         int n = matrix[0].length;
 
         double[][] transposedMatrix = new double[n][m];
 
-        for(int x = 0; x < n; x++) {
-            for(int y = 0; y < m; y++) {
+        for (int x = 0; x < n; x++) {
+            for (int y = 0; y < m; y++) {
                 transposedMatrix[x][y] = matrix[y][x];
             }
         }
