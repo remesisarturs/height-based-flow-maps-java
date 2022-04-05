@@ -6,5 +6,6 @@ public class Cell {
     int cell_x;
     int cell_y;
     String title;
+    double distance;
 
 }
