@@ -49,6 +49,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static String DISTANCE_METRIC;
 
+    public static String INPUT_FILE_NAME;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -92,12 +94,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
         draw(grid, paths, 0, false);
 
+        long startTime = System.currentTimeMillis();
         ArrayList<double[][]> distances_for_paths = null;
         if (DISTANCE_METRIC.equals("BFS")) {
             distances_for_paths = compute_bfs(grid, paths);
         } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
             distances_for_paths = compute_Dijkstra(grid, paths);
         }
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                 BASE_HEIGHT_TYPE, BASE_SCALE, true, false);
@@ -116,16 +122,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
+        INPUT_FILE_NAME = "./input/1_s_3_t_1.csv";
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
         BASE_SCALE = 0.5;
         NR_OF_ITERATIONS = 30;
-        HEIGHT_FUNCTION_WIDTH = 90; //90;
-        HEIGHT_FUNCTION_SCALE = 200000;//10000.0; //27000000;//200000;
+        HEIGHT_FUNCTION_WIDTH = 100; //90;
+        HEIGHT_FUNCTION_SCALE = 400000;//10000.0; //27000000;//200000;
 
     }
 
@@ -475,15 +482,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 int x = cell.cell_x;
                 int y = cell.cell_y;
 
-                double dist = cell.distance;
-
-
-//                if (distances[x][y] < d) {
-//                    continue;
-//                }
-
-//                for (int i = 0; i < 4; i++) {
-                for (int i = 0; i < 8; i++) {
+                for (int i = 0; i < 16; i++) {
 
                     int adj_x = x + dCol[i];
                     int adj_y = y + dRow[i];
@@ -1204,7 +1203,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList read_input() throws FileNotFoundException {
 
-        Scanner sc = new Scanner(new File("./input/1_s_2_t_3_2.csv"));
+        Scanner sc = new Scanner(new File(INPUT_FILE_NAME));
         sc.useDelimiter("\n");
 
         ArrayList items = new ArrayList();
