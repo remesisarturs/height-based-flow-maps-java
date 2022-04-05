@@ -47,6 +47,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String BASE_HEIGHT_TYPE;
     public static double BASE_SCALE;
 
+    public static String DISTANCE_METRIC;
 
     public static void main(String[] args) throws IOException {
 
@@ -91,8 +92,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
         draw(grid, paths, 0, false);
 
-        //ArrayList<double[][]> distances_for_paths1 = compute_bfs(grid, paths);
-        ArrayList<double[][]> distances_for_paths = compute_Dijkstra(grid, paths);
+        ArrayList<double[][]> distances_for_paths = null;
+        if (DISTANCE_METRIC.equals("BFS")) {
+            distances_for_paths = compute_bfs(grid, paths);
+        } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+            distances_for_paths = compute_Dijkstra(grid, paths);
+        }
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                 BASE_HEIGHT_TYPE, BASE_SCALE, true, false);
@@ -111,12 +116,14 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        //BASE_HEIGHT_TYPE = "EUCLID";
+        BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        DISTANCE_METRIC = "DIJKSTRA";
+        DISTANCE_METRIC = "BFS";
         BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 4;
+        NR_OF_ITERATIONS = 10;
         HEIGHT_FUNCTION_WIDTH = 90; //90;
         HEIGHT_FUNCTION_SCALE = 10000;//10000.0; //27000000;//200000;
 
@@ -130,6 +137,7 @@ public class Main extends JFrame implements MouseWheelListener {
         fileWriter.write("BASE_SCALE = " + BASE_SCALE + "\n");
         fileWriter.write("HEIGHT_FUNCTION_SCALE = " + HEIGHT_FUNCTION_SCALE + "\n");
         fileWriter.write("HEIGHT_FUNCTION_WIDTH = " + HEIGHT_FUNCTION_WIDTH + "\n");
+        fileWriter.write("DISTANCE_METRIC = " + DISTANCE_METRIC + "\n");
         fileWriter.close();
     }
 
@@ -186,8 +194,11 @@ public class Main extends JFrame implements MouseWheelListener {
                 draw(grid, paths, i, show_intermediate_results);
             }
 
-            //distances_for_paths = compute_bfs(grid, paths);
-            distances_for_paths = compute_Dijkstra(grid, paths);
+            if (DISTANCE_METRIC.equals("BFS")) {
+                distances_for_paths = compute_bfs(grid, paths);
+            } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+                distances_for_paths = compute_Dijkstra(grid, paths);
+            }
 
             if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                 initialize_grid_height_Euclidean_dist(grid, scale);
@@ -1187,7 +1198,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static ArrayList read_input() throws FileNotFoundException {
 
-        Scanner sc = new Scanner(new File("./input/1_s_2_t.csv"));
+        Scanner sc = new Scanner(new File("./input/1_s_2_t_2.csv"));
         sc.useDelimiter("\n");
 
         ArrayList items = new ArrayList();
