@@ -19,13 +19,13 @@ import java.util.List;
 public class Main extends JFrame implements MouseWheelListener {
 
 
-    public static int nr_of_rows = 500;        // 500
-    public static int nr_of_columns = 500;     // 500
+    public static int nr_of_rows = 100;        // 500
+    public static int nr_of_columns = 100;     // 500
 
     public static int source_x;
     public static int source_y;
 
-    public static String target_name = "A";
+    public static String TARGET_NAME;
 
     static JFrame jframe;
 
@@ -100,9 +100,11 @@ public class Main extends JFrame implements MouseWheelListener {
             distances_for_paths = compute_bfs(grid, paths);
         } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
             distances_for_paths = compute_Dijkstra(grid, paths);
+        } else if (DISTANCE_METRIC.equals("ANGULAR")) {
+            distances_for_paths = compute_angular_distance(grid, paths);
         }
-        long endTime = System.currentTimeMillis();
 
+        long endTime = System.currentTimeMillis();
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
@@ -122,17 +124,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        INPUT_FILE_NAME = "./input/1_s_3_t_1.csv";
+        TARGET_NAME = "A";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
-        DISTANCE_METRIC = "DIJKSTRA";
+        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        //DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
+        DISTANCE_METRIC = "ANGULAR";
         BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 30;
+        NR_OF_ITERATIONS = 10;
         HEIGHT_FUNCTION_WIDTH = 100; //90;
-        HEIGHT_FUNCTION_SCALE = 400000;//10000.0; //27000000;//200000;
+        HEIGHT_FUNCTION_SCALE = 200000;//10000.0; //27000000;//200000;
 
     }
 
@@ -205,6 +209,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_bfs(grid, paths);
             } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
                 distances_for_paths = compute_Dijkstra(grid, paths);
+            } else if (DISTANCE_METRIC.equals("ANGULAR")) {
+                distances_for_paths = compute_angular_distance(grid, paths);
             }
 
             if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
@@ -519,6 +525,7 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static double[][] transposeMatrix(double[][] matrix) {
+        // TODO: figure out how to assign these without transpose
         int m = matrix.length;
         int n = matrix[0].length;
 
@@ -531,6 +538,74 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         return transposedMatrix;
+    }
+
+    public static ArrayList compute_angular_distance(Cell[][] grid, ArrayList paths) {
+
+        System.out.println("computing angular distance");
+
+        Iterator path_iterator = paths.iterator();
+
+        ArrayList distances_for_paths = new ArrayList();
+
+        Cell source_cell = grid[source_x][source_y];
+
+        // for all paths
+        while (path_iterator.hasNext()) {
+
+            ArrayList path = (ArrayList) path_iterator.next();
+
+            Collections.reverse(path);
+
+
+            double[][] distances = new double[nr_of_columns][nr_of_rows];
+
+            // for each cell in the grid
+            for (int i = 0; i < nr_of_columns; i++) {
+                for (int j = 0; j < nr_of_rows; j++) {
+
+                    //System.out.println("i:" + i + " j: " + j);
+                    Cell cell = grid[i][j];
+
+                    if (path.contains(cell)) {
+                        distances[i][j] = 0.0;
+                        continue;
+                    }
+
+                    // TODO: compute radius ((Euclidean?) distance from cell to center)
+
+                    double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(source_cell.cell_y - cell.cell_y, 2)));
+
+                    Iterator cell_iterator = path.iterator();
+
+                    while (cell_iterator.hasNext()) {
+
+                        Cell path_cell = (Cell) cell_iterator.next();
+
+                        double dist = (Math.sqrt(Math.pow(source_cell.cell_x - path_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - path_cell.cell_y, 2)));
+                        if (dist <= radius) {
+                            // consider next cell on path
+                            continue;
+                        } else {
+                            // this is the cell
+                            double dist_2 = (Math.sqrt(Math.pow(cell.cell_x - path_cell.cell_x, 2) +
+                                    Math.pow(cell.cell_y - path_cell.cell_y, 2)));
+
+                            double angle = Math.acos((Math.pow(dist, 2) + Math.pow(radius, 2) - Math.pow(dist_2, 2)) /
+                                    (2.0 * dist * radius));
+
+                            distances[i][j] = angle;
+
+                            //TODO: compute angle between path_cell, source cell and cell
+                        }
+                    }
+                }
+            }
+            distances_for_paths.add(distances);
+        }
+        return distances_for_paths;
     }
 
     public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) {
@@ -925,7 +1000,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Point point = (Point) it.next();
 
-            if (point.name.equals(target_name)) {
+            if (point.name.equals(TARGET_NAME)) {
                 continue;
             }
 
@@ -937,7 +1012,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             path.add(current_cell);
 
-            while (!(current_cell.title.equals(target_name))) {
+            while (!(current_cell.title.equals(TARGET_NAME))) {
 
                 int node_x = (int) current_cell.cell_x;
                 int node_y = (int) current_cell.cell_y;
@@ -1095,7 +1170,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             grid[point.grid_x][point.grid_y].title = point.name;
 
-            if (point.name.equals(target_name)) {
+            if (point.name.equals(TARGET_NAME)) {
                 grid[point.grid_x][point.grid_y].height = 0;
 
                 source_x = point.grid_x;
