@@ -19,8 +19,8 @@ import java.util.List;
 public class Main extends JFrame implements MouseWheelListener {
 
 
-    public static int nr_of_rows = 100;        // 500
-    public static int nr_of_columns = 100;     // 500
+    public static int nr_of_rows = 500;        // 500
+    public static int nr_of_columns = 500;     // 500
 
     public static int source_x;
     public static int source_y;
@@ -50,6 +50,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String DISTANCE_METRIC;
 
     public static String INPUT_FILE_NAME;
+
+    public static Cell source_cell;
 
     public static void main(String[] args) throws IOException {
 
@@ -104,6 +106,9 @@ public class Main extends JFrame implements MouseWheelListener {
             distances_for_paths = compute_angular_distance(grid, paths);
         }
 
+        //ArrayList test = compute_Dijkstra(grid, paths);
+        //ArrayList test2 = compute_angular_distance(grid, paths);
+
         long endTime = System.currentTimeMillis();
         System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
@@ -135,7 +140,7 @@ public class Main extends JFrame implements MouseWheelListener {
         DISTANCE_METRIC = "ANGULAR";
         BASE_SCALE = 0.5;
         NR_OF_ITERATIONS = 10;
-        HEIGHT_FUNCTION_WIDTH = 100; //90;
+        HEIGHT_FUNCTION_WIDTH = 90; //90;
         HEIGHT_FUNCTION_SCALE = 200000;//10000.0; //27000000;//200000;
 
     }
@@ -184,10 +189,11 @@ public class Main extends JFrame implements MouseWheelListener {
         output.close();
     }
 
-    public static Tuple<Cell[][], ArrayList<ArrayList<Cell>>> iterate(Cell[][] grid, ArrayList points_list, ArrayList paths,
-                                                                      ArrayList distances_for_paths, int NR_OF_ITERATIONS,
-                                                                      String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
-                                                                      boolean show_intermediate_results)
+    public static Tuple<Cell[][], ArrayList<ArrayList<Cell>>> iterate(
+            Cell[][] grid, ArrayList points_list, ArrayList paths,
+            ArrayList distances_for_paths, int NR_OF_ITERATIONS,
+            String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
+            boolean show_intermediate_results)
             throws IOException {
 
         adjust_height(grid, distances_for_paths);
@@ -245,8 +251,6 @@ public class Main extends JFrame implements MouseWheelListener {
     public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths) {
 
         System.out.println("adjusting height");
-
-        double[][] dist = (double[][]) distances_for_paths.get(0);
 
         for (int i = 0; i < nr_of_columns; i++) {
 
@@ -548,6 +552,114 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList distances_for_paths = new ArrayList();
 
+        // for all paths
+        while (path_iterator.hasNext()) {
+
+            ArrayList path = (ArrayList) path_iterator.next();
+
+            Collections.reverse(path);
+
+            double[][] distances = new double[nr_of_columns][nr_of_rows];
+
+            // for each cell in the grid
+            for (int i = 0; i < nr_of_columns; i++) {
+                for (int j = 0; j < nr_of_rows; j++) {
+
+                    Cell cell = grid[i][j];
+
+                    double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(source_cell.cell_y - cell.cell_y, 2)));
+
+                    int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+
+                    Cell intersection_cell = (Cell) path.get(index_of_cell);
+
+                    double dist_2 = (Math.sqrt(Math.pow(intersection_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(intersection_cell.cell_y - cell.cell_y, 2)));
+
+                    double angle = Math.acos((Math.pow(radius, 2) + Math.pow(radius, 2) - Math.pow(dist_2, 2)) /
+                            (2.0 * radius * radius));
+
+                    distances[i][j] = angle;
+                }
+            }
+
+            Iterator path_cell_iter = path.iterator();
+
+            while (path_cell_iter.hasNext()) {
+
+                Cell cell = (Cell) path_cell_iter.next();
+
+                distances[cell.cell_x][cell.cell_y] = 0.0;
+
+            }
+
+            distances_for_paths.add(transposeMatrix(distances));
+        }
+        return distances_for_paths;
+
+    }
+
+    private static int binary_search_2(ArrayList<Cell> path, double distance_target) {
+
+        int start = 0;
+        int end = path.size() - 1;
+
+        int ans = -1;
+
+        while (start <= end) {
+            int mid = (start + end) / 2;
+            Cell mid_cell = path.get(mid);
+
+            double dist_to_mid = (Math.sqrt(Math.pow(source_cell.cell_x - mid_cell.cell_x, 2) +
+                    Math.pow(source_cell.cell_y - mid_cell.cell_y, 2)));
+
+            if (dist_to_mid == distance_target) {
+                return mid;
+            }
+
+            if (dist_to_mid <= distance_target) {
+                start = mid + 1;
+            }
+
+            else {
+                ans = mid;
+                end = mid - 1;
+            }
+        }
+        return end;
+    }
+
+    public static int binarySearch(ArrayList<Cell> path, int l, int r, double dist) {
+
+        if (r >= l) {
+            int mid = l + (r - l) / 2;
+
+            Cell mid_cell = path.get(mid);
+
+            double dist_to_mid = (Math.sqrt(Math.pow(source_cell.cell_x - mid_cell.cell_x, 2) +
+                    Math.pow(source_cell.cell_y - mid_cell.cell_y, 2)));
+
+            if (dist_to_mid == dist) {
+                return mid;
+            } else if (dist_to_mid > dist) {
+                binarySearch(path, l, mid - 1, dist);
+            } else {
+                binarySearch(path, mid + 1, r, dist);
+            }
+        }
+
+        return -1;
+    }
+
+    public static ArrayList compute_angular_distance_2(Cell[][] grid, ArrayList paths) {
+
+        System.out.println("computing angular distance");
+
+        Iterator path_iterator = paths.iterator();
+
+        ArrayList distances_for_paths = new ArrayList();
+
         Cell source_cell = grid[source_x][source_y];
 
         // for all paths
@@ -556,7 +668,6 @@ public class Main extends JFrame implements MouseWheelListener {
             ArrayList path = (ArrayList) path_iterator.next();
 
             Collections.reverse(path);
-
 
             double[][] distances = new double[nr_of_columns][nr_of_rows];
 
@@ -571,8 +682,6 @@ public class Main extends JFrame implements MouseWheelListener {
                         distances[i][j] = 0.0;
                         continue;
                     }
-
-                    // TODO: compute radius ((Euclidean?) distance from cell to center)
 
                     double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
                             Math.pow(source_cell.cell_y - cell.cell_y, 2)));
@@ -598,12 +707,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
                             distances[i][j] = angle;
 
-                            //TODO: compute angle between path_cell, source cell and cell
                         }
                     }
                 }
             }
-            distances_for_paths.add(distances);
+
+            distances_for_paths.add(transposeMatrix(distances));
         }
         return distances_for_paths;
     }
@@ -1178,6 +1287,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+
+        source_cell = grid[source_x][source_y];
     }
 
 
