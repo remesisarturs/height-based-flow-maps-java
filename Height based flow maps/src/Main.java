@@ -64,14 +64,16 @@ public class Main extends JFrame implements MouseWheelListener {
         storage_location_name = storage_location_name.concat("_" + DISTANCE_METRIC + "_" + BASE_HEIGHT_TYPE);
 
         double [] widths = {90};
-        double [] scales = {1000, 2000};
+        double [] scales = {10000, 20000, 30000};
 
         for (int i = 0; i < widths.length; i ++) {
 
             double width = widths[i];
+            HEIGHT_FUNCTION_WIDTH = width;
 
             for (int j = 0 ; j < scales.length; j++) {
                 double scale = scales[j];
+                HEIGHT_FUNCTION_SCALE = scale;
 
                 String iteration_location = storage_location_name.concat("_w_" + width + "_s_" + scale);
 
@@ -132,7 +134,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
-
     }
 
     public static void initialize_parameters() {
@@ -145,13 +146,13 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
-        //DISTANCE_METRIC = "DIJKSTRA";
+        DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
-        DISTANCE_METRIC = "ANGULAR";
+        //DISTANCE_METRIC = "ANGULAR";
         //BASE_SCALE = 0.5;
         NR_OF_ITERATIONS = 3;
-        HEIGHT_FUNCTION_WIDTH = 50; //90;
-        HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
+        //HEIGHT_FUNCTION_WIDTH = 50; //90;
+        //HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
 
     }
 
