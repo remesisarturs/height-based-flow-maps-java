@@ -58,26 +58,29 @@ public class Main extends JFrame implements MouseWheelListener {
         initialize_parameters();
 
         storage_location_name = dtf.format(now);
+        storage_location_name = storage_location_name.concat("_" + DISTANCE_METRIC + "_" + BASE_HEIGHT_TYPE);
 
         currentWorkingPath = System.getProperty("user.dir").concat("\\experiments\\");
 
-        storage_location_name = storage_location_name.concat("_" + DISTANCE_METRIC + "_" + BASE_HEIGHT_TYPE);
+        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
+        dir.mkdir();
 
-        double [] widths = {90};
-        double [] scales = {10000, 20000, 30000};
 
-        for (int i = 0; i < widths.length; i ++) {
+        double[] widths = {90};
+        double[] scales = {10000, 20000, 30000};
+
+        for (int i = 0; i < widths.length; i++) {
 
             double width = widths[i];
             HEIGHT_FUNCTION_WIDTH = width;
 
-            for (int j = 0 ; j < scales.length; j++) {
+            for (int j = 0; j < scales.length; j++) {
                 double scale = scales[j];
                 HEIGHT_FUNCTION_SCALE = scale;
 
-                String iteration_location = storage_location_name.concat("_w_" + width + "_s_" + scale);
+                String iteration_location = ("w_" + width + "_s_" + scale);
 
-                File dir = new File(currentWorkingPath.concat("\\" + iteration_location + "\\"));
+                dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\"));
 
                 dir.mkdir();
 
@@ -157,7 +160,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void write_output_configuration(String iteration_location) throws IOException {
-        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + iteration_location) + "\\config.txt");
+        ////        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/image_" + image_index + ".png"));
+        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location) + "\\config.txt");
         fileWriter.write("GRID_SIZE = " + NR_OF_ROWS + " rows x " + NR_OF_COLUMNS + " columns" + "\n");
         fileWriter.write("NR_OF_ITERATIONS = " + NR_OF_ITERATIONS + "\n");
         fileWriter.write("BASE_HEIGHT_TYPE = " + BASE_HEIGHT_TYPE + "\n");
@@ -170,13 +174,13 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void generate_gif(String iteration_location) throws IOException {
 
-
-        File dir = new File(currentWorkingPath.concat("\\" + iteration_location + "\\"));
+//        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/image_" + image_index + ".png"));
+        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\"));
         File[] files = dir.listFiles((dir1, name) -> name.endsWith(".png"));
 
 
-        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + iteration_location + "\\image_0.png")));
-        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + iteration_location + "\\output_gif.gif")));
+        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\image_0.png")));
+        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\output_gif.gif")));
 
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
         writer.writeToSequence(first);
@@ -1231,8 +1235,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
             jframe.show();
         }
+        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
 
-        File file = new File(currentWorkingPath.concat("/" + iteration_location + "/image_" + image_index + ".png"));
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/image_" + image_index + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
 
