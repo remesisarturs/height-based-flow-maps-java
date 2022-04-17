@@ -63,67 +63,75 @@ public class Main extends JFrame implements MouseWheelListener {
 
         storage_location_name = storage_location_name.concat("_" + DISTANCE_METRIC + "_" + BASE_HEIGHT_TYPE);
 
-        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
+        double [] widths = {90};
+        double [] scales = {1000, 2000};
 
-        dir.mkdir();
+        for (int i = 0; i < widths.length; i ++) {
 
-        Cell[][] grid = initialize_grid(NR_OF_ROWS, NR_OF_COLUMNS);
+            double width = widths[i];
 
-        ArrayList<String> items = read_input();
+            for (int j = 0 ; j < scales.length; j++) {
+                double scale = scales[j];
 
-        ArrayList<Point> points_list = process_input(items);
+                String iteration_location = storage_location_name.concat("_w_" + width + "_s_" + scale);
 
-        Bounds bounds = obtain_bounds(points_list);
+                File dir = new File(currentWorkingPath.concat("\\" + iteration_location + "\\"));
 
-        compute_cell_for_point(bounds, points_list);
+                dir.mkdir();
 
-        initialize_points_in_grid(grid, points_list);
+                Cell[][] grid = initialize_grid(NR_OF_ROWS, NR_OF_COLUMNS);
+
+                ArrayList<String> items = read_input();
+
+                ArrayList<Point> points_list = process_input(items);
+
+                Bounds bounds = obtain_bounds(points_list);
+
+                compute_cell_for_point(bounds, points_list);
+
+                initialize_points_in_grid(grid, points_list);
 
 
-        if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
-            initialize_grid_height_Euclidean_dist(grid, BASE_SCALE);
-        } else if (BASE_HEIGHT_TYPE.equals("default")) {
-            initialize_grid_height(grid, BASE_SCALE);
-        } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
-            initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
-        } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
-            initialize_grid_height_Euclidean_dist_sqrt(grid, BASE_SCALE);
+                if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
+                    initialize_grid_height_Euclidean_dist(grid, BASE_SCALE);
+                } else if (BASE_HEIGHT_TYPE.equals("default")) {
+                    initialize_grid_height(grid, BASE_SCALE);
+                } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
+                    initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
+                    initialize_grid_height_Euclidean_dist_sqrt(grid, BASE_SCALE);
+                }
+
+                compute_flow(grid);
+
+                ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
+
+                draw(grid, paths, 0, false, iteration_location);
+
+                ArrayList<double[][]> distances_for_paths = null;
+                if (DISTANCE_METRIC.equals("BFS")) {
+                    distances_for_paths = compute_bfs(grid, paths);
+                } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+                    distances_for_paths = compute_Dijkstra(grid, paths);
+                } else if (DISTANCE_METRIC.equals("ANGULAR")) {
+                    distances_for_paths = compute_angular_distance_precise(grid, paths);
+                }
+
+                Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
+                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location);
+
+                grid = result.first;
+
+                paths = result.second;
+
+                draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location);
+
+                generate_gif(iteration_location);
+
+                write_output_configuration(iteration_location);
+
+            }
         }
-
-        compute_flow(grid);
-
-        ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
-
-        draw(grid, paths, 0, false);
-
-        long startTime = System.currentTimeMillis();
-        ArrayList<double[][]> distances_for_paths = null;
-        if (DISTANCE_METRIC.equals("BFS")) {
-            distances_for_paths = compute_bfs(grid, paths);
-        } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
-            distances_for_paths = compute_Dijkstra(grid, paths);
-        } else if (DISTANCE_METRIC.equals("ANGULAR")) {
-            distances_for_paths = compute_angular_distance_precise(grid, paths);
-        }
-
-        //ArrayList test = compute_Dijkstra(grid, paths);
-        //ArrayList test2 = compute_angular_distance(grid, paths);
-
-        long endTime = System.currentTimeMillis();
-        System.out.println("That took " + (endTime - startTime) + " milliseconds");
-
-        Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                BASE_HEIGHT_TYPE, BASE_SCALE, true, false);
-
-        grid = result.first;
-
-        paths = result.second;
-
-        draw(grid, paths, NR_OF_ITERATIONS, false);
-
-        generate_gif();
-
-        write_output_configuration();
 
     }
 
@@ -141,14 +149,14 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "BFS";
         DISTANCE_METRIC = "ANGULAR";
         //BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 20;
+        NR_OF_ITERATIONS = 3;
         HEIGHT_FUNCTION_WIDTH = 50; //90;
         HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
 
     }
 
-    public static void write_output_configuration() throws IOException {
-        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name) + "\\config.txt");
+    public static void write_output_configuration(String iteration_location) throws IOException {
+        FileWriter fileWriter = new FileWriter(currentWorkingPath.concat("\\" + iteration_location) + "\\config.txt");
         fileWriter.write("GRID_SIZE = " + NR_OF_ROWS + " rows x " + NR_OF_COLUMNS + " columns" + "\n");
         fileWriter.write("NR_OF_ITERATIONS = " + NR_OF_ITERATIONS + "\n");
         fileWriter.write("BASE_HEIGHT_TYPE = " + BASE_HEIGHT_TYPE + "\n");
@@ -159,15 +167,15 @@ public class Main extends JFrame implements MouseWheelListener {
         fileWriter.close();
     }
 
-    public static void generate_gif() throws IOException {
+    public static void generate_gif(String iteration_location) throws IOException {
 
 
-        File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
+        File dir = new File(currentWorkingPath.concat("\\" + iteration_location + "\\"));
         File[] files = dir.listFiles((dir1, name) -> name.endsWith(".png"));
 
 
-        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\image_0.png")));
-        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\output_gif.gif")));
+        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + iteration_location + "\\image_0.png")));
+        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + iteration_location + "\\output_gif.gif")));
 
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
         writer.writeToSequence(first);
@@ -194,11 +202,11 @@ public class Main extends JFrame implements MouseWheelListener {
     public static Tuple<Cell[][], ArrayList<ArrayList<Cell>>> iterate(
             Cell[][] grid, ArrayList points_list, ArrayList paths,
             ArrayList distances_for_paths, int NR_OF_ITERATIONS,
-            String BASE_HEIGHT_TYPE, double scale, boolean save_outputs,
-            boolean show_intermediate_results)
+            String BASE_HEIGHT_TYPE, double base_function_scale, boolean save_outputs,
+            boolean show_intermediate_results, double width, double scale, String iteration_location)
             throws IOException {
 
-        adjust_height(grid, distances_for_paths);
+        adjust_height(grid, distances_for_paths, width, scale);
 
         // Iterate a number of times:
         for (int i = 1; i < NR_OF_ITERATIONS; i++) {
@@ -210,7 +218,7 @@ public class Main extends JFrame implements MouseWheelListener {
             paths = compute_paths(points_list, grid);
 
             if (save_outputs == true) {
-                draw(grid, paths, i, show_intermediate_results);
+                draw(grid, paths, i, show_intermediate_results, iteration_location);
             }
 
             long startTime = System.currentTimeMillis();
@@ -226,16 +234,16 @@ public class Main extends JFrame implements MouseWheelListener {
             System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
             if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
-                initialize_grid_height_Euclidean_dist(grid, scale);
+                initialize_grid_height_Euclidean_dist(grid, base_function_scale);
             } else if (BASE_HEIGHT_TYPE.equals("default")) {
-                initialize_grid_height(grid, scale);
+                initialize_grid_height(grid, base_function_scale);
             } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
-                initialize_grid_height_chebyshev_distance(grid, scale);
+                initialize_grid_height_chebyshev_distance(grid, base_function_scale);
             } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
-                initialize_grid_height_Euclidean_dist_sqrt(grid, scale);
+                initialize_grid_height_Euclidean_dist_sqrt(grid, base_function_scale);
             }
 
-            adjust_height(grid, distances_for_paths);
+            adjust_height(grid, distances_for_paths, width, scale);
 
         }
 
@@ -254,12 +262,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths) {
+    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale) {
 
         System.out.println("adjusting height");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
-
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
                 Cell cell = grid[j][i];
@@ -282,24 +289,12 @@ public class Main extends JFrame implements MouseWheelListener {
                     sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
                 }
 
-//                double distance_1 = (double) distances_for_cell.get(0);
-//                double distance_2 = (double) distances_for_cell.get(1);
-
                 double height = -HEIGHT_FUNCTION_SCALE * sum;
-
-//                if (distance_1 <= 2 || distance_2 <= 2) {
-//                    System.out.println("before : " + grid[j][i].height);
-//                }
-
                 grid[j][i].height = grid[j][i].height + height;
-
-//                if (distance_1 <= 2 || distance_2 <= 2) {
-//
-//                    System.out.println("after : " + grid[j][i].height);
-//                }
 
             }
         }
+
     }
 
     public static void initialize_grid_height(Cell[][] grid, double scale) {
@@ -573,7 +568,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double sum = 0.0;
 
-            for (int i = 0; i < path.size() - 1; i ++) { // potentially up to size - 1
+            for (int i = 0; i < path.size() - 1; i++) { // potentially up to size - 1
 
                 Cell cell = (Cell) path.get(i);
                 Cell next_cell = (Cell) path.get(i + 1);
@@ -598,7 +593,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 double split_x = abs_x / splits;
                 double split_y = abs_y / splits;
 
-                for (int j = 0 ; j < splits; j ++) {
+                for (int j = 0; j < splits; j++) {
 
                     IntermediateCell intermediate_cell = new IntermediateCell();
 
@@ -612,7 +607,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
             IntermediateCell last_cell = new IntermediateCell();
 
-            Cell last_path_cell = (Cell) path.get(path.size() -1);
+            Cell last_path_cell = (Cell) path.get(path.size() - 1);
             last_cell.cell_x = last_path_cell.cell_x;
             last_cell.cell_y = last_path_cell.cell_y;
 
@@ -734,7 +729,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static int binary_serach_for_finer_path (ArrayList path, double distance_target) {
+    public static int binary_serach_for_finer_path(ArrayList path, double distance_target) {
 
         int start = 0;
         int end = path.size() - 1;
@@ -754,9 +749,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (dist_to_mid <= distance_target) {
                 start = mid + 1;
-            }
-
-            else {
+            } else {
                 ans = mid;
                 end = mid - 1;
             }
@@ -784,9 +777,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (dist_to_mid <= distance_target) {
                 start = mid + 1;
-            }
-
-            else {
+            } else {
                 ans = mid;
                 end = mid - 1;
             }
@@ -1142,7 +1133,7 @@ public class Main extends JFrame implements MouseWheelListener {
         return result_color;
     }
 
-    public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results)
+    public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location)
             throws IOException {
 
         jframe = new JFrame("panel");
@@ -1240,7 +1231,7 @@ public class Main extends JFrame implements MouseWheelListener {
             jframe.show();
         }
 
-        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/image_" + image_index + ".png"));
+        File file = new File(currentWorkingPath.concat("/" + iteration_location + "/image_" + image_index + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
 
