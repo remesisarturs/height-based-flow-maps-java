@@ -53,6 +53,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static Cell source_cell;
 
+    public static double[] WIDTHS;
+    public static double[] SCALES;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -66,16 +69,14 @@ public class Main extends JFrame implements MouseWheelListener {
         dir.mkdir();
 
 
-        double[] widths = {90};
-        double[] scales = {10000, 20000, 30000};
 
-        for (int i = 0; i < widths.length; i++) {
+        for (int i = 0; i < WIDTHS.length; i++) {
 
-            double width = widths[i];
+            double width = WIDTHS[i];
             HEIGHT_FUNCTION_WIDTH = width;
 
-            for (int j = 0; j < scales.length; j++) {
-                double scale = scales[j];
+            for (int j = 0; j < SCALES.length; j++) {
+                double scale = SCALES[j];
                 HEIGHT_FUNCTION_SCALE = scale;
 
                 String iteration_location = ("w_" + width + "_s_" + scale);
@@ -111,7 +112,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
 
-                draw(grid, paths, 0, false, iteration_location);
+                draw(grid, paths, 0, false, iteration_location, width, scale);
 
                 ArrayList<double[][]> distances_for_paths = null;
                 if (DISTANCE_METRIC.equals("BFS")) {
@@ -129,7 +130,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 paths = result.second;
 
-                draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location);
+                draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
 
                 generate_gif(iteration_location);
 
@@ -153,9 +154,11 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR";
         //BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 3;
+        NR_OF_ITERATIONS = 20;
         //HEIGHT_FUNCTION_WIDTH = 50; //90;
         //HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
+        WIDTHS = new double[]{90};
+        SCALES = new double[]{2500, 5000, 10000, 20000, 40000};
 
     }
 
@@ -180,9 +183,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
         BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\image_0.png")));
-        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\output_gif.gif")));
+        ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location +
+                "\\gif_" + HEIGHT_FUNCTION_WIDTH + "_" + HEIGHT_FUNCTION_SCALE + ".gif")));
 
-        GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 250, true);
+        GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 1000, true);
         writer.writeToSequence(first);
 
 
@@ -223,7 +227,7 @@ public class Main extends JFrame implements MouseWheelListener {
             paths = compute_paths(points_list, grid);
 
             if (save_outputs == true) {
-                draw(grid, paths, i, show_intermediate_results, iteration_location);
+                draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
             }
 
             long startTime = System.currentTimeMillis();
@@ -1138,7 +1142,7 @@ public class Main extends JFrame implements MouseWheelListener {
         return result_color;
     }
 
-    public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location)
+    public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
             throws IOException {
 
         jframe = new JFrame("panel");
@@ -1218,6 +1222,17 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
+        // draw string in image:
+        Font f = new Font(Font.MONOSPACED, Font.PLAIN, 24);
+        String s = "width: " + width + " scale: " + scale;
+        Graphics g = image.getGraphics();
+        g.setColor(Color.BLUE);
+        g.setFont(f);
+        FontMetrics fm = g.getFontMetrics();
+        int x = image.getWidth() - fm.stringWidth(s) - 5;
+        int y = fm.getHeight();
+        g.drawString(s, x, y);
+        g.dispose();
 
         if (show_intermediate_results) {
 
