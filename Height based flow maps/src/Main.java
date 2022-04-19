@@ -40,6 +40,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String storage_location_name = "";
     public static String currentWorkingPath;
 
+    public static int GIF_DELAY;
+
 
     public static double HEIGHT_FUNCTION_WIDTH;
     public static double HEIGHT_FUNCTION_SCALE;
@@ -67,8 +69,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
         dir.mkdir();
-
-
 
         for (int i = 0; i < WIDTHS.length; i++) {
 
@@ -112,6 +112,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
 
+                if (paths == null) {
+                    continue;
+                }
+
                 draw(grid, paths, 0, false, iteration_location, width, scale);
 
                 ArrayList<double[][]> distances_for_paths = null;
@@ -121,10 +125,16 @@ public class Main extends JFrame implements MouseWheelListener {
                     distances_for_paths = compute_Dijkstra(grid, paths);
                 } else if (DISTANCE_METRIC.equals("ANGULAR")) {
                     distances_for_paths = compute_angular_distance_precise(grid, paths);
+                } else if (DISTANCE_METRIC.equals("ARC")) {
+                    distances_for_paths = compute_arc_length(grid, paths);
                 }
 
                 Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                         BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location);
+
+                if (result == null) {
+                    continue;
+                }
 
                 grid = result.first;
 
@@ -146,19 +156,36 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
         TARGET_NAME = "A";
         INPUT_FILE_NAME = "./input/1_s_2_t.csv";
-        BASE_HEIGHT_TYPE = "EUCLID";
+        GIF_DELAY = 750; // 1000 - 1 FRAME PER SEC
+
+
+        //BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
-        DISTANCE_METRIC = "DIJKSTRA";
+        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+
+        //DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR";
+        DISTANCE_METRIC = "ARC";
+
         //BASE_SCALE = 0.5;
         NR_OF_ITERATIONS = 20;
         //HEIGHT_FUNCTION_WIDTH = 50; //90;
         //HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
-        WIDTHS = new double[]{90};
-        SCALES = new double[]{2500, 5000, 10000, 20000, 40000};
+        WIDTHS = new double[]{80};
+        //WIDTHS = new double[]{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110};
+        //WIDTHS = new double[]{120, 130, 150, 170, 190, 210, 350, 400};
+
+        SCALES = new double[]{50000, 100000, 150000, 200000};
+        //SCALES = new double[]{600000, 700000, 800000, 900000, 1000000, 1100000};
+        //SCALES = new double[]{10, 50, 100, 200, 300, 400, 500};
+        //SCALES = new double[]{500, 1000, 2000, 4000, 8000, 1000};
+        //SCALES = new double[]{10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000};
+        //SCALES = new double[]{1000000, 1500000, 2000000, 2500000, 3000000}; // angular, euclid, scale 80/90
+        //SCALES = new double[]{100000, 150000, 200000, 250000, 300000, 350000, 400000, 500000}; // angular, euclid sqrt, scale 90
+        //SCALES = new double []{100000};
+        //SCALES = new double[]{2500, 5000, 10000, 20000, 40000};
 
     }
 
@@ -186,7 +213,7 @@ public class Main extends JFrame implements MouseWheelListener {
         ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location +
                 "\\gif_" + HEIGHT_FUNCTION_WIDTH + "_" + HEIGHT_FUNCTION_SCALE + ".gif")));
 
-        GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), 1000, true);
+        GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), GIF_DELAY, true);
         writer.writeToSequence(first);
 
 
@@ -226,6 +253,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
             paths = compute_paths(points_list, grid);
 
+            if (paths == null) {
+                return null;
+            }
+
             if (save_outputs == true) {
                 draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
             }
@@ -238,7 +269,11 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_Dijkstra(grid, paths);
             } else if (DISTANCE_METRIC.equals("ANGULAR")) {
                 distances_for_paths = compute_angular_distance_precise(grid, paths);
+            } else if (DISTANCE_METRIC.equals("ARC")) {
+                distances_for_paths = compute_arc_length(grid, paths);
             }
+
+
             long endTime = System.currentTimeMillis();
             System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
@@ -258,6 +293,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         compute_flow(grid);
         paths = compute_paths(points_list, grid);
+
+        if (paths == null) {
+            return null;
+        }
 
         Tuple<Cell[][], ArrayList<ArrayList<Cell>>> tuple = new Tuple<Cell[][], ArrayList<ArrayList<Cell>>>(grid, paths);
 
@@ -437,6 +476,132 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
+    public static ArrayList compute_arc_length(Cell[][] grid, ArrayList paths) {
+
+        System.out.println("computing arc length distance");
+
+        Iterator path_iterator = paths.iterator();
+
+        ArrayList distances_for_paths = new ArrayList();
+
+        // for all paths
+        while (path_iterator.hasNext()) {
+
+            ArrayList path = (ArrayList) path_iterator.next();
+
+            Collections.reverse(path);
+
+            // the first cell in the path is the source node (A). The last cell is the target (B)
+            ArrayList<IntermediateCell> finer_path = new ArrayList<IntermediateCell>();
+
+            //double distance = 0.0;
+            // Make path finer:
+
+            double sum = 0.0;
+
+            for (int i = 0; i < path.size() - 1; i++) { // potentially up to size - 1
+
+                Cell cell = (Cell) path.get(i);
+                Cell next_cell = (Cell) path.get(i + 1);
+
+//                double distance = (Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2) +
+//                        Math.pow(next_cell.cell_y - cell.cell_y, 2)));
+
+                int cell_x = cell.cell_x;
+                int next_cell_x = next_cell.cell_x;
+
+                int cell_y = cell.cell_y;
+                int next_cell_y = next_cell.cell_y;
+
+//                double distance_x = Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2));
+//                double distance_y = Math.sqrt(Math.pow(next_cell.cell_y - cell.cell_y, 2));
+
+                double abs_x = Math.abs(cell_x - next_cell_x);
+                double abs_y = Math.abs(cell_y - next_cell_y);
+
+                double splits = 1;
+
+                double split_x = abs_x / splits;
+                double split_y = abs_y / splits;
+
+                for (int j = 0; j < splits; j++) {
+
+                    IntermediateCell intermediate_cell = new IntermediateCell();
+
+                    intermediate_cell.cell_x = cell_x - split_x * j;
+                    intermediate_cell.cell_y = cell_y - split_y * j;
+
+                    finer_path.add(intermediate_cell);
+                    //sum = sum + split_distance;
+                    //finer_path.add(sum);
+                }
+            }
+            IntermediateCell last_cell = new IntermediateCell();
+
+            Cell last_path_cell = (Cell) path.get(path.size() - 1);
+            last_cell.cell_x = last_path_cell.cell_x;
+            last_cell.cell_y = last_path_cell.cell_y;
+
+            finer_path.add(last_cell);
+
+            double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+            // for each cell in the grid
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+                for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                    Cell cell = grid[i][j];
+
+                    double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(source_cell.cell_y - cell.cell_y, 2)));
+
+                    // We don't actually need an index of a cell. We just need the distance
+                    // For our binary search: we split the actual path into a much finer path (each cell split into 10)
+                    // Then run binary search on the finer path.
+                    // Input: Arraylist/array of bins. |array| = number of cells + cumber of finer cells
+                    // Each smaller cell holds the distance it corresponds to in the split
+
+                    //double distance = binary_serach_for_finer_path(finer_path, radius);
+
+                    int index_of_cell = binary_serach_for_finer_path(finer_path, radius);
+
+                    double x = finer_path.get(index_of_cell).cell_x;
+                    double y = finer_path.get(index_of_cell).cell_y;
+
+                    IntermediateCell intersection_cell = (IntermediateCell) finer_path.get(index_of_cell);
+
+                    // Here we can either use radius as dist or the actual distance. Matter of precision.
+                    double dist = (Math.sqrt(Math.pow(intersection_cell.cell_x - source_cell.cell_x, 2) +
+                            Math.pow(intersection_cell.cell_y - source_cell.cell_y, 2)));
+
+                    double dist_2 = (Math.sqrt(Math.pow(intersection_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(intersection_cell.cell_y - cell.cell_y, 2)));
+
+                    double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(dist_2, 2)) /
+                            (2.0 * radius * dist));
+
+                    double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                    distances[i][j] = arc_length;
+                }
+            }
+
+            Iterator path_cell_iter = path.iterator();
+
+            while (path_cell_iter.hasNext()) {
+
+                Cell cell = (Cell) path_cell_iter.next();
+
+                distances[cell.cell_x][cell.cell_y] = 0.0;
+
+            }
+
+            distances_for_paths.add(transposeMatrix(distances));
+        }
+        return distances_for_paths;
+
+    }
+
     public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList paths) {
 
         System.out.println("Computing Dijkstra");
@@ -597,7 +762,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 double abs_x = Math.abs(cell_x - next_cell_x);
                 double abs_y = Math.abs(cell_y - next_cell_y);
 
-                double splits = 100;
+                double splits = 1;
 
                 double split_x = abs_x / splits;
                 double split_y = abs_y / splits;
@@ -1223,8 +1388,8 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         // draw string in image:
-        Font f = new Font(Font.MONOSPACED, Font.PLAIN, 24);
-        String s = "width: " + width + " scale: " + scale;
+        Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+        String s = "width: " + width + " scale: " + scale + " i: " + image_index;
         Graphics g = image.getGraphics();
         g.setColor(Color.BLUE);
         g.setFont(f);
@@ -1297,7 +1462,14 @@ public class Main extends JFrame implements MouseWheelListener {
 
             path.add(current_cell);
 
+            int counter = 0;
+
             while (!(current_cell.title.equals(TARGET_NAME))) {
+
+                if (counter > NR_OF_COLUMNS + NR_OF_ROWS) {
+                    System.out.println("something went wrong");
+                    return null;
+                }
 
                 int node_x = (int) current_cell.cell_x;
                 int node_y = (int) current_cell.cell_y;
@@ -1323,6 +1495,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 path.add(current_cell);
+
+                counter++;
 
             }
 
