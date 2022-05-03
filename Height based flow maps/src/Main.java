@@ -30,8 +30,8 @@ public class Main extends JFrame implements MouseWheelListener {
     static JFrame jframe;
 
 
-    private static double zoomFactor = 10;
-    private static double prevZoomFactor = 10;
+    private static double zoomFactor = 50;
+    private static double prevZoomFactor = 50;
     private static boolean zoomer;
 
 
@@ -49,6 +49,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static String BASE_HEIGHT_TYPE;
     public static double BASE_SCALE;
 
+    public static double ARC_RADIUS;
+
     public static String DISTANCE_METRIC;
 
     public static String INPUT_FILE_NAME;
@@ -57,6 +59,25 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static double[] WIDTHS;
     public static double[] SCALES;
+
+    public static boolean REMOVE_DIAGONAL_BIAS = false;
+    public static boolean RESET_HEIGHTS = true;
+
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+
+    public static boolean GRAY_SCALE = false;
+
+    public static boolean DRAW_TEXT_DESCRIPTION = true;
+
+    public static boolean DRAW_PATHS = true;
 
     public static void main(String[] args) throws IOException {
 
@@ -97,18 +118,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 initialize_points_in_grid(grid, points_list);
 
-
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
-                    initialize_grid_height_Euclidean_dist(grid, BASE_SCALE);
+                    initialize_grid_height_Euclidean_dist(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("default")) {
-                    initialize_grid_height(grid, BASE_SCALE);
+                    initialize_grid_height(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
-                    initialize_grid_height_chebyshev_distance(grid, BASE_SCALE);
+                    initialize_grid_height_chebyshev_distance(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
-                    initialize_grid_height_Euclidean_dist_sqrt(grid, BASE_SCALE);
+                    initialize_grid_height_Euclidean_dist_sqrt(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
+                    initialize_grid_height_Euclidean_dist_squared(grid);
                 }
 
-                compute_flow(grid);
+                compute_flow(grid, 0);
 
                 ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
 
@@ -129,6 +151,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     distances_for_paths = compute_arc_length(grid, paths);
                 } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
                     distances_for_paths = compute_angular_distance_with_intersection(grid, paths);
+                } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
+                    distances_for_paths = compute_anguar_with_arc_length(grid, paths);
                 }
 
                 Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
@@ -156,44 +180,42 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
+
+        GRAY_SCALE = true;
+
         TARGET_NAME = "A";
         INPUT_FILE_NAME = "./input/1_s_2_t.csv";
-        GIF_DELAY = 750; // 1000 - 1 FRAME PER SEC
+        GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
+        BASE_SCALE = 0.05;
+
+        RESET_HEIGHTS = true;
+        REMOVE_DIAGONAL_BIAS = true;
+
+        DRAW_TEXT_DESCRIPTION = false;
+        DRAW_PATHS = true;
+
+        ARC_RADIUS = 40;
 
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        //BASE_HEIGHT_TYPE = "EUCLID_SQUARED";
 
-        //DISTANCE_METRIC = "DIJKSTRA";
+        DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
-        //DISTANCE_METRIC = "ANGULAR";
+        //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
-        DISTANCE_METRIC = "ANGULAR_INTERSECTION";
+        //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
+        //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        //BASE_SCALE = 0.5;
-        NR_OF_ITERATIONS = 20;
-        //HEIGHT_FUNCTION_WIDTH = 50; //90;
-        //HEIGHT_FUNCTION_SCALE = 200000;//1000000.0;//10000.0; //27000000;//200000;
-//        WIDTHS = new double[]{610};
-//        SCALES = new double[]{5000000};
+
+        NR_OF_ITERATIONS = 15;
+
         WIDTHS = new double[]{90};
-        SCALES = new double[]{350000};
-        //WIDTHS = new double[]{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110};
-        //WIDTHS = new double[]{120, 130, 150, 170, 190, 210, 350, 400};
+        SCALES = new double[]{500};
 
-        //SCALES = new double[]{50000, 100000, 150000, 200000};
-        //SCALES = new double[]{1000, 5000, 10000, 20000, 40000, 60000, 100000};
-
-        //SCALES = new double[]{600000, 700000, 800000, 900000, 1000000, 1100000};
-        //SCALES = new double[]{10, 50, 100, 200, 300, 400, 500};
-        //SCALES = new double[]{500, 1000, 2000, 4000, 8000, 1000};
-        //SCALES = new double[]{10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000};
-        //SCALES = new double[]{1000000, 1500000, 2000000, 2500000, 3000000}; // angular, euclid, scale 80/90
-        //SCALES = new double[]{100000, 150000, 200000, 250000, 300000, 350000, 400000, 500000}; // angular, euclid sqrt, scale 90
-        //SCALES = new double []{100000};
-        //SCALES = new double[]{2500, 5000, 10000, 20000, 40000};
 
     }
 
@@ -250,14 +272,13 @@ public class Main extends JFrame implements MouseWheelListener {
             boolean show_intermediate_results, double width, double scale, String iteration_location)
             throws IOException {
 
-        adjust_height(grid, distances_for_paths, width, scale);
+        adjust_height(grid, distances_for_paths, width, scale, paths);
 
         // Iterate a number of times:
         for (int i = 1; i < NR_OF_ITERATIONS; i++) {
             System.out.println("iteration : " + i);
 
-
-            compute_flow(grid);
+            compute_flow(grid, i);
 
             paths = compute_paths(points_list, grid);
 
@@ -275,33 +296,144 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_bfs(grid, paths);
             } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
                 distances_for_paths = compute_Dijkstra(grid, paths);
+
+                double[][] first = (double[][]) distances_for_paths.get(0);
+                double[][] second = (double[][]) distances_for_paths.get(1);
+
+                boolean verbose = true;
+
+                if (verbose == true) {
+
+                    System.out.println("Distances 1");
+                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
+                        for (int r = 0; r < NR_OF_ROWS; r++) {
+
+
+                            if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
+
+                                Boolean cell_on_path = false;
+                                Iterator it = paths.iterator();
+                                while (it.hasNext()) {
+
+                                    ArrayList path = (ArrayList) it.next();
+
+                                    Iterator cell_it = path.iterator();
+                                    while (cell_it.hasNext()) {
+
+                                        Cell path_cell = (Cell) cell_it.next();
+
+                                        if (c == path_cell.cell_x && r == path_cell.cell_y) {
+                                            cell_on_path = true;
+                                            //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+                                        }
+                                    }
+                                }
+
+                                if (c == source_x && r == source_y) {
+                                    System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + first[r][c] + ANSI_RESET + " ");
+
+                                } else if (false) {
+
+                                } else {
+                                    if (cell_on_path) {
+                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+                                    } else {
+                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + first[r][c] + ANSI_RESET + " ");
+                                    }
+                                }
+
+
+                            }
+
+                        }
+                        if (c > source_x - 10) {
+
+                            System.out.println();
+                        }
+                    }
+                    System.out.println("Distances 1 End");
+
+                    System.out.println("Distances 2 ");
+                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
+                        for (int r = 0; r < NR_OF_ROWS; r++) {
+
+
+                            if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
+
+                                Boolean cell_on_path = false;
+                                Iterator it = paths.iterator();
+                                while (it.hasNext()) {
+
+                                    ArrayList path = (ArrayList) it.next();
+
+                                    Iterator cell_it = path.iterator();
+                                    while (cell_it.hasNext()) {
+
+                                        Cell path_cell = (Cell) cell_it.next();
+
+                                        if (c == path_cell.cell_x && r == path_cell.cell_y) {
+                                            cell_on_path = true;
+                                            //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+                                        }
+                                    }
+                                }
+
+                                if (c == source_x && r == source_y) {
+                                    System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + second[r][c] + ANSI_RESET + " ");
+
+                                } else {
+                                    if (cell_on_path) {
+                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + second[r][c] + ANSI_RESET + " ");
+                                    } else {
+                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + second[r][c] + ANSI_RESET + " ");
+                                    }
+                                }
+
+
+                            }
+
+                        }
+                        if (c > source_x - 10) {
+
+                            System.out.println();
+                        }
+                    }
+                    System.out.println("Distances 2 End");
+
+                }
+
             } else if (DISTANCE_METRIC.equals("ANGULAR")) {
                 distances_for_paths = compute_angular_distance_precise(grid, paths);
             } else if (DISTANCE_METRIC.equals("ARC")) {
                 distances_for_paths = compute_arc_length(grid, paths);
             } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
                 distances_for_paths = compute_angular_distance_with_intersection(grid, paths);
+            } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
+                distances_for_paths = compute_anguar_with_arc_length(grid, paths);
             }
-
 
             long endTime = System.currentTimeMillis();
             System.out.println("That took " + (endTime - startTime) + " milliseconds");
 
-            if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
-                initialize_grid_height_Euclidean_dist(grid, base_function_scale);
-            } else if (BASE_HEIGHT_TYPE.equals("default")) {
-                initialize_grid_height(grid, base_function_scale);
-            } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
-                initialize_grid_height_chebyshev_distance(grid, base_function_scale);
-            } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
-                initialize_grid_height_Euclidean_dist_sqrt(grid, base_function_scale);
+            if (RESET_HEIGHTS == true) {
+                if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
+                    initialize_grid_height_Euclidean_dist(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("default")) {
+                    initialize_grid_height(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
+                    initialize_grid_height_chebyshev_distance(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
+                    initialize_grid_height_Euclidean_dist_sqrt(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
+                    initialize_grid_height_Euclidean_dist_squared(grid);
+                }
             }
 
-            adjust_height(grid, distances_for_paths, width, scale);
+            adjust_height(grid, distances_for_paths, width, scale, paths);
 
         }
 
-        compute_flow(grid);
+        compute_flow(grid, NR_OF_ITERATIONS);
         paths = compute_paths(points_list, grid);
 
         if (paths == null) {
@@ -320,9 +452,60 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale) {
+    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths) {
 
         System.out.println("adjusting height");
+
+        boolean verbose = true;
+
+        if (verbose == true) {
+
+            System.out.println("Before : ");
+
+            for (int c = 0; c < NR_OF_COLUMNS; c++) {
+                for (int r = 0; r < NR_OF_ROWS; r++) {
+
+
+                    if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
+
+                        Boolean cell_on_path = false;
+                        Iterator it = paths.iterator();
+                        while (it.hasNext()) {
+
+                            ArrayList path = (ArrayList) it.next();
+
+                            Iterator cell_it = path.iterator();
+                            while (cell_it.hasNext()) {
+
+                                Cell path_cell = (Cell) cell_it.next();
+
+                                if (c == path_cell.cell_x && r == path_cell.cell_y) {
+                                    cell_on_path = true;
+                                    //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+                                }
+                            }
+                        }
+
+                        if (c == source_x && r == source_y) {
+
+                            System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + grid[c][r].height + ANSI_RESET + " ");
+
+                        } else {
+                            if (cell_on_path) {
+                                System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + grid[c][r].height + ANSI_RESET + " ");
+                            } else {
+                                System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + grid[c][r].height + ANSI_RESET + " ");
+                            }
+                        }
+                    }
+
+                }
+                if (c > source_x - 10) {
+
+                    System.out.println();
+                }
+            }
+        }
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -347,38 +530,98 @@ public class Main extends JFrame implements MouseWheelListener {
                     sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
                 }
 
-                double height = -HEIGHT_FUNCTION_SCALE * sum;
-                grid[j][i].height = grid[j][i].height + height;
+                double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
+                grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
 
+            }
+        }
+
+        if (verbose == true) {
+
+            System.out.println("After : ");
+            for (int c = 0; c < NR_OF_COLUMNS; c++) {
+                for (int r = 0; r < NR_OF_ROWS; r++) {
+
+
+                    if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
+
+                        Boolean cell_on_path = false;
+                        Iterator it = paths.iterator();
+                        while (it.hasNext()) {
+
+                            ArrayList path = (ArrayList) it.next();
+
+                            Iterator cell_it = path.iterator();
+                            while (cell_it.hasNext()) {
+
+                                Cell path_cell = (Cell) cell_it.next();
+
+                                if (c == path_cell.cell_x && r == path_cell.cell_y) {
+                                    cell_on_path = true;
+                                    //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+                                }
+                            }
+                        }
+
+                        if (c == source_x && r == source_y) {
+
+                            System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + grid[c][r].height + ANSI_RESET + " ");
+
+                        } else {
+                            if (cell_on_path) {
+                                System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + grid[c][r].height + ANSI_RESET + " ");
+                            } else {
+                                System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + grid[c][r].height + ANSI_RESET + " ");
+                            }
+                        }
+                    }
+
+                }
+                if (c > source_x - 10) {
+
+                    System.out.println();
+                }
             }
         }
 
     }
 
-    public static void initialize_grid_height(Cell[][] grid, double scale) {
+    public static void initialize_grid_height(Cell[][] grid) {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (0.05 * (Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
+                grid[j][i].height = (BASE_SCALE * (Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
 
             }
         }
     }
 
-    public static void initialize_grid_height_Euclidean_dist_sqrt(Cell[][] grid, double scale) {
+    public static void initialize_grid_height_Euclidean_dist_sqrt(Cell[][] grid) {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (0.05 * Math.sqrt(Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2))));
+                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2))));
 
             }
         }
 
     }
 
-    public static void initialize_grid_height_chebyshev_distance(Cell[][] grid, double scale) {
+    public static void initialize_grid_height_Euclidean_dist_squared(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                grid[j][i].height = (BASE_SCALE * Math.pow(2, Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2))));
+
+            }
+        }
+
+    }
+
+    public static void initialize_grid_height_chebyshev_distance(Cell[][] grid) {
 
         // Direction vectors
         int dRow[] = {-1, 0, 1, 0};
@@ -441,12 +684,12 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
-    public static void initialize_grid_height_Euclidean_dist(Cell[][] grid, double scale) {
+    public static void initialize_grid_height_Euclidean_dist(Cell[][] grid) {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (0.05 * Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
+                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2)));
 
             }
         }
@@ -501,58 +744,124 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Collections.reverse(path);
 
-            // the first cell in the path is the source node (A). The last cell is the target (B)
-            ArrayList<IntermediateCell> finer_path = new ArrayList<IntermediateCell>();
+            double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
-            //double distance = 0.0;
-            // Make path finer:
+            // for each cell in the grid
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+                for (int j = 0; j < NR_OF_ROWS; j++) {
 
-            double sum = 0.0;
+                    Cell cell = grid[i][j];
 
-            for (int i = 0; i < path.size() - 1; i++) { // potentially up to size - 1
+                    double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
+                            Math.pow(source_cell.cell_y - cell.cell_y, 2)));
 
-                Cell cell = (Cell) path.get(i);
-                Cell next_cell = (Cell) path.get(i + 1);
+                    int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
 
-//                double distance = (Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2) +
-//                        Math.pow(next_cell.cell_y - cell.cell_y, 2)));
+                    Cell intersection_cell = (Cell) path.get(index_of_cell);
 
-                int cell_x = cell.cell_x;
-                int next_cell_x = next_cell.cell_x;
+                    double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
+                            Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
 
-                int cell_y = cell.cell_y;
-                int next_cell_y = next_cell.cell_y;
+                    // TODO: check index out of bounds
+                    if (index_of_cell + 1 < NR_OF_COLUMNS && index_of_cell - 1 > 0) {
 
-//                double distance_x = Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2));
-//                double distance_y = Math.sqrt(Math.pow(next_cell.cell_y - cell.cell_y, 2));
+                        Cell next_cell = (Cell) path.get(index_of_cell + 1);
+                        Cell previous_cell = (Cell) path.get(index_of_cell - 1);
 
-                double abs_x = Math.abs(cell_x - next_cell_x);  // TODO: is this right?
-                double abs_y = Math.abs(cell_y - next_cell_y);
+                        double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
 
-                double splits = 1;
+                        double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
 
-                double split_x = abs_x / splits;
-                double split_y = abs_y / splits;
+                        Tuple<Double, Double> intersection_point = null;
+                        // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
+                        if (radius > dist_2 && radius < dist) {
 
-                for (int j = 0; j < splits; j++) {
+                            // here compute the intersection point
 
-                    IntermediateCell intermediate_cell = new IntermediateCell();
+                            intersection_point = compute_intersection_of_circle_and_line_segment(
+                                    source_x, source_y, radius,
+                                    intersection_cell.cell_x, intersection_cell.cell_y,
+                                    previous_cell.cell_x, previous_cell.cell_y);
 
-                    intermediate_cell.cell_x = cell_x - split_x * j;
-                    intermediate_cell.cell_y = cell_y - split_y * j;
 
-                    finer_path.add(intermediate_cell);
-                    //sum = sum + split_distance;
-                    //finer_path.add(sum);
+                        } else if (radius > dist && radius < dist_1) {
+                            // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
+
+                            // here compute the intersection
+
+                            intersection_point = compute_intersection_of_circle_and_line_segment(
+                                    source_x, source_y, radius,
+                                    intersection_cell.cell_x, intersection_cell.cell_y,
+                                    next_cell.cell_x, next_cell.cell_y);
+
+                        } else if (radius == dist) {
+                            intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
+                        }
+
+                        if (intersection_point == null) {
+                            System.out.println();
+                        }
+
+                        double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
+                                Math.pow(cell.cell_y - intersection_point.second, 2)));
+
+                        double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
+                                Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+
+                        double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                (2.0 * radius * distance_from_source_to_intersection));
+
+                        double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                        distances[i][j] = arc_length;
+
+                    } else {
+
+                        double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
+                                Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+
+                        double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                (2.0 * radius * radius));
+
+                        double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                        distances[i][j] = arc_length;
+                    }
                 }
             }
-            IntermediateCell last_cell = new IntermediateCell();
 
-            Cell last_path_cell = (Cell) path.get(path.size() - 1);
-            last_cell.cell_x = last_path_cell.cell_x;
-            last_cell.cell_y = last_path_cell.cell_y;
+            Iterator path_cell_iter = path.iterator();
 
-            finer_path.add(last_cell);
+            while (path_cell_iter.hasNext()) {
+
+                Cell cell = (Cell) path_cell_iter.next();
+
+                distances[cell.cell_x][cell.cell_y] = 0.0;
+
+            }
+
+            distances_for_paths.add(transposeMatrix(distances));
+        }
+        return distances_for_paths;
+
+    }
+
+    public static ArrayList compute_anguar_with_arc_length(Cell[][] grid, ArrayList paths) {
+
+        System.out.println("computing angular distance with arc length ");
+
+        Iterator path_iterator = paths.iterator();
+
+        ArrayList distances_for_paths = new ArrayList();
+
+        // for all paths
+        while (path_iterator.hasNext()) {
+
+            ArrayList path = (ArrayList) path_iterator.next();
+
+            Collections.reverse(path);
 
             double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
@@ -565,34 +874,159 @@ public class Main extends JFrame implements MouseWheelListener {
                     double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
                             Math.pow(source_cell.cell_y - cell.cell_y, 2)));
 
-                    // We don't actually need an index of a cell. We just need the distance
-                    // For our binary search: we split the actual path into a much finer path (each cell split into 10)
-                    // Then run binary search on the finer path.
-                    // Input: Arraylist/array of bins. |array| = number of cells + cumber of finer cells
-                    // Each smaller cell holds the distance it corresponds to in the split
+                    if (radius > ARC_RADIUS) {
 
-                    //double distance = binary_serach_for_finer_path(finer_path, radius);
+                        // Binary search finds the first cell for which the distance to this cell is >= than radius
+                        int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
 
-                    int index_of_cell = binary_serach_for_finer_path(finer_path, radius);
+                        Cell intersection_cell = (Cell) path.get(index_of_cell);
 
-                    double x = finer_path.get(index_of_cell).cell_x;
-                    double y = finer_path.get(index_of_cell).cell_y;
+                        double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
 
-                    IntermediateCell intersection_cell = (IntermediateCell) finer_path.get(index_of_cell);
+                        // TODO: check index out of bounds
+                        if (index_of_cell + 1 < path.size() && index_of_cell - 1 > 0) {
 
-                    // Here we can either use radius as dist or the actual distance. Matter of precision.
-                    double dist = (Math.sqrt(Math.pow(intersection_cell.cell_x - source_cell.cell_x, 2) +
-                            Math.pow(intersection_cell.cell_y - source_cell.cell_y, 2)));
+                            Cell next_cell = (Cell) path.get(index_of_cell + 1);
+                            Cell previous_cell = (Cell) path.get(index_of_cell - 1);
 
-                    double dist_2 = (Math.sqrt(Math.pow(intersection_cell.cell_x - cell.cell_x, 2) +
-                            Math.pow(intersection_cell.cell_y - cell.cell_y, 2)));
+                            double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
 
-                    double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(dist_2, 2)) /
-                            (2.0 * radius * dist));
+                            double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
 
-                    double arc_length = 2 * Math.PI * radius * (angle / 360);
+                            Tuple<Double, Double> intersection_point = null;
+                            // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
+                            if (radius > dist_2 && radius < dist) {
 
-                    distances[i][j] = arc_length;
+                                // here compute the intersection point
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        previous_cell.cell_x, previous_cell.cell_y);
+
+
+                            } else if (radius > dist && radius < dist_1) {
+                                // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
+
+                                // here compute the intersection
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        next_cell.cell_x, next_cell.cell_y);
+
+                            } else if (radius == dist) {
+                                intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
+                            }
+
+                            if (intersection_point == null) {
+                                System.out.println();
+                            }
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(cell.cell_y - intersection_point.second, 2)));
+
+                            double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * distance_from_source_to_intersection));
+
+                            distances[i][j] = angle;
+
+                        } else {
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
+                                    Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * radius));
+
+                            distances[i][j] = angle;
+
+                        }
+
+                    } else {
+
+                        int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+
+                        Cell intersection_cell = (Cell) path.get(index_of_cell);
+
+                        double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
+
+                        // TODO: check index out of bounds
+                        if (index_of_cell + 1 < NR_OF_COLUMNS && index_of_cell - 1 > 0) {
+
+                            Cell next_cell = (Cell) path.get(index_of_cell + 1);
+                            Cell previous_cell = (Cell) path.get(index_of_cell - 1);
+
+                            double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
+
+                            double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
+
+                            Tuple<Double, Double> intersection_point = null;
+                            // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
+                            if (radius > dist_2 && radius < dist) {
+
+                                // here compute the intersection point
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        previous_cell.cell_x, previous_cell.cell_y);
+
+
+                            } else if (radius > dist && radius < dist_1) {
+                                // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
+
+                                // here compute the intersection
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        next_cell.cell_x, next_cell.cell_y);
+
+                            } else if (radius == dist) {
+                                intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
+                            }
+
+                            if (intersection_point == null) {
+                                System.out.println();
+                            }
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(cell.cell_y - intersection_point.second, 2)));
+
+                            double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * distance_from_source_to_intersection));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+
+                        } else {
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
+                                    Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * radius));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+                        }
+
+                    }
                 }
             }
 
@@ -723,6 +1157,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
+            //distances_for_paths.add(distances);
             distances_for_paths.add(transposeMatrix(distances));
         }
         return distances_for_paths;
@@ -862,7 +1297,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             // Insert cell with updated distance
-                            distances[adj_x][adj_y] = distances[cell.cell_x][cell.cell_y] + weight;
+                            distances[adj_x][adj_y] = Math.round((distances[cell.cell_x][cell.cell_y] + weight) * 1000.0) / 1000.0;
 
                             grid[adj_x][adj_y].distance = distances[adj_x][adj_y];
                             Q.add(grid[adj_x][adj_y]); //new Cell(rows, cols, dist[rows][cols]));
@@ -1432,12 +1867,31 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static Color getValueBetweenTwoFixedColors(float value) {
-        int aR = 0;
-        int aG = 0;
-        int aB = 255;  // RGB for our 1st color (blue in this case).
-        int bR = 255;
-        int bG = 0;
-        int bB = 0;    // RGB for our 2nd color (red in this case).
+
+        int aR;
+        int aG;
+        int aB;
+        int bR;
+        int bG;
+        int bB;
+
+        if (GRAY_SCALE) {
+            aR = 0;
+            aG = 0;
+            aB = 0;
+
+            bR = 255;
+            bG = 255;
+            bB = 255;
+        } else {
+            aR = 0;
+            aG = 0;
+            aB = 255;  // RGB for our 1st color (blue in this case).
+
+            bR = 255;
+            bG = 0;
+            bB = 0;    // RGB for our 2nd color (red in this case).
+        }
 
         int red = (int) ((float) (bR - aR) * value + aR);      // Evaluated as -255*value + 255.
         int green = (int) ((float) (bG - aG) * value + aG);      // Evaluates as 0.
@@ -1545,34 +1999,41 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        Iterator iter = paths.iterator();
+        if (DRAW_PATHS) {
 
-        while (iter.hasNext()) {
+            Iterator iter = paths.iterator();
 
-            ArrayList path = (ArrayList) iter.next();
+            while (iter.hasNext()) {
 
-            Iterator cell_iter = path.iterator();
+                ArrayList path = (ArrayList) iter.next();
 
-            while (cell_iter.hasNext()) {
+                Iterator cell_iter = path.iterator();
 
-                Cell cell = (Cell) cell_iter.next();
+                while (cell_iter.hasNext()) {
 
-                image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+                    Cell cell = (Cell) cell_iter.next();
 
+                    image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+
+                }
             }
         }
 
+
         // draw string in image:
-        Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-        String s = "width: " + width + " scale: " + scale + " i: " + image_index;
-        Graphics g = image.getGraphics();
-        g.setColor(Color.BLUE);
-        g.setFont(f);
-        FontMetrics fm = g.getFontMetrics();
-        int x = image.getWidth() - fm.stringWidth(s) - 5;
-        int y = fm.getHeight();
-        g.drawString(s, x, y);
-        g.dispose();
+
+        if (DRAW_TEXT_DESCRIPTION) {
+            Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+            String s = "width: " + width + " scale: " + scale + " i: " + image_index;
+            Graphics g = image.getGraphics();
+            g.setColor(Color.BLUE);
+            g.setFont(f);
+            FontMetrics fm = g.getFontMetrics();
+            int x = image.getWidth() - fm.stringWidth(s) - 5;
+            int y = fm.getHeight();
+            g.drawString(s, x, y);
+            g.dispose();
+        }
 
         if (show_intermediate_results) {
 
@@ -1681,7 +2142,7 @@ public class Main extends JFrame implements MouseWheelListener {
         return paths;
     }
 
-    public static void compute_flow(Cell[][] grid) {
+    public static void compute_flow(Cell[][] grid, int iteration) {
         System.out.println("computing flow");
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
 
@@ -1751,14 +2212,31 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     double change_in_height = grid[x][y].height - neighbor.height;
 
-                    double distance = 0f;
+                    double distance = 0.0;
 
                     if (neighbor == left || neighbor == right || neighbor == top || neighbor == bottom) {
 
-                        distance = 1f;
+                        distance = 1.0;
 
                     } else if (neighbor == top_left || neighbor == top_right || neighbor == bottom_left || neighbor == bottom_right) {
-                        distance = (double) Math.sqrt(2);
+
+                        double dist_from_source_to_cell = Math.sqrt(Math.pow(grid[j][i].cell_x - source_x, 2) + Math.pow(grid[j][i].cell_y - source_y, 2));
+
+                        if (iteration > 10) {//dist_from_source_to_cell < 100) {
+                            
+                            if (REMOVE_DIAGONAL_BIAS) {
+                                //System.out.println("bias removed");
+                                distance = 1.0;
+                            } else {
+                                //System.out.println("bias not removed");
+                                distance = (double) Math.sqrt(2);
+                            }
+
+                        } else {
+                            //System.out.println("bias not removed ");
+
+                            distance = (double) Math.sqrt(2);
+                        }
                     }
 
                     double drop = (change_in_height / distance);
@@ -1805,7 +2283,7 @@ public class Main extends JFrame implements MouseWheelListener {
             grid[point.grid_x][point.grid_y].title = point.name;
 
             if (point.name.equals(TARGET_NAME)) {
-                grid[point.grid_x][point.grid_y].height = 0;
+                grid[point.grid_x][point.grid_y].height = -10000;
 
                 source_x = point.grid_x;
                 source_y = point.grid_y;
