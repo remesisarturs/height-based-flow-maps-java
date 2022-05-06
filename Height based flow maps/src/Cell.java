@@ -7,5 +7,6 @@ public class Cell {
     int cell_y;
     String title;
     double distance;
+    boolean is_obstacle;
 
 }
