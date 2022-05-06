@@ -8,7 +8,7 @@ import re
 
 gifs = []
 
-location = "2022_04_19_13_31_16_ARC_EUCLID_SQRT"
+location = "2022_04_28_18_34_48_DIJKSTRA_EUCLID"
 path_to_experiments = r'C:\\Users\\20175326\\Desktop\\Thesis\\Code\\height-based-flow-maps-java\\Height based flow maps\\experiments\\'  
 
 valid_images = [".gif"]
