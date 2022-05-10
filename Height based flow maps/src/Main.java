@@ -84,6 +84,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean DRAW_DISTANCE_IMAGES = false;
 
+    public static boolean HEIGHT_DECAY_ENABLED = false;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -200,10 +202,9 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        GRAY_SCALE = false;
-        DRAW_DISTANCE_IMAGES = false;
-        TARGET_NAME = "MO";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -211,13 +212,15 @@ public class Main extends JFrame implements MouseWheelListener {
         RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
-        DRAW_TEXT_DESCRIPTION = true;
+        DRAW_TEXT_DESCRIPTION = false;
         DRAW_PATHS = true;
+        GRAY_SCALE = false;
+        DRAW_DISTANCE_IMAGES = false;
 
-        ARC_RADIUS = 40;
+        ARC_RADIUS = 200;
 
         BASE_HEIGHT_TYPE = "EUCLID";
-        BASE_HEIGHT_TYPE = "default";
+        //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED";
@@ -229,10 +232,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 30;
+        NR_OF_ITERATIONS = 7;
 
-        WIDTHS = new double[]{30};
-        SCALES = new double[]{100000};
+        WIDTHS = new double[]{20};
+        SCALES = new double[]{30};
 
     }
 
@@ -294,7 +297,7 @@ public class Main extends JFrame implements MouseWheelListener {
             boolean show_intermediate_results, double width, double scale, String iteration_location)
             throws IOException {
 
-        adjust_height(grid, distances_for_paths, width, scale, paths);
+        adjust_height(grid, distances_for_paths, width, scale, paths, 0, iteration_location);
         //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
 
         // Iterate a number of times:
@@ -471,7 +474,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            adjust_height(grid, distances_for_paths, width, scale, paths);
+            adjust_height(grid, distances_for_paths, width, scale, paths, i, iteration_location);
             //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
 
         }
@@ -539,7 +542,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths) {
+    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths, int iteration, String iteration_location) throws IOException {
 
         System.out.println("adjusting height");
 
@@ -594,15 +597,12 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        double[][] previous_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
-        double[][] new_height = new double[NR_OF_ROWS][NR_OF_COLUMNS];
+        double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
                 Cell cell = grid[j][i];
-
-                previous_height[j][i] = grid[j][i].height;
 
                 Iterator path_iterator = distances_for_paths.iterator();
 
@@ -622,12 +622,24 @@ public class Main extends JFrame implements MouseWheelListener {
                     sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
                 }
 
-                double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
-                grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
-                new_height[j][i] = grid[j][i].height;
+                if (RESET_HEIGHTS == false) {
 
+                    // wtf is this??
+                    if (i == 0) {
+                        i = 1;
+                    }
+                    double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
+                    grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                } else {
+                    double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
+                    computed_height[j][i] = height;
+
+                    grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                }
             }
         }
+
+        draw_matrix(computed_height, paths, iteration, iteration_location);
 
         if (verbose == true) {
 
@@ -676,25 +688,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
         }
-
-        double[][] differences = new double[NR_OF_ROWS][NR_OF_COLUMNS];
-
-        double sum = 0;
-
-        for (int i = 0; i < NR_OF_COLUMNS; i++) {
-            for (int j = 0; j < NR_OF_ROWS; j++) {
-
-                double difference = Math.abs(previous_height[i][j] - new_height[i][j]);
-                sum = sum + difference;
-                differences[i][j] = difference;
-
-            }
-        }
-        System.out.println("difference of previous sum and new sum : " + Math.abs(sum - previous_sum));
-
-        previous_sum = sum;
-
-        System.out.println("sum of differences : " + sum);
 
     }
 
@@ -2379,6 +2372,90 @@ public class Main extends JFrame implements MouseWheelListener {
         return result_color;
     }
 
+    public static void draw_matrix(double[][] matrix, ArrayList paths, int image_index, String iteration_location) throws IOException {
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        double max_height = matrix[0][0];
+        double min_hieght = matrix[0][0];
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                if (matrix[i][j] > max_height) {
+                    max_height = matrix[i][j];
+                }
+                if (matrix[i][j] < min_hieght) {
+                    min_hieght = matrix[i][j];
+                }
+            }
+        }
+
+        System.out.println("min : " + min_hieght + " max: " + max_height);
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                float value = (float) ((matrix[i][j] - min_hieght) / (max_height - min_hieght));
+
+                Color color = getValueBetweenTwoFixedColors(value);
+
+                image.setRGB(i, j, color.getRGB());
+
+//                if (!grid[i][j].title.equals("")) {
+//
+//                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
+//                }
+            }
+        }
+
+        if (DRAW_PATHS) {
+
+            Iterator iter = paths.iterator();
+
+            while (iter.hasNext()) {
+
+                ArrayList path = (ArrayList) iter.next();
+
+                Iterator cell_iter = path.iterator();
+
+                while (cell_iter.hasNext()) {
+
+                    Cell cell = (Cell) cell_iter.next();
+
+                    image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+
+                }
+            }
+        }
+
+
+        // draw string in image:
+
+//        if (DRAW_TEXT_DESCRIPTION) {
+//            Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+//            String s = "width: " + width + " scale: " + scale + " i: " + image_index;
+//            Graphics g = image.getGraphics();
+//            g.setColor(Color.BLUE);
+//            g.setFont(f);
+//            FontMetrics fm = g.getFontMetrics();
+//            int x = image.getWidth() - fm.stringWidth(s) - 5;
+//            int y = fm.getHeight();
+//            g.drawString(s, x, y);
+//            g.dispose();
+//        }
+
+        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
+
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+    }
+
     public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
             throws IOException {
 
@@ -2673,7 +2750,8 @@ public class Main extends JFrame implements MouseWheelListener {
                             if (REMOVE_DIAGONAL_BIAS) {
 
                                 //System.out.println("bias removed");
-                                distance = 1.0;//Math.sqrt(2) - step * iteration;//1.0;
+                                distance = Math.sqrt(2) - step * iteration;
+                                ;//Math.sqrt(2) - step * iteration;//1.0;
                             } else {
                                 //System.out.println("bias not removed");
                                 distance = (double) Math.sqrt(2);
