@@ -86,6 +86,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean HEIGHT_DECAY_ENABLED = false;
 
+    public static double MIN_HEIGHT = Integer.MAX_VALUE;
+    public static double MAX_HEIGHT = Integer.MIN_VALUE;
+
+    public static boolean GENERATE_INTERMEDIATE_RESULTS = true;
+    public static boolean GENERATE_INTERMEDIATE_HEIGHT = true;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -145,7 +151,9 @@ public class Main extends JFrame implements MouseWheelListener {
                     continue;
                 }
 
-                draw(grid, paths, 0, false, iteration_location, width, scale);
+                if (GENERATE_INTERMEDIATE_RESULTS) {
+                    draw(grid, paths, 0, false, iteration_location, width, scale);
+                }
 
                 ArrayList<double[][]> distances_for_paths = null;
                 if (DISTANCE_METRIC.equals("BFS")) {
@@ -177,13 +185,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 paths = result.second;
 
+                // draw final iteration
                 draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
 
                 if (DRAW_DISTANCE_IMAGES) {
                     draw_distances(grid, paths, distances_for_paths, false, width, scale, NR_OF_ITERATIONS, iteration_location);
                 }
 
-                generate_gif(iteration_location);
+                if (GENERATE_INTERMEDIATE_RESULTS) {
+                    generate_gif(iteration_location);
+                }
 
                 write_output_configuration(iteration_location);
 
@@ -196,12 +207,26 @@ public class Main extends JFrame implements MouseWheelListener {
         return null;
     }
 
+    public static void compute_min_and_max_heights(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_ROWS; i++) {
+            for (int j = 0; j < NR_OF_COLUMNS; j++) {
+
+                if (grid[j][i].height < MIN_HEIGHT) {
+                    MIN_HEIGHT = grid[j][i].height;
+                }
+                if (grid[j][i].height > MAX_HEIGHT) {
+                    MAX_HEIGHT = grid[j][i].height;
+                }
+
+            }
+        }
+    }
 
     public static void initialize_parameters() {
 
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
-
 
         TARGET_NAME = "A";//"FL";
         INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
@@ -235,7 +260,11 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 7;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{30};
+        SCALES = new double[]{500};
+
+        GENERATE_INTERMEDIATE_RESULTS = true;
+        GENERATE_INTERMEDIATE_HEIGHT = true;
+
 
     }
 
@@ -298,6 +327,8 @@ public class Main extends JFrame implements MouseWheelListener {
             throws IOException {
 
         adjust_height(grid, distances_for_paths, width, scale, paths, 0, iteration_location);
+        compute_min_and_max_heights(grid);
+
         //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
 
         // Iterate a number of times:
@@ -313,7 +344,9 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
             if (save_outputs == true) {
-                draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+                if (GENERATE_INTERMEDIATE_RESULTS) {
+                    draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+                }
 
                 if (DRAW_DISTANCE_IMAGES) {
                     draw_distances(grid, paths, distances_for_paths, show_intermediate_results, width, scale, i, iteration_location);
@@ -475,6 +508,8 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
             adjust_height(grid, distances_for_paths, width, scale, paths, i, iteration_location);
+            compute_min_and_max_heights(grid);
+
             //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
 
         }
@@ -639,7 +674,11 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        draw_matrix(computed_height, paths, iteration, iteration_location);
+        if (GENERATE_INTERMEDIATE_RESULTS) {
+            if (GENERATE_INTERMEDIATE_HEIGHT) {
+                draw_matrix(computed_height, paths, iteration, iteration_location);
+            }
+        }
 
         if (verbose == true) {
 
@@ -2341,9 +2380,9 @@ public class Main extends JFrame implements MouseWheelListener {
     public static Color getHeatMapColor(float value) {
 
         // TODO: fix, low priority
-        int NUM_COLORS = 4;
+        int NUM_COLORS = 5;
 
-        float color[][] = {{0, 0, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}};
+        float color[][] = {{0, 0, 1}, {0, 1, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}};
         // A static array of 4 colors:  (blue,   green,  yellow,  red) using {r,g,b} for each.
 
         int idx1;        // |-- Our desired color will be between these two indexes in "color".
@@ -2367,7 +2406,7 @@ public class Main extends JFrame implements MouseWheelListener {
         int green = (int) ((color[idx2][1] - color[idx1][1]) * fractBetween + color[idx1][1]);
         int blue = (int) ((color[idx2][2] - color[idx1][2]) * fractBetween + color[idx1][2]);
 
-        Color result_color = new Color(255 * red, 255 * green, 255 * blue);
+        Color result_color = new Color(red, green, blue);
 
         return result_color;
     }
@@ -2379,21 +2418,21 @@ public class Main extends JFrame implements MouseWheelListener {
         BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
                 BufferedImage.TYPE_INT_ARGB);
 
-        double max_height = matrix[0][0];
-        double min_hieght = matrix[0][0];
+        double max_height = MAX_HEIGHT;
+        double min_hieght = MIN_HEIGHT;
 
-        for (int i = 0; i < NR_OF_COLUMNS; i++) {
-
-            for (int j = 0; j < NR_OF_ROWS; j++) {
-
-                if (matrix[i][j] > max_height) {
-                    max_height = matrix[i][j];
-                }
-                if (matrix[i][j] < min_hieght) {
-                    min_hieght = matrix[i][j];
-                }
-            }
-        }
+//        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+//
+//            for (int j = 0; j < NR_OF_ROWS; j++) {
+//
+//                if (matrix[i][j] > max_height) {
+//                    max_height = matrix[i][j];
+//                }
+//                if (matrix[i][j] < min_hieght) {
+//                    min_hieght = matrix[i][j];
+//                }
+//            }
+//        }
 
         System.out.println("min : " + min_hieght + " max: " + max_height);
 
@@ -2402,7 +2441,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 float value = (float) ((matrix[i][j] - min_hieght) / (max_height - min_hieght));
 
-                Color color = getValueBetweenTwoFixedColors(value);
+                Color color;
+                if (GRAY_SCALE) {
+                    color = getValueBetweenTwoFixedColors(value);
+
+                } else {
+                    float minHue = 210f / 255;
+                    float maxHue = 0; //corresponds to red
+                    float hue = value * maxHue + (1 - value) * minHue;
+                    color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                }
 
                 image.setRGB(i, j, color.getRGB());
 
@@ -2488,7 +2536,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 float value = (float) ((grid[i][j].height - min_hieght) / (max_height - min_hieght));
 
-                Color color = getValueBetweenTwoFixedColors(value);
+                Color color;
+                if (GRAY_SCALE) {
+                    color = getValueBetweenTwoFixedColors(value);
+
+                } else {
+                    float minHue = 210f / 255; //corresponds to green
+                    float maxHue = 0; //corresponds to red
+                    float hue = value * maxHue + (1 - value) * minHue;
+                    color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                }
+
 //                Color colorOfYourDataPoint = null;
 //                try {
 //                    colorOfYourDataPoint = new Color((int) value*255, (int)value*255, (int)value*255);
