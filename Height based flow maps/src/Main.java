@@ -695,11 +695,13 @@ public class Main extends JFrame implements MouseWheelListener {
                 if (RESET_HEIGHTS == false) {
 
                     // wtf is this??
-                    if (i == 0) {
-                        i = 1;
-                    }
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
                     double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
                     grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                    computed_height[j][i] = height;
+
                 } else {
                     double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
                     computed_height[j][i] = height;
@@ -2565,7 +2567,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     color = getValueBetweenTwoFixedColors(value);
 
                 } else {
-                    float minHue = 210f / 255; //corresponds to green
+                    float minHue = 210f/255;//210f / 255; //corresponds to green
                     float maxHue = 0; //corresponds to red
                     float hue = value * maxHue + (1 - value) * minHue;
                     color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
