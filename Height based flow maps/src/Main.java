@@ -92,6 +92,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static boolean GENERATE_INTERMEDIATE_RESULTS = true;
     public static boolean GENERATE_INTERMEDIATE_HEIGHT = true;
 
+    public static boolean EXPERIMENTAL_MODE = false;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -118,6 +120,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\"));
 
                 dir.mkdir();
+                write_output_configuration(iteration_location);
 
                 Cell[][] grid = initialize_grid(NR_OF_ROWS, NR_OF_COLUMNS);
 
@@ -141,11 +144,19 @@ public class Main extends JFrame implements MouseWheelListener {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
                     initialize_grid_height_Euclidean_dist_squared(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
+                    initialize_grid_height_to_edge(grid);
                 }
 
                 compute_flow(grid, 0);
 
-                ArrayList<ArrayList<Cell>> paths = compute_paths(points_list, grid);
+                ArrayList<ArrayList<Cell>> paths;
+
+                if (EXPERIMENTAL_MODE) {
+                    paths = compute_paths_to_frame_edge(points_list, grid);
+                } else {
+                    paths = compute_paths(points_list, grid);
+                }
 
                 if (paths == null) {
                     continue;
@@ -196,10 +207,21 @@ public class Main extends JFrame implements MouseWheelListener {
                     generate_gif(iteration_location);
                 }
 
-                write_output_configuration(iteration_location);
 
             }
         }
+    }
+
+    public static void initialize_grid_height_to_edge(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                grid[j][i].height = NR_OF_COLUMNS - j;
+
+            }
+        }
+
     }
 
     public static Cell[][] initialize_obstacles() {
@@ -228,13 +250,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -245,10 +267,11 @@ public class Main extends JFrame implements MouseWheelListener {
         ARC_RADIUS = 200;
 
         BASE_HEIGHT_TYPE = "EUCLID";
-        //BASE_HEIGHT_TYPE = "default";
+        BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
 
         DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
@@ -257,14 +280,15 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 7;
+        NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{500};
+        WIDTHS = new double[]{10};
+        SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
+        EXPERIMENTAL_MODE = true;
 
     }
 
@@ -337,7 +361,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
             compute_flow(grid, i);
 
-            paths = compute_paths(points_list, grid);
+            if (EXPERIMENTAL_MODE) {
+                paths = compute_paths_to_frame_edge(points_list, grid);
+            } else {
+                paths = compute_paths(points_list, grid);
+            }
 
             if (paths == null) {
                 return null;
@@ -504,6 +532,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
                     initialize_grid_height_Euclidean_dist_squared(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
+                    initialize_grid_height_to_edge(grid);
                 }
             }
 
@@ -515,7 +545,12 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         compute_flow(grid, NR_OF_ITERATIONS);
-        paths = compute_paths(points_list, grid);
+
+        if (EXPERIMENTAL_MODE) {
+            paths = compute_paths_to_frame_edge(points_list, grid);
+        } else {
+            paths = compute_paths(points_list, grid);
+        }
 
         if (paths == null) {
             return null;
@@ -676,7 +711,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         if (GENERATE_INTERMEDIATE_RESULTS) {
             if (GENERATE_INTERMEDIATE_HEIGHT) {
-                draw_matrix(computed_height, paths, iteration, iteration_location);
+                draw_matrix(computed_height, paths, iteration, iteration_location, false);
+                draw_matrix(computed_height, paths, iteration, iteration_location, true);
+
             }
         }
 
@@ -2411,28 +2448,33 @@ public class Main extends JFrame implements MouseWheelListener {
         return result_color;
     }
 
-    public static void draw_matrix(double[][] matrix, ArrayList paths, int image_index, String iteration_location) throws IOException {
+    public static void draw_matrix(double[][] matrix, ArrayList paths, int image_index, String iteration_location, boolean relative_to_total) throws IOException {
         jframe = new JFrame("panel");
         jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
 
         BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
                 BufferedImage.TYPE_INT_ARGB);
 
-        double max_height = MAX_HEIGHT;
-        double min_hieght = MIN_HEIGHT;
+        double max_height = matrix[0][0];
+        double min_hieght = matrix[0][0];
 
-//        for (int i = 0; i < NR_OF_COLUMNS; i++) {
-//
-//            for (int j = 0; j < NR_OF_ROWS; j++) {
-//
-//                if (matrix[i][j] > max_height) {
-//                    max_height = matrix[i][j];
-//                }
-//                if (matrix[i][j] < min_hieght) {
-//                    min_hieght = matrix[i][j];
-//                }
-//            }
-//        }
+        if (relative_to_total) {
+            max_height = MAX_HEIGHT;
+            min_hieght = MIN_HEIGHT;
+        } else {
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+                for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                    if (matrix[i][j] > max_height) {
+                        max_height = matrix[i][j];
+                    }
+                    if (matrix[i][j] < min_hieght) {
+                        min_hieght = matrix[i][j];
+                    }
+                }
+            }
+        }
 
         System.out.println("min : " + min_hieght + " max: " + max_height);
 
@@ -2454,52 +2496,34 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 image.setRGB(i, j, color.getRGB());
 
-//                if (!grid[i][j].title.equals("")) {
+            }
+        }
+
+//        if (DRAW_PATHS) {
 //
-//                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
+//            Iterator iter = paths.iterator();
+//
+//            while (iter.hasNext()) {
+//
+//                ArrayList path = (ArrayList) iter.next();
+//
+//                Iterator cell_iter = path.iterator();
+//
+//                while (cell_iter.hasNext()) {
+//
+//                    Cell cell = (Cell) cell_iter.next();
+//
+//                    image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+//
 //                }
-            }
-        }
-
-        if (DRAW_PATHS) {
-
-            Iterator iter = paths.iterator();
-
-            while (iter.hasNext()) {
-
-                ArrayList path = (ArrayList) iter.next();
-
-                Iterator cell_iter = path.iterator();
-
-                while (cell_iter.hasNext()) {
-
-                    Cell cell = (Cell) cell_iter.next();
-
-                    image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
-
-                }
-            }
-        }
-
-
-        // draw string in image:
-
-//        if (DRAW_TEXT_DESCRIPTION) {
-//            Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-//            String s = "width: " + width + " scale: " + scale + " i: " + image_index;
-//            Graphics g = image.getGraphics();
-//            g.setColor(Color.BLUE);
-//            g.setFont(f);
-//            FontMetrics fm = g.getFontMetrics();
-//            int x = image.getWidth() - fm.stringWidth(s) - 5;
-//            int y = fm.getHeight();
-//            g.drawString(s, x, y);
-//            g.dispose();
+//            }
 //        }
-
-        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
-
-        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_" + image_index + ".png"));
+        File file;
+        if (relative_to_total) {
+            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_total_" + image_index + ".png"));
+        } else {
+            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_local_" + image_index + ".png"));
+        }
         file.mkdirs();
         ImageIO.write(image, "png", file);
     }
@@ -2651,6 +2675,72 @@ public class Main extends JFrame implements MouseWheelListener {
         // All drawings go here
     }
 
+    public static ArrayList compute_paths_to_frame_edge(ArrayList points_list, Cell[][] grid) {
+        System.out.println("computing paths");
+
+        Iterator it = points_list.iterator();
+
+        ArrayList<ArrayList<Cell>> paths = new ArrayList();
+
+        while (it.hasNext()) {
+
+            Point point = (Point) it.next();
+
+            if (point.name.equals(TARGET_NAME)) {
+                continue;
+            }
+
+            Cell grid_cell = grid[point.grid_x][point.grid_y];
+
+            Cell current_cell = grid_cell;
+
+            ArrayList<Cell> path = new ArrayList();
+
+            path.add(current_cell);
+
+            int counter = 0;
+
+            while (!(current_cell.title.equals("right_edge"))) {
+
+                if (counter > 4 * (NR_OF_COLUMNS + NR_OF_ROWS)) {
+                    System.out.println("something went wrong");
+                    return null;
+                }
+
+                int node_x = (int) current_cell.cell_x;
+                int node_y = (int) current_cell.cell_y;
+
+                double flow = current_cell.flow_direction;
+
+                if (flow == 1) {
+                    current_cell = grid[node_x + 1][node_y];
+                } else if (flow == 2) {
+                    current_cell = grid[node_x + 1][node_y + 1];
+                } else if (flow == 4) {
+                    current_cell = grid[node_x][node_y + 1];
+                } else if (flow == 8) {
+                    current_cell = grid[node_x - 1][node_y + 1];
+                } else if (flow == 16) {
+                    current_cell = grid[node_x - 1][node_y];
+                } else if (flow == 32) {
+                    current_cell = grid[node_x - 1][node_y - 1];
+                } else if (flow == 64) {
+                    current_cell = grid[node_x][node_y - 1];
+                } else if (flow == 128) {
+                    current_cell = grid[node_x + 1][node_y - 1];
+                }
+
+                path.add(current_cell);
+
+                counter++;
+
+            }
+
+            paths.add(path);
+
+        }
+        return paths;
+    }
 
     public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) {
 
@@ -3008,6 +3098,16 @@ public class Main extends JFrame implements MouseWheelListener {
                 cell.title = "";
                 grid[i][j] = cell;
                 cell.is_obstacle = false;
+
+                // i = columns
+                // j = rows
+                if (i == nr_of_rows - 1 || j == nr_of_columns - 1 || i == 0 || j == 0) {
+                    cell.title = "edge";
+                }
+
+                if (i == nr_of_rows - 1) {
+                    cell.title = "right_edge";
+                }
 
             }
         }
