@@ -211,8 +211,14 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    generate_gif(iteration_location);
+                    generate_gif(iteration_location, "global_height");
                 }
+
+                if (GENERATE_INTERMEDIATE_HEIGHT) {
+                    generate_gif(iteration_location, "update_local_height");
+                    generate_gif(iteration_location, "update_global_height");
+                }
+
                 log_file_writer.close();
 
 
@@ -264,7 +270,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -288,7 +294,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 3;
 
         WIDTHS = new double[]{10};
         SCALES = new double[]{100};
@@ -318,26 +324,37 @@ public class Main extends JFrame implements MouseWheelListener {
         fileWriter.close();
     }
 
-    public static void generate_gif(String iteration_location) throws IOException {
+    public static void generate_gif(String iteration_location, String type) throws IOException {
 
 //        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/image_" + image_index + ".png"));
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\"));
 
-        File[] files = dir.listFiles((dir1, name) -> (name.endsWith(".png") && name.startsWith("height")));
+        String output_name = "";
+        if (type.equals("global_height")) {
+            output_name = "global_height";
+        } else if (type.equals("update_local_height")) {
+            output_name = "update_local_height";
+        } else if (type.equals("update_global_height")) {
+            output_name = "update_global_height";
+        }
 
-        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\height_0.png")));
+        String finalOutput_name1 = output_name;
+        File[] files = dir.listFiles((dir1, name) -> (name.endsWith(".png") && name.startsWith(finalOutput_name1)));
+
+        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\" + output_name+ "_0" +".png")));
         ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location +
-                "\\gif_" + HEIGHT_FUNCTION_WIDTH + "_" + HEIGHT_FUNCTION_SCALE + ".gif")));
+                "\\gif_" + output_name + ".gif")));
 
         GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), GIF_DELAY, true);
         writer.writeToSequence(first);
 
 
+        String finalOutput_name = output_name;
         Arrays.sort(files, new Comparator<File>() {
             @Override
             public int compare(File f1, File f2) {
-                String s1 = f1.getName().substring(7, f1.getName().indexOf("."));
-                String s2 = f2.getName().substring(7, f2.getName().indexOf("."));
+                String s1 = f1.getName().substring(finalOutput_name.length() + 1, f1.getName().indexOf("."));
+                String s2 = f2.getName().substring(finalOutput_name.length() + 1, f2.getName().indexOf("."));
                 return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
             }
         });
@@ -2546,9 +2563,9 @@ public class Main extends JFrame implements MouseWheelListener {
 //        }
         File file;
         if (relative_to_total) {
-            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_global_" + image_index + ".png"));
+            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/update_global_height_" + image_index + ".png"));
         } else {
-            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_local_" + image_index + ".png"));
+            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/update_local_height_" + image_index + ".png"));
         }
         file.mkdirs();
         ImageIO.write(image, "png", file);
@@ -2682,7 +2699,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
         //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
 
-        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/height_" + image_index + ".png"));
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/global_height_" + image_index + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
 
