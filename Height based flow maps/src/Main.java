@@ -94,6 +94,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean EXPERIMENTAL_MODE = false;
 
+    public static FileWriter log_file_writer;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -105,6 +107,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
         dir.mkdir();
+
+
 
         for (int i = 0; i < WIDTHS.length; i++) {
 
@@ -120,6 +124,9 @@ public class Main extends JFrame implements MouseWheelListener {
                 dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\"));
 
                 dir.mkdir();
+
+                log_file_writer = new FileWriter(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location) + "\\log.txt");
+
                 write_output_configuration(iteration_location);
 
                 Cell[][] grid = initialize_grid(NR_OF_ROWS, NR_OF_COLUMNS);
@@ -206,6 +213,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 if (GENERATE_INTERMEDIATE_RESULTS) {
                     generate_gif(iteration_location);
                 }
+                log_file_writer.close();
 
 
             }
@@ -250,13 +258,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -267,11 +275,11 @@ public class Main extends JFrame implements MouseWheelListener {
         ARC_RADIUS = 200;
 
         BASE_HEIGHT_TYPE = "EUCLID";
-        BASE_HEIGHT_TYPE = "default";
+        //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED";
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
 
         DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
@@ -280,7 +288,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 20;
+        NR_OF_ITERATIONS = 10;
 
         WIDTHS = new double[]{10};
         SCALES = new double[]{100};
@@ -288,7 +296,7 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = true;
+        EXPERIMENTAL_MODE = false;
 
     }
 
@@ -358,6 +366,7 @@ public class Main extends JFrame implements MouseWheelListener {
         // Iterate a number of times:
         for (int i = 1; i < NR_OF_ITERATIONS; i++) {
             System.out.println("iteration : " + i);
+            log_file_writer.write("iteration : " + i + "\n");
 
             compute_flow(grid, i);
 
@@ -396,6 +405,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 if (verbose == true) {
 
                     System.out.println("Distances 1");
+                    log_file_writer.write("Distances 1" + "\n");
+
                     for (int c = 0; c < NR_OF_COLUMNS; c++) {
                         for (int r = 0; r < NR_OF_ROWS; r++) {
 
@@ -520,6 +531,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
             distances_for_paths = transposed_dist;
             System.out.println("That took " + (endTime - startTime) + " milliseconds");
+            log_file_writer.write("That took " + (endTime - startTime) + " milliseconds" + "\n");
 
             if (RESET_HEIGHTS == true) {
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
@@ -568,8 +580,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void adjust_height_min_distances(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths) {
+    public static void adjust_height_min_distances(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths) throws IOException {
         System.out.println("adjusting height");
+        log_file_writer.write("adjusting height" + "\n");
 
         double[][] dist = (double[][]) distances_for_paths.get(0);
 
@@ -604,8 +617,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 double new_height = gaussian((double) min_distances[cell.cell_y][cell.cell_x], 0, HEIGHT_FUNCTION_WIDTH);
 
-                double height = Math.round((-HEIGHT_FUNCTION_SCALE * new_height) * 1000.0) / 1000.0;
-                grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                double height = ((-HEIGHT_FUNCTION_SCALE * new_height));
+                grid[j][i].height = grid[j][i].height + ((height));
 
             }
         }
@@ -615,6 +628,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths, int iteration, String iteration_location) throws IOException {
 
         System.out.println("adjusting height");
+        log_file_writer.write("adjusting height" + "\n");
 
         boolean verbose = false;
 
@@ -698,15 +712,15 @@ public class Main extends JFrame implements MouseWheelListener {
 //                    if (i == 0) {
 //                        i = 1;
 //                    }
-                    double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
-                    grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                    double height =((-HEIGHT_FUNCTION_SCALE * sum) ) ;
+                    grid[j][i].height = grid[j][i].height +((height) ) ;
                     computed_height[j][i] = height;
 
                 } else {
-                    double height = Math.round((-HEIGHT_FUNCTION_SCALE * sum) * 1000.0) / 1000.0;
+                    double height =((-HEIGHT_FUNCTION_SCALE * sum) ) ;
                     computed_height[j][i] = height;
 
-                    grid[j][i].height = grid[j][i].height + Math.round((height) * 1000.0) / 1000.0;
+                    grid[j][i].height = grid[j][i].height + ((height) );
                 }
             }
         }
@@ -912,9 +926,10 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static ArrayList compute_arc_length(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_arc_length(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing arc length distance");
+        log_file_writer.write("computing arc length distance" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1031,9 +1046,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static ArrayList compute_angular_with_Dijkstra(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_angular_with_Dijkstra(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance with arc length ");
+        log_file_writer.write("computing angular distance with arc length " + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1229,9 +1245,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static ArrayList compute_anguar_with_arc_length(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_anguar_with_arc_length(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance with arc length ");
+        log_file_writer.write("computing angular distance with arc length " + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1426,9 +1443,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static ArrayList compute_angular_distance_with_intersection(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_angular_distance_with_intersection(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular intersections distance");
+        log_file_writer.write("computing angular intersections distance"+ "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1597,9 +1615,10 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
-    public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("Computing Dijkstra");
+        log_file_writer.write("Computing Dijkstra"+ "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1682,7 +1701,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             // Insert cell with updated distance
-                            distances[adj_x][adj_y] = Math.round((distances[cell.cell_x][cell.cell_y] + weight) * 1000.0) / 1000.0;
+                            distances[adj_x][adj_y] = ((distances[cell.cell_x][cell.cell_y] + weight) ) ;
 
                             grid[adj_x][adj_y].distance = distances[adj_x][adj_y];
                             Q.add(grid[adj_x][adj_y]); //new Cell(rows, cols, dist[rows][cols]));
@@ -1714,9 +1733,10 @@ public class Main extends JFrame implements MouseWheelListener {
         return transposedMatrix;
     }
 
-    public static ArrayList compute_angular_distance_precise(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_angular_distance_precise(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance");
+        log_file_writer.write("computing angular distance"+ "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1838,9 +1858,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static ArrayList compute_angular_distance(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_angular_distance(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance");
+        log_file_writer.write("computing angular distance"+ "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -2041,9 +2062,10 @@ public class Main extends JFrame implements MouseWheelListener {
         return distances_for_paths;
     }
 
-    public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) {
+    public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing bfs");
+        log_file_writer.write("computing bfs"+ "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -2301,7 +2323,8 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        System.out.println("min : " + min_dist + " max: " + max_dist);
+        System.out.println("min dist: " + min_dist + " max dist : " + max_dist);
+        log_file_writer.write("min dist: " + min_dist + " max dist : " + max_dist+ "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -2478,7 +2501,8 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        System.out.println("min : " + min_hieght + " max: " + max_height);
+        System.out.println("min height update : " + min_hieght + " max height update : " + max_height);
+        log_file_writer.write("min height update : " + min_hieght + " max height update : "+ max_height + "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -2522,7 +2546,7 @@ public class Main extends JFrame implements MouseWheelListener {
 //        }
         File file;
         if (relative_to_total) {
-            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_total_" + image_index + ".png"));
+            file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_global_" + image_index + ".png"));
         } else {
             file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/intermediate_height_local_" + image_index + ".png"));
         }
@@ -2555,7 +2579,8 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        System.out.println("min : " + min_hieght + " max: " + max_height);
+        System.out.println("min height : " + min_hieght + " max height : " + max_height);
+        log_file_writer.write("min height : " + min_hieght + " max height : " + max_height + "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -2677,8 +2702,9 @@ public class Main extends JFrame implements MouseWheelListener {
         // All drawings go here
     }
 
-    public static ArrayList compute_paths_to_frame_edge(ArrayList points_list, Cell[][] grid) {
-        System.out.println("computing paths");
+    public static ArrayList compute_paths_to_frame_edge(ArrayList points_list, Cell[][] grid) throws IOException {
+        System.out.println("computing paths from fram to edge");
+        log_file_writer.write("computing paths from fram to edge" + "\n");
 
         Iterator it = points_list.iterator();
 
@@ -2706,6 +2732,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (counter > 4 * (NR_OF_COLUMNS + NR_OF_ROWS)) {
                     System.out.println("something went wrong");
+                    log_file_writer.write("something went wrong" + "\n");
                     return null;
                 }
 
@@ -2744,9 +2771,10 @@ public class Main extends JFrame implements MouseWheelListener {
         return paths;
     }
 
-    public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) {
+    public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) throws IOException {
 
         System.out.println("computing paths");
+        log_file_writer.write("computing paths" + "\n");
 
         Iterator it = points_list.iterator();
 
@@ -2774,6 +2802,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (counter > 4 * (NR_OF_COLUMNS + NR_OF_ROWS)) {
                     System.out.println("something went wrong");
+                    log_file_writer.write("something went wrong" + "\n");
+
                     return null;
                 }
 
@@ -2812,8 +2842,10 @@ public class Main extends JFrame implements MouseWheelListener {
         return paths;
     }
 
-    public static void compute_flow(Cell[][] grid, int iteration) {
+    public static void compute_flow(Cell[][] grid, int iteration) throws IOException {
         System.out.println("computing flow");
+        log_file_writer.write("computing flow" + "\n");
+
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
 
             for (int j = 0; j < NR_OF_ROWS; j++) {
