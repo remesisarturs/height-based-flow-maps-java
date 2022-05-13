@@ -289,8 +289,8 @@ public class Main extends JFrame implements MouseWheelListener {
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
-        DRAW_PATHS = true;
-        GRAY_SCALE = false;
+        DRAW_PATHS = false;
+        GRAY_SCALE = true;
         DRAW_DISTANCE_IMAGES = false;
 
         ARC_RADIUS = 200;
@@ -299,8 +299,8 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
-        BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
 
@@ -313,7 +313,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{90};
+        WIDTHS = new double[]{20};
         SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
@@ -358,7 +358,7 @@ public class Main extends JFrame implements MouseWheelListener {
         String finalOutput_name1 = output_name;
         File[] files = dir.listFiles((dir1, name) -> (name.endsWith(".png") && name.startsWith(finalOutput_name1)));
 
-        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\" + output_name+ "_0" +".png")));
+        BufferedImage first = ImageIO.read(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location + "\\" + output_name + "_0" + ".png")));
         ImageOutputStream output = new FileImageOutputStream(new File(currentWorkingPath.concat("\\" + storage_location_name + "\\" + iteration_location +
                 "\\gif_" + output_name + ".gif")));
 
@@ -748,21 +748,22 @@ public class Main extends JFrame implements MouseWheelListener {
 //                    if (i == 0) {
 //                        i = 1;
 //                    }
-                    double height =((-HEIGHT_FUNCTION_SCALE * sum) ) ;
-                    grid[j][i].height = grid[j][i].height +((height) ) ;
+                    double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                    grid[j][i].height = grid[j][i].height + ((height));
                     computed_height[j][i] = height;
 
                 } else {
-                    double height =((-HEIGHT_FUNCTION_SCALE * sum) ) ;
+                    double height = ((-HEIGHT_FUNCTION_SCALE * sum));
                     computed_height[j][i] = height;
 
-                    grid[j][i].height = grid[j][i].height + ((height) );
+                    grid[j][i].height = grid[j][i].height + ((height));
                 }
             }
         }
 
         if (GENERATE_INTERMEDIATE_RESULTS) {
             if (GENERATE_INTERMEDIATE_HEIGHT) {
+                compute_min_and_max_heights(grid);
                 draw_matrix(computed_height, paths, iteration, iteration_location, false);
                 draw_matrix(computed_height, paths, iteration, iteration_location, true);
 
@@ -1482,7 +1483,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static ArrayList compute_angular_distance_with_intersection(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular intersections distance");
-        log_file_writer.write("computing angular intersections distance"+ "\n");
+        log_file_writer.write("computing angular intersections distance" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1654,7 +1655,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("Computing Dijkstra");
-        log_file_writer.write("Computing Dijkstra"+ "\n");
+        log_file_writer.write("Computing Dijkstra" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1737,7 +1738,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             // Insert cell with updated distance
-                            distances[adj_x][adj_y] = ((distances[cell.cell_x][cell.cell_y] + weight) ) ;
+                            distances[adj_x][adj_y] = ((distances[cell.cell_x][cell.cell_y] + weight));
 
                             grid[adj_x][adj_y].distance = distances[adj_x][adj_y];
                             Q.add(grid[adj_x][adj_y]); //new Cell(rows, cols, dist[rows][cols]));
@@ -1772,7 +1773,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static ArrayList compute_angular_distance_precise(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance");
-        log_file_writer.write("computing angular distance"+ "\n");
+        log_file_writer.write("computing angular distance" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -1897,7 +1898,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static ArrayList compute_angular_distance(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance");
-        log_file_writer.write("computing angular distance"+ "\n");
+        log_file_writer.write("computing angular distance" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -2101,7 +2102,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static ArrayList compute_bfs(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing bfs");
-        log_file_writer.write("computing bfs"+ "\n");
+        log_file_writer.write("computing bfs" + "\n");
 
         Iterator path_iterator = paths.iterator();
 
@@ -2360,7 +2361,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         System.out.println("min dist: " + min_dist + " max dist : " + max_dist);
-        log_file_writer.write("min dist: " + min_dist + " max dist : " + max_dist+ "\n");
+        log_file_writer.write("min dist: " + min_dist + " max dist : " + max_dist + "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -2470,7 +2471,12 @@ public class Main extends JFrame implements MouseWheelListener {
         int green = (int) ((float) (bG - aG) * value + aG);      // Evaluates as 0.
         int blue = (int) ((float) (bB - aB) * value + aB);      // Evaluates as 255*value + 0.
 
-        Color color = new Color(red, green, blue);
+        Color color = null;
+        try {
+            color = new Color(red, green, blue);
+        } catch (Exception e) {
+            System.out.println();
+        }
 
         return color;
     }
@@ -2522,6 +2528,21 @@ public class Main extends JFrame implements MouseWheelListener {
         if (relative_to_total) {
             max_height = MAX_HEIGHT;
             min_hieght = MIN_HEIGHT;
+
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+                for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                    if (matrix[i][j] < min_hieght) {
+                        min_hieght = matrix[i][j];
+                    }
+
+                    if (matrix[i][j] > max_height) {
+                        max_height = matrix[i][j];
+                    }
+
+                }
+            }
+
         } else {
             for (int i = 0; i < NR_OF_COLUMNS; i++) {
 
@@ -2538,7 +2559,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         System.out.println("min height update : " + min_hieght + " max height update : " + max_height);
-        log_file_writer.write("min height update : " + min_hieght + " max height update : "+ max_height + "\n");
+        log_file_writer.write("min height update : " + min_hieght + " max height update : " + max_height + "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -2553,10 +2574,20 @@ public class Main extends JFrame implements MouseWheelListener {
                     float minHue = 210f / 255;
                     float maxHue = 0; //corresponds to red
                     float hue = value * maxHue + (1 - value) * minHue;
+
+                    if (hue < 0 || value < 0) {
+                        System.out.println();
+                    }
+
                     color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
                 }
 
-                image.setRGB(i, j, color.getRGB());
+                try {
+                    image.setRGB(i, j, color.getRGB());
+
+                } catch (Exception e) {
+                    System.out.println();
+                }
 
             }
         }
@@ -2628,7 +2659,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     color = getValueBetweenTwoFixedColors(value);
 
                 } else {
-                    float minHue = 210f/255;//210f / 255; //corresponds to green
+                    float minHue = 210f / 255;//210f / 255; //corresponds to green
                     float maxHue = 0; //corresponds to red
                     float hue = value * maxHue + (1 - value) * minHue;
                     color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
