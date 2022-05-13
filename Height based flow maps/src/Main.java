@@ -108,8 +108,6 @@ public class Main extends JFrame implements MouseWheelListener {
         File dir = new File(currentWorkingPath.concat("\\" + storage_location_name + "\\"));
         dir.mkdir();
 
-
-
         for (int i = 0; i < WIDTHS.length; i++) {
 
             double width = WIDTHS[i];
@@ -143,16 +141,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
-                } else if (BASE_HEIGHT_TYPE.equals("default")) {
-                    initialize_grid_height(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
+                    initialize_grid_height_Euclidean_squared(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                     initialize_grid_height_chebyshev_distance(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
-                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
-                    initialize_grid_height_Euclidean_dist_squared(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
                     initialize_grid_height_to_edge(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQUARED")) {
+                    initialize_grid_height_to_edge_squared(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQRT")) {
+                    initialize_grid_height_to_edge_sqrt(grid);
                 }
 
                 compute_flow(grid, 0);
@@ -230,12 +230,27 @@ public class Main extends JFrame implements MouseWheelListener {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
-
                 grid[j][i].height = NR_OF_COLUMNS - j;
-
             }
         }
+    }
 
+    public static void initialize_grid_height_to_edge_sqrt(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+                grid[j][i].height = Math.sqrt(NR_OF_COLUMNS - j);
+            }
+        }
+    }
+
+    public static void initialize_grid_height_to_edge_squared(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+                grid[j][i].height = Math.pow(NR_OF_COLUMNS - j, 2);
+            }
+        }
     }
 
     public static Cell[][] initialize_obstacles() {
@@ -264,13 +279,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -281,11 +296,13 @@ public class Main extends JFrame implements MouseWheelListener {
         ARC_RADIUS = 200;
 
         BASE_HEIGHT_TYPE = "EUCLID";
-        //BASE_HEIGHT_TYPE = "default";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
-        //BASE_HEIGHT_TYPE = "EUCLID_SQUARED";
+        //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
         //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
+        //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
+
 
         DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BFS";
@@ -294,15 +311,15 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 3;
+        NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{10};
+        WIDTHS = new double[]{90};
         SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = false;
+        EXPERIMENTAL_MODE = true;
 
     }
 
@@ -553,16 +570,18 @@ public class Main extends JFrame implements MouseWheelListener {
             if (RESET_HEIGHTS == true) {
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
-                } else if (BASE_HEIGHT_TYPE.equals("default")) {
-                    initialize_grid_height(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
+                    initialize_grid_height_Euclidean_squared(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                     initialize_grid_height_chebyshev_distance(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
-                } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
-                    initialize_grid_height_Euclidean_dist_squared(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
                     initialize_grid_height_to_edge(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQUARED")) {
+                    initialize_grid_height_to_edge_squared(grid);
+                } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQRT")) {
+                    initialize_grid_height_to_edge_sqrt(grid);
                 }
             }
 
@@ -800,7 +819,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void initialize_grid_height(Cell[][] grid) {
+    public static void initialize_grid_height_Euclidean_squared(Cell[][] grid) {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
