@@ -73,8 +73,6 @@ public class Main extends JFrame implements MouseWheelListener {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
 
-    public static boolean GRAY_SCALE = false;
-
     public static boolean DRAW_TEXT_DESCRIPTION = true;
 
     public static boolean DRAW_PATHS = true;
@@ -95,6 +93,9 @@ public class Main extends JFrame implements MouseWheelListener {
     public static boolean EXPERIMENTAL_MODE = false;
 
     public static FileWriter log_file_writer;
+
+    public static String COLOR_MODE = "";
+
 
     public static void main(String[] args) throws IOException {
 
@@ -276,30 +277,34 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 500;
-        NR_OF_COLUMNS = 500;
+        NR_OF_ROWS = 100;
+        NR_OF_COLUMNS = 100;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
-        DRAW_PATHS = false;
-        GRAY_SCALE = true;
+        DRAW_PATHS = true;
+
+        //COLOR_MODE = "GRAY_SCALE";
+        COLOR_MODE = "MULTIPLE_COLORS";
+        //COLOR_MODE = "RED_BLUE";
+
         DRAW_DISTANCE_IMAGES = false;
 
-        ARC_RADIUS = 200;
+        ARC_RADIUS = 20;
 
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -309,17 +314,17 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
-        //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
+        DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 3;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{100};
+        WIDTHS = new double[]{10};
+        SCALES = new double[]{2000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = true;
+        EXPERIMENTAL_MODE = false;
 
     }
 
@@ -1370,6 +1375,8 @@ public class Main extends JFrame implements MouseWheelListener {
                             double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
                                     (2.0 * radius * distance_from_source_to_intersection));
 
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
                             distances[i][j] = angle;
 
                         } else {
@@ -1379,6 +1386,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                             double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
                                     (2.0 * radius * radius));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
 
                             distances[i][j] = angle;
 
@@ -1446,7 +1455,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                             double arc_length = 2 * Math.PI * radius * (angle / 360);
 
-                            distances[i][j] = arc_length / radius;
+                            distances[i][j] = arc_length / ARC_RADIUS;
 
                         } else {
 
@@ -1458,7 +1467,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                             double arc_length = 2 * Math.PI * radius * (angle / 360);
 
-                            distances[i][j] = arc_length / radius;
+                            distances[i][j] = arc_length / ARC_RADIUS;
                         }
                     }
                 }
@@ -1474,7 +1483,30 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
-            distances_for_paths.add(transposeMatrix(distances));
+            double[][] transposed_matrix = transposeMatrix(distances);
+
+            distances_for_paths.add(transposed_matrix);
+
+//            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+//                for (int j = 0; j < NR_OF_ROWS; j++) {
+//
+//                    Cell cell = grid[i][j];
+//
+//                    double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
+//                            Math.pow(source_cell.cell_y - cell.cell_y, 2)));
+//
+//                    if (radius < ARC_RADIUS) {
+//                        //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
+//
+//                        System.out.print(" " + ANSI_YELLOW + distances[i][j] + ANSI_RESET);
+//                    } else {
+//                        System.out.print(" " + distances[i][j]);
+//                    }
+//
+//                }
+//                System.out.println();
+//            }
+
         }
         return distances_for_paths;
 
@@ -2449,7 +2481,7 @@ public class Main extends JFrame implements MouseWheelListener {
         int bG;
         int bB;
 
-        if (GRAY_SCALE) {
+        if (COLOR_MODE == "GRAY_SCALE") {
             aR = 0;
             aG = 0;
             aB = 0;
@@ -2566,20 +2598,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 float value = (float) ((matrix[i][j] - min_hieght) / (max_height - min_hieght));
 
-                Color color;
-                if (GRAY_SCALE) {
+                Color color = null;
+                if (COLOR_MODE == "GRAY_SCALE") {
                     color = getValueBetweenTwoFixedColors(value);
 
-                } else {
-                    float minHue = 210f / 255;
+                } else if (COLOR_MODE == "MULTIPLE_COLORS") {
+                    float minHue = 210f / 255;//210f / 255; //corresponds to green
                     float maxHue = 0; //corresponds to red
                     float hue = value * maxHue + (1 - value) * minHue;
-
-                    if (hue < 0 || value < 0) {
-                        System.out.println();
-                    }
-
                     color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                } else if (COLOR_MODE == "RED_BLUE") {
+                    color = getValueBetweenTwoFixedColors(value);
                 }
 
                 try {
@@ -2654,15 +2683,17 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 float value = (float) ((grid[i][j].height - min_hieght) / (max_height - min_hieght));
 
-                Color color;
-                if (GRAY_SCALE) {
+                Color color = null;
+                if (COLOR_MODE == "GRAY_SCALE") {
                     color = getValueBetweenTwoFixedColors(value);
 
-                } else {
+                } else if (COLOR_MODE == "MULTIPLE_COLORS") {
                     float minHue = 210f / 255;//210f / 255; //corresponds to green
                     float maxHue = 0; //corresponds to red
                     float hue = value * maxHue + (1 - value) * minHue;
                     color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                } else if (COLOR_MODE == "RED_BLUE") {
+                    color = getValueBetweenTwoFixedColors(value);
                 }
 
 //                Color colorOfYourDataPoint = null;
