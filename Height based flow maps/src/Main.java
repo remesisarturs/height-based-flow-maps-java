@@ -277,22 +277,22 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 100;
-        NR_OF_COLUMNS = 100;
+        NR_OF_ROWS = 500;
+        NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
         DRAW_PATHS = true;
 
-        //COLOR_MODE = "GRAY_SCALE";
+        COLOR_MODE = "GRAY_SCALE";
         COLOR_MODE = "MULTIPLE_COLORS";
         //COLOR_MODE = "RED_BLUE";
 
@@ -305,7 +305,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
         //BASE_HEIGHT_TYPE = "TO_EDGE";
-        //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
+        BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
 
@@ -314,17 +314,17 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
-        DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
+        //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 3;
+        NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{10};
-        SCALES = new double[]{2000};
+        WIDTHS = new double[]{40};
+        SCALES = new double[]{500000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = false;
+        EXPERIMENTAL_MODE = true;
 
     }
 
@@ -995,79 +995,172 @@ public class Main extends JFrame implements MouseWheelListener {
                     double radius = (Math.sqrt(Math.pow(source_cell.cell_x - cell.cell_x, 2) +
                             Math.pow(source_cell.cell_y - cell.cell_y, 2)));
 
-                    int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+                    if (radius > ARC_RADIUS) {
 
-                    Cell intersection_cell = (Cell) path.get(index_of_cell);
+                        // Binary search finds the first cell for which the distance to this cell is >= than radius
 
-                    double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
-                            Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
+//                        if (i == 389 && j == 0) {
+//                            System.out.println();
+//                        }
 
-                    // TODO: check index out of bounds
-                    if (index_of_cell + 1 < path.size() && index_of_cell - 1 > 0) {
+                        int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
 
-                        Cell next_cell = (Cell) path.get(index_of_cell + 1);
-                        Cell previous_cell = (Cell) path.get(index_of_cell - 1);
+                        Cell intersection_cell = null;
+                        try {
+                            intersection_cell = (Cell) path.get(index_of_cell);
 
-                        double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
-                                Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
-
-                        double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
-                                Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
-
-                        Tuple<Double, Double> intersection_point = null;
-                        // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
-                        if (radius > dist_2 && radius < dist) {
-
-                            // here compute the intersection point
-
-                            intersection_point = compute_intersection_of_circle_and_line_segment(
-                                    source_x, source_y, radius,
-                                    intersection_cell.cell_x, intersection_cell.cell_y,
-                                    previous_cell.cell_x, previous_cell.cell_y);
-
-
-                        } else if (radius > dist && radius < dist_1) {
-                            // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
-
-                            // here compute the intersection
-
-                            intersection_point = compute_intersection_of_circle_and_line_segment(
-                                    source_x, source_y, radius,
-                                    intersection_cell.cell_x, intersection_cell.cell_y,
-                                    next_cell.cell_x, next_cell.cell_y);
-
-                        } else if (radius == dist) {
-                            intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
-                        }
-
-                        if (intersection_point == null) {
+                        } catch (Exception e ) {
                             System.out.println();
                         }
 
-                        double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
-                                Math.pow(cell.cell_y - intersection_point.second, 2)));
+                        double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
 
-                        double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
-                                Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+                        // TODO: check index out of bounds
+                        if (index_of_cell + 1 < path.size() && index_of_cell - 1 > 0) {
 
-                        double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
-                                (2.0 * radius * distance_from_source_to_intersection));
+                            Cell next_cell = (Cell) path.get(index_of_cell + 1);
+                            Cell previous_cell = (Cell) path.get(index_of_cell - 1);
 
-                        double arc_length = 2 * Math.PI * radius * (angle / 360);
+                            double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
 
-                        distances[i][j] = arc_length;
+                            double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
+
+                            Tuple<Double, Double> intersection_point = null;
+                            // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
+                            if (radius > dist_2 && radius < dist) {
+
+                                // here compute the intersection point
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        previous_cell.cell_x, previous_cell.cell_y);
+
+
+                            } else if (radius > dist && radius < dist_1) {
+                                // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
+
+                                // here compute the intersection
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        next_cell.cell_x, next_cell.cell_y);
+
+                            } else if (radius == dist) {
+                                intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
+                            }
+
+                            if (intersection_point == null) {
+                                System.out.println();
+                            }
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(cell.cell_y - intersection_point.second, 2)));
+
+                            double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * distance_from_source_to_intersection));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+
+                        } else {
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
+                                    Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * radius));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+
+                        }
 
                     } else {
 
-                        double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
-                                Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+                        int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
 
-                        double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
-                                (2.0 * radius * radius));
+                        Cell intersection_cell = (Cell) path.get(index_of_cell);
 
-                        double arc_length = 2 * Math.PI * radius * (angle / 360);
+                        double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
+                                Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
 
-                        distances[i][j] = arc_length;
+                        // TODO: check index out of bounds
+                        if (index_of_cell + 1 < path.size() && index_of_cell - 1 > 0) {
+
+                            Cell next_cell = (Cell) path.get(index_of_cell + 1);
+                            Cell previous_cell = (Cell) path.get(index_of_cell - 1);
+
+                            double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - next_cell.cell_y, 2)));
+
+                            double dist_2 = (Math.sqrt(Math.pow(source_cell.cell_x - previous_cell.cell_x, 2) +
+                                    Math.pow(source_cell.cell_y - previous_cell.cell_y, 2)));
+
+                            Tuple<Double, Double> intersection_point = null;
+                            // if radius is between intersection_cell and intersection_cell - 1, we consider these two cells
+                            if (radius > dist_2 && radius < dist) {
+
+                                // here compute the intersection point
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        previous_cell.cell_x, previous_cell.cell_y);
+
+
+                            } else if (radius > dist && radius < dist_1) {
+                                // if radius is between intersection_cell and intersection_cell + 1 we consider these two cells
+
+                                // here compute the intersection
+
+                                intersection_point = compute_intersection_of_circle_and_line_segment(
+                                        source_x, source_y, radius,
+                                        intersection_cell.cell_x, intersection_cell.cell_y,
+                                        next_cell.cell_x, next_cell.cell_y);
+
+                            } else if (radius == dist) {
+                                intersection_point = new Tuple<Double, Double>((double) intersection_cell.cell_x, (double) intersection_cell.cell_y);
+                            }
+
+                            if (intersection_point == null) {
+                                System.out.println();
+                            }
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(cell.cell_y - intersection_point.second, 2)));
+
+                            double distance_from_source_to_intersection = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_point.first, 2) +
+                                    Math.pow(source_cell.cell_y - intersection_point.second, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distance_from_source_to_intersection, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * distance_from_source_to_intersection));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+
+                        } else {
+
+                            double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_cell.cell_x, 2) +
+                                    Math.pow(cell.cell_y - intersection_cell.cell_y, 2)));
+
+                            double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distance_from_cell_to_intersection, 2)) /
+                                    (2.0 * radius * radius));
+
+                            double arc_length = 2 * Math.PI * radius * (angle / 360);
+
+                            distances[i][j] = arc_length;
+                        }
                     }
                 }
             }
@@ -1082,10 +1175,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
-            distances_for_paths.add(transposeMatrix(distances));
+            double[][] transposed_matrix = transposeMatrix(distances);
+
+            distances_for_paths.add(transposed_matrix);
+
         }
         return distances_for_paths;
-
     }
 
     public static ArrayList compute_angular_with_Dijkstra(Cell[][] grid, ArrayList paths) throws IOException {
@@ -2038,7 +2133,12 @@ public class Main extends JFrame implements MouseWheelListener {
                 start = mid + 1;
             } else {
                 ans = mid;
-                end = mid - 1;
+
+                if (mid - 1 > 0) {
+                    end = mid - 1;
+                } else {
+                    return mid;
+                }
             }
         }
         return end;
