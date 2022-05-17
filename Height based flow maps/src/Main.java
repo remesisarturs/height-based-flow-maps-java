@@ -96,6 +96,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static String COLOR_MODE = "";
 
+    public static boolean PATH_SCALING = false;
 
     public static void main(String[] args) throws IOException {
 
@@ -281,7 +282,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 100;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_3_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -325,6 +326,8 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
         EXPERIMENTAL_MODE = false;
+
+        PATH_SCALING = true;
 
     }
 
@@ -615,6 +618,48 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static ArrayList compute_y_coordinates_for_columns(Cell[][] grid, ArrayList paths) {
+
+        // TODO: potentially make this faster with binary search or something
+
+        ArrayList y_coordinates_for_all_columns = new ArrayList();
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+
+            ArrayList y_coordinates_for_column = new ArrayList();
+
+            for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                Iterator path_iterator = paths.iterator();
+
+                int path_index = 0;
+
+                while (path_iterator.hasNext()) {
+
+                    ArrayList path = (ArrayList) path_iterator.next();
+
+                    Iterator path_cell_iterator = path.iterator();
+
+                    while (path_cell_iterator.hasNext()) {
+
+                        Cell path_cell = (Cell) path_cell_iterator.next();
+
+                        if (grid[col][row] == path_cell) {
+
+                            // path cell is on the vertical cell
+                            y_coordinates_for_column.add(row);
+                            //path_indexes.add(path_index);
+                        }
+                    }
+                }
+            }
+
+            y_coordinates_for_all_columns.add(y_coordinates_for_column);
+
+        }
+
+        return y_coordinates_for_all_columns;
+    }
 
     public static double compute_scaled_path_factors(Cell[][] grid, ArrayList paths, ArrayList distances_for_cell, Cell cell) {
 
@@ -793,50 +838,174 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+        ArrayList y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                Cell cell = grid[j][i];
+                if (PATH_SCALING) {
 
-                Iterator path_iterator = distances_for_paths.iterator();
+                    // TODO: potentially has to be sorted s.t. the path ids are preserved
+                    ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(i);
 
-                ArrayList distances_for_cell = new ArrayList();
+                    double[] factors = new double[paths.size()];
 
-                while (path_iterator.hasNext()) {
+                    int index = -1;
 
-                    double[][] distances = (double[][]) path_iterator.next();
+                    // TODO: this could be binary search (if sorted)
+                    for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
 
-                    distances_for_cell.add(distances[cell.cell_y][cell.cell_x]);
+                        if (j > (int) y_coordinates_of_paths_for_cell.get(p) && j < (int) y_coordinates_of_paths_for_cell.get(p + 1)) {
+                            // index is between two y coordinates
+                            // the two y coordinates should have 1
+                            index = p;
+                            factors[p] = 1;
+                            factors[p + 1] = 1;
+                            break;
+                        }
 
-                }
+                        if (p == (int) y_coordinates_of_paths_for_cell.get(p)) {
+                            // the index is on a path cell. We find all the paths that have the same y and set factors to 1
+                            index = p;
+//
+//                            factors.add(p, 1);
+//
+                            int counter = 0;
+                            while (p + counter == (int) y_coordinates_of_paths_for_cell.get(p + counter)) {
 
-                double sum = 0;
-                for (int k = 0; k < distances_for_cell.size(); k++) {
-                    sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+                                factors[p + counter] = 1;
 
-                }
-                long startTime = System.currentTimeMillis();
+                                counter++;
 
-                double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
-                long endTime = System.currentTimeMillis();
-                //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+                                if (p + counter == y_coordinates_of_paths_for_cell.size()) {
+                                    break;
+                                }
+                            }
+                            break;
 
-                if (RESET_HEIGHTS == false) {
+                        }
 
-                    // wtf is this??
+                        if (p < (int) y_coordinates_of_paths_for_cell.get(p)) {
+                            index = p;
+                            factors[p] = 1;
+                            break;
+                        }
+
+                    }
+
+                    int n = factors.length;
+                    int first = -1;
+                    int last = -1;
+
+                    for (int k = 0; k < n; k++) {
+                        if (1 != factors[k])
+                            continue;
+                        if (first == -1)
+                            first = k;
+                        last = k;
+                    }
+//                    if (first != -1) {
+////                        System.out.println("First Occurrence = " + first);
+////                        System.out.println("Last Occurrence = " + last);
+//                    }
+
+                 //   System.out.println();
+
+
+                    for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
+
+                        int distance_from_index_first = Math.abs(p - first);
+                        int distance_from_index_last = Math.abs(p - last);
+
+                        double factor_first = 1 / (Math.pow(2, distance_from_index_first));
+                        double factor_last = 1 / (Math.pow(2, distance_from_index_last));
+
+                        factors[p] = (double) Math.max(factor_first, factor_last);
+
+                    }
+                   // System.out.println();
+
+                    Iterator path_iterator = distances_for_paths.iterator();
+                    ArrayList distances_for_cell = new ArrayList();
+
+                    while (path_iterator.hasNext()) {
+
+                        double[][] distances = (double[][]) path_iterator.next();
+
+                        distances_for_cell.add(distances[i][j]);
+
+                    }
+
+                    double sum = 0;
+                    for (int k = 0; k < distances_for_cell.size(); k++) {
+
+//                        if (factors[k] == 0) {
+//                            factors[k] = 1;
+//                        }
+
+                        sum = sum + factors[k] * gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+                    }
+
+                    if (RESET_HEIGHTS == false) {
+
+                        // wtf is this??
 //                    if (i == 0) {
 //                        i = 1;
 //                    }
-                    double height = ((-HEIGHT_FUNCTION_SCALE * sum_2));
-                    grid[j][i].height = grid[j][i].height + ((height));
-                    computed_height[j][i] = height;
+                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                        grid[j][i].height = grid[j][i].height + ((height));
+                        computed_height[j][i] = height;
 
+                    } else {
+                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                        computed_height[j][i] = height;
+
+                        grid[j][i].height = grid[j][i].height + ((height));
+                    }
+
+                    // ===================
                 } else {
-                    double height = ((-HEIGHT_FUNCTION_SCALE * sum_2));
-                    computed_height[j][i] = height;
+                    Cell cell = grid[j][i];
 
-                    grid[j][i].height = grid[j][i].height + ((height));
+                    Iterator path_iterator = distances_for_paths.iterator();
+
+                    ArrayList distances_for_cell = new ArrayList();
+
+                    while (path_iterator.hasNext()) {
+
+                        double[][] distances = (double[][]) path_iterator.next();
+
+                        distances_for_cell.add(distances[cell.cell_y][cell.cell_x]);
+
+                    }
+
+                    double sum = 0;
+                    for (int k = 0; k < distances_for_cell.size(); k++) {
+                        sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+                    }
+                    long startTime = System.currentTimeMillis();
+
+                    //double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
+
+                    long endTime = System.currentTimeMillis();
+                    //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+
+                    if (RESET_HEIGHTS == false) {
+
+                        // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                        grid[j][i].height = grid[j][i].height + ((height));
+                        computed_height[j][i] = height;
+
+                    } else {
+                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                        computed_height[j][i] = height;
+
+                        grid[j][i].height = grid[j][i].height + ((height));
+                    }
                 }
             }
         }
