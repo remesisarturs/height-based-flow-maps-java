@@ -278,8 +278,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 100;
-        NR_OF_COLUMNS = 100;
+        NR_OF_ROWS = 500;
+        NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
         INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
@@ -327,7 +327,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         EXPERIMENTAL_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
 
     }
 
@@ -838,7 +838,10 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
-        ArrayList y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
+        ArrayList y_coordinates_for_columns = null;
+        if (PATH_SCALING) {
+            y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
+        }
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
@@ -909,7 +912,7 @@ public class Main extends JFrame implements MouseWheelListener {
 ////                        System.out.println("Last Occurrence = " + last);
 //                    }
 
-                 //   System.out.println();
+                    //   System.out.println();
 
 
                     for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
@@ -923,7 +926,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         factors[p] = (double) Math.max(factor_first, factor_last);
 
                     }
-                   // System.out.println();
+                    // System.out.println();
 
                     Iterator path_iterator = distances_for_paths.iterator();
                     ArrayList distances_for_cell = new ArrayList();
