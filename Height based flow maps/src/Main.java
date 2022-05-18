@@ -159,7 +159,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 compute_flow(grid, 0);
 
-                ArrayList<ArrayList<Cell>> paths;
+                ArrayList<Path> paths;
 
                 if (EXPERIMENTAL_MODE) {
                     paths = compute_paths_to_frame_edge(points_list, grid);
@@ -194,7 +194,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     draw_distances(grid, paths, distances_for_paths, false, width, scale, 0, iteration_location);
                 }
 
-                Tuple<Cell[][], ArrayList<ArrayList<Cell>>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
+                Tuple<Cell[][], ArrayList<Path>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
                         BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location);
 
                 if (result == null) {
@@ -282,7 +282,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_4_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -393,7 +393,7 @@ public class Main extends JFrame implements MouseWheelListener {
         output.close();
     }
 
-    public static Tuple<Cell[][], ArrayList<ArrayList<Cell>>> iterate(
+    public static Tuple<Cell[][], ArrayList<Path>> iterate(
             Cell[][] grid, ArrayList points_list, ArrayList paths,
             ArrayList distances_for_paths, int NR_OF_ITERATIONS,
             String BASE_HEIGHT_TYPE, double base_function_scale, boolean save_outputs,
@@ -438,114 +438,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_bfs(grid, paths);
             } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
                 distances_for_paths = compute_Dijkstra(grid, paths);
-
-                double[][] first = (double[][]) distances_for_paths.get(0);
-                double[][] second = (double[][]) distances_for_paths.get(1);
-
-                boolean verbose = false;
-
-                if (verbose == true) {
-
-                    System.out.println("Distances 1");
-                    log_file_writer.write("Distances 1" + "\n");
-
-                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
-                        for (int r = 0; r < NR_OF_ROWS; r++) {
-
-
-                            if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
-
-                                Boolean cell_on_path = false;
-                                Iterator it = paths.iterator();
-                                while (it.hasNext()) {
-
-                                    ArrayList path = (ArrayList) it.next();
-
-                                    Iterator cell_it = path.iterator();
-                                    while (cell_it.hasNext()) {
-
-                                        Cell path_cell = (Cell) cell_it.next();
-
-                                        if (c == path_cell.cell_x && r == path_cell.cell_y) {
-                                            cell_on_path = true;
-                                            //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
-                                        }
-                                    }
-                                }
-
-                                if (c == source_x && r == source_y) {
-                                    System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + first[r][c] + ANSI_RESET + " ");
-
-                                } else if (false) {
-
-                                } else {
-                                    if (cell_on_path) {
-                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
-                                    } else {
-                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + first[r][c] + ANSI_RESET + " ");
-                                    }
-                                }
-
-
-                            }
-
-                        }
-                        if (c > source_x - 10) {
-
-                            System.out.println();
-                        }
-                    }
-                    System.out.println("Distances 1 End");
-
-                    System.out.println("Distances 2 ");
-                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
-                        for (int r = 0; r < NR_OF_ROWS; r++) {
-
-
-                            if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
-
-                                Boolean cell_on_path = false;
-                                Iterator it = paths.iterator();
-                                while (it.hasNext()) {
-
-                                    ArrayList path = (ArrayList) it.next();
-
-                                    Iterator cell_it = path.iterator();
-                                    while (cell_it.hasNext()) {
-
-                                        Cell path_cell = (Cell) cell_it.next();
-
-                                        if (c == path_cell.cell_x && r == path_cell.cell_y) {
-                                            cell_on_path = true;
-                                            //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
-                                        }
-                                    }
-                                }
-
-                                if (c == source_x && r == source_y) {
-                                    System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + second[r][c] + ANSI_RESET + " ");
-
-                                } else {
-                                    if (cell_on_path) {
-                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + second[r][c] + ANSI_RESET + " ");
-                                    } else {
-                                        System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + second[r][c] + ANSI_RESET + " ");
-                                    }
-                                }
-
-
-                            }
-
-                        }
-                        if (c > source_x - 10) {
-
-                            System.out.println();
-                        }
-                    }
-                    System.out.println("Distances 2 End");
-
-                }
-
             } else if (DISTANCE_METRIC.equals("ANGULAR")) {
                 distances_for_paths = compute_angular_distance_precise(grid, paths);
             } else if (DISTANCE_METRIC.equals("ARC")) {
@@ -612,7 +504,7 @@ public class Main extends JFrame implements MouseWheelListener {
             return null;
         }
 
-        Tuple<Cell[][], ArrayList<ArrayList<Cell>>> tuple = new Tuple<Cell[][], ArrayList<ArrayList<Cell>>>(grid, paths);
+        Tuple<Cell[][], ArrayList<Path>> tuple = new Tuple<Cell[][], ArrayList<Path>>(grid, paths);
 
         return tuple;
 
@@ -788,56 +680,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         boolean verbose = false;
 
-        if (verbose == true) {
-
-            System.out.println("Before : ");
-
-            for (int c = 0; c < NR_OF_COLUMNS; c++) {
-                for (int r = 0; r < NR_OF_ROWS; r++) {
-
-
-                    if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
-
-                        Boolean cell_on_path = false;
-                        Iterator it = paths.iterator();
-                        while (it.hasNext()) {
-
-                            ArrayList path = (ArrayList) it.next();
-
-                            Iterator cell_it = path.iterator();
-                            while (cell_it.hasNext()) {
-
-                                Cell path_cell = (Cell) cell_it.next();
-
-                                if (c == path_cell.cell_x && r == path_cell.cell_y) {
-                                    cell_on_path = true;
-                                    //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
-                                }
-                            }
-                        }
-
-                        if (c == source_x && r == source_y) {
-
-                            System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + grid[c][r].height + ANSI_RESET + " ");
-
-                        } else {
-                            if (cell_on_path) {
-                                System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + grid[c][r].height + ANSI_RESET + " ");
-                            } else {
-                                System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + grid[c][r].height + ANSI_RESET + " ");
-                            }
-                        }
-                    }
-
-                }
-                if (c > source_x - 10) {
-
-                    System.out.println();
-                }
-            }
-        }
-
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
         ArrayList y_coordinates_for_columns = null;
         if (PATH_SCALING) {
             y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
@@ -1021,55 +865,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
-
-        if (verbose == true) {
-
-            System.out.println("After : ");
-            for (int c = 0; c < NR_OF_COLUMNS; c++) {
-                for (int r = 0; r < NR_OF_ROWS; r++) {
-
-
-                    if (c > source_x - 10 && r > source_y - 10 && c < source_x + 10 && r < source_y + 10) {
-
-                        Boolean cell_on_path = false;
-                        Iterator it = paths.iterator();
-                        while (it.hasNext()) {
-
-                            ArrayList path = (ArrayList) it.next();
-
-                            Iterator cell_it = path.iterator();
-                            while (cell_it.hasNext()) {
-
-                                Cell path_cell = (Cell) cell_it.next();
-
-                                if (c == path_cell.cell_x && r == path_cell.cell_y) {
-                                    cell_on_path = true;
-                                    //System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + first[r][c] + ANSI_RESET + " ");
-                                }
-                            }
-                        }
-
-                        if (c == source_x && r == source_y) {
-
-                            System.out.print("r : " + r + " c : " + c + " " + ANSI_RED + grid[c][r].height + ANSI_RESET + " ");
-
-                        } else {
-                            if (cell_on_path) {
-                                System.out.print("r : " + r + " c : " + c + " " + ANSI_YELLOW + grid[c][r].height + ANSI_RESET + " ");
-                            } else {
-                                System.out.print("r : " + r + " c : " + c + " " + ANSI_BLUE + grid[c][r].height + ANSI_RESET + " ");
-                            }
-                        }
-                    }
-
-                }
-                if (c > source_x - 10) {
-
-                    System.out.println();
-                }
-            }
-        }
-
     }
 
     public static void initialize_grid_height_Euclidean_squared(Cell[][] grid) {
@@ -2053,7 +1848,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         while (path_iterator.hasNext()) {
 
-            ArrayList path = (ArrayList) path_iterator.next();
+            Path path = (Path) path_iterator.next();
 
             // store results for a single path here
             double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
@@ -2070,7 +1865,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     new distanceComparator());
 
             // Loop over each cell on a path:
-            Iterator cell_iterator = path.iterator();
+            Iterator cell_iterator = path.cells.iterator();
             while (cell_iterator.hasNext()) {
 
                 // A cell on a path:
@@ -2766,9 +2561,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
             while (iter.hasNext()) {
 
-                ArrayList path = (ArrayList) iter.next();
+                Path path = (Path) iter.next();
 
-                Iterator cell_iter = path.iterator();
+                Iterator cell_iter = path.cells.iterator();
 
                 while (cell_iter.hasNext()) {
 
@@ -2974,7 +2769,7 @@ public class Main extends JFrame implements MouseWheelListener {
 //
 //            while (iter.hasNext()) {
 //
-//                ArrayList path = (ArrayList) iter.next();
+//                Path path = (Path) iter.next();
 //
 //                Iterator cell_iter = path.iterator();
 //
@@ -3079,9 +2874,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
             while (iter.hasNext()) {
 
-                ArrayList path = (ArrayList) iter.next();
+                Path path = (Path) iter.next();
 
-                Iterator cell_iter = path.iterator();
+                Iterator cell_iter = path.cells.iterator();
 
                 while (cell_iter.hasNext()) {
 
@@ -3216,15 +3011,16 @@ public class Main extends JFrame implements MouseWheelListener {
         return paths;
     }
 
-    public static ArrayList compute_paths(ArrayList points_list, Cell[][] grid) throws IOException {
+    public static ArrayList<Path> compute_paths(ArrayList points_list, Cell[][] grid) throws IOException {
 
         System.out.println("computing paths");
         log_file_writer.write("computing paths" + "\n");
 
         Iterator it = points_list.iterator();
 
-        ArrayList<ArrayList<Cell>> paths = new ArrayList();
+        ArrayList<Path> paths = new ArrayList();
 
+        int id_counter = 0;
         while (it.hasNext()) {
 
             Point point = (Point) it.next();
@@ -3237,9 +3033,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Cell current_cell = grid_cell;
 
-            ArrayList<Cell> path = new ArrayList();
+            Path path = new Path();
+            path.cells = new ArrayList();
+            path.id = id_counter;
+            //ArrayList<Cell> path = new ArrayList();
 
-            path.add(current_cell);
+            path.cells.add(current_cell);
 
             int counter = 0;
 
@@ -3275,7 +3074,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     current_cell = grid[node_x + 1][node_y - 1];
                 }
 
-                path.add(current_cell);
+                path.cells.add(current_cell);
 
                 counter++;
 
