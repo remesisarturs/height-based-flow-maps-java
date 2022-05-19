@@ -329,7 +329,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         EXPERIMENTAL_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
 
     }
 
@@ -458,11 +458,14 @@ public class Main extends JFrame implements MouseWheelListener {
 
             while (path_it.hasNext()) {
 
-                double[][] dist = (double[][]) path_it.next();
+                DistanceForPathMatrix dist = (DistanceForPathMatrix) path_it.next();
+                double[][] dist_matrix = dist.distance_matrix;
 
-                transposeMatrix(dist);
-
-                transposed_dist.add(dist);
+                transposeMatrix(dist_matrix);
+                DistanceForPathMatrix dist_transposed = new DistanceForPathMatrix();
+                dist_transposed.distance_matrix = dist_matrix;
+                dist_transposed.path_id = dist.path_id;
+                transposed_dist.add(dist_transposed);
 
             }
             distances_for_paths = transposed_dist;
@@ -696,9 +699,29 @@ public class Main extends JFrame implements MouseWheelListener {
             for (int col = 0; col < NR_OF_COLUMNS; col++) { //j is the column id
 
                 if (PATH_SCALING) {
+
+                    Cell cell = grid[col][row];
+
+
+                    if (row == 5 && col == 5) {
+                        System.out.println();
+                    }
+
+                    if (row == 5 && col == 0) {
+                        System.out.println();
+                    }
+
+                    if (row == 9 && col == 0) {
+                        System.out.println();
+                    }
+
+                    if (row == 5 && col == 8) {
+                        System.out.println();
+                    }
+
                     // grid[col][row]
                     // TODO: potentially has to be sorted s.t. the path ids are preserved
-                    ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(col);
+                    ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_y);
 
                     //double[] factors = new double[paths.size()];
 
@@ -714,7 +737,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         if (p + 1 < y_coordinates_of_paths_for_cell.size()) {
                             Pair<Integer, Integer> next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + 1);
 
-                            if (col > (int) pair.getValue() && col < (int) next_pair.getValue()) {
+                            if (row > (int) pair.getValue() && row < (int) next_pair.getValue()) {
                                 // index is between two y coordinates
                                 // the two y coordinates should have 1
                                 //index = p;
@@ -805,7 +828,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         DistanceForPathMatrix distanceForPathMatrix = (DistanceForPathMatrix) path_iterator.next();
 
-                        Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[col][row]);
+                        Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[cell.cell_y][cell.cell_x]);
 
                         distances_for_cell.add(distances_for_cell_and_id);
 
@@ -838,6 +861,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         //double factor_for_path_id = factors_for_ids[];
 
+                        //factor = 1.0;
+                        //System.out.print("row : " + row + " col : " + col + " factor : " + factor + " | ");
                         sum = sum + factor * gaussian((double) distance_for_path, 0, HEIGHT_FUNCTION_WIDTH);
 
 //                        if (factors[k] == 0) {
@@ -846,7 +871,7 @@ public class Main extends JFrame implements MouseWheelListener {
 //
 //                        sum = sum + factors[k] * gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
                     }
-                    System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+                    //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
 
                     if (RESET_HEIGHTS == false) {
 
@@ -865,7 +890,11 @@ public class Main extends JFrame implements MouseWheelListener {
                         grid[col][row].height = grid[col][row].height + ((height));
                     }
 
+                    // =================== PATH SCALING = FALSE
                     // ===================
+                    // ===================
+                    // ===================
+
                 } else {
                     Cell cell = grid[col][row];
 
@@ -875,9 +904,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     while (path_iterator.hasNext()) {
 
-                        double[][] distances = (double[][]) path_iterator.next();
+                        DistanceForPathMatrix distances = (DistanceForPathMatrix) path_iterator.next();
+                        double[][] distances_matrix = distances.distance_matrix;
 
-                        distances_for_cell.add(distances[cell.cell_y][cell.cell_x]);
+                        distances_for_cell.add(distances_matrix[cell.cell_y][cell.cell_x]);
 
                     }
 
@@ -885,6 +915,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     for (int k = 0; k < distances_for_cell.size(); k++) {
                         sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
                     }
+                    //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+
                     long startTime = System.currentTimeMillis();
 
                     //double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
