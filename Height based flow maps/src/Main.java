@@ -100,6 +100,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean PATH_SCALING = false;
 
+    public static boolean MEMORY_MODE = false;
+
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -132,6 +135,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 write_output_configuration(iteration_location);
 
                 Cell[][] grid = initialize_grid(NR_OF_ROWS, NR_OF_COLUMNS);
+                double[][] base_function = new double[NR_OF_ROWS][NR_OF_COLUMNS];
 
                 ArrayList<String> items = read_input();
 
@@ -145,18 +149,25 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
                     initialize_grid_height_Euclidean_squared(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                     initialize_grid_height_chebyshev_distance(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
                     initialize_grid_height_to_edge(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQUARED")) {
                     initialize_grid_height_to_edge_squared(grid);
+
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQRT")) {
                     initialize_grid_height_to_edge_sqrt(grid);
+
                 }
 
                 compute_flow(grid, 0);
@@ -196,8 +207,11 @@ public class Main extends JFrame implements MouseWheelListener {
                     draw_distances(grid, paths, distances_for_paths, false, width, scale, 0, iteration_location);
                 }
 
+                // copies the initial state of grid into memory
+                copy_height(grid, base_function);
+
                 Tuple<Cell[][], ArrayList<Path>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location);
+                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location, base_function);
 
                 if (result == null) {
                     continue;
@@ -228,6 +242,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+    }
+
+    public static void copy_height(Cell[][] grid, double[][] memory_grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                memory_grid[i][j] = grid[i][j].height;
+
+            }
+        }
+
     }
 
     public static void initialize_grid_height_to_edge(Cell[][] grid) {
@@ -280,16 +307,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 10;
-        NR_OF_COLUMNS = 10;
+        NR_OF_ROWS = 500;
+        NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -321,8 +348,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{40};
-        SCALES = new double[]{100};
+        WIDTHS = new double[]{20};
+        SCALES = new double[]{10};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -330,6 +357,8 @@ public class Main extends JFrame implements MouseWheelListener {
         EXPERIMENTAL_MODE = false;
 
         PATH_SCALING = false;
+
+        MEMORY_MODE = true;
 
     }
 
@@ -395,14 +424,77 @@ public class Main extends JFrame implements MouseWheelListener {
         output.close();
     }
 
+    public static void apply_height_update(Cell[][] grid, double[][] height_update) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                grid[i][j].height = grid[i][j].height + height_update[i][j];
+
+            }
+        }
+
+    }
+
+
+    public static double[][] add_heights(double[][] previous_height, double[][] new_height) {
+
+        double[][] result = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                result[i][j] = previous_height[i][j] * 0.5 + new_height[i][j];
+
+            }
+        }
+
+        return result;
+    }
+
+    // adds the propagated height to the base and stores it in global grid
+    public static Cell[][] add_to_base_function (Cell[][] grid, double[][] base, double[][] previous_height) {
+
+        double[][] result = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                grid[i][j].height = base[i][j] + previous_height[i][j];
+
+            }
+        }
+
+        return grid;
+    }
+
     public static Tuple<Cell[][], ArrayList<Path>> iterate(
             Cell[][] grid, ArrayList points_list, ArrayList paths,
             ArrayList distances_for_paths, int NR_OF_ITERATIONS,
             String BASE_HEIGHT_TYPE, double base_function_scale, boolean save_outputs,
-            boolean show_intermediate_results, double width, double scale, String iteration_location)
+            boolean show_intermediate_results, double width, double scale, String iteration_location,
+            double[][] base_function)
             throws IOException {
 
-        adjust_height(grid, distances_for_paths, width, scale, paths, 0, iteration_location);
+        double[][] sum_of_previous_heights = new double[NR_OF_ROWS][NR_OF_COLUMNS];
+
+        if (MEMORY_MODE) {
+            // this is the first height update w.r.t. the base
+
+            // take the old height (that is, the global grid height), compute height update U_1
+            double[][] height_update = compute_height_update(grid, distances_for_paths, paths, 0, iteration_location); // this is U_1
+
+            // here we apply the height update on the base function
+            // the update is written inside global grid height
+            apply_height_update(grid, height_update); // grid = B + U_1
+
+            // sum of previous heights is now U_1
+            sum_of_previous_heights = height_update;
+
+        } else {
+            update_height_overwrite(grid, distances_for_paths, width, scale, paths, 0, iteration_location);
+        }
+
         compute_min_and_max_heights(grid);
 
         //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
@@ -468,6 +560,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 transposed_dist.add(dist_transposed);
 
             }
+
             distances_for_paths = transposed_dist;
             System.out.println("That took " + (endTime - startTime) + " milliseconds");
             log_file_writer.write("That took " + (endTime - startTime) + " milliseconds" + "\n");
@@ -490,7 +583,21 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            adjust_height(grid, distances_for_paths, width, scale, paths, i, iteration_location);
+            if (MEMORY_MODE) {
+                // take the global grid height and compute the height update // here we took B + U_1 and computed U_2
+                double[][] height_update = compute_height_update(grid, distances_for_paths, paths, i, iteration_location); // = U_2
+
+                sum_of_previous_heights = add_heights(sum_of_previous_heights, height_update);
+
+                // apply the height update on the global grid // here we should take B and add 1/2 U_1 + U_2
+                //apply_height_update(grid, height_update); // this is not right
+
+                grid = add_to_base_function(grid, base_function, sum_of_previous_heights);
+
+            } else {
+                update_height_overwrite(grid, distances_for_paths, width, scale, paths, i, iteration_location);
+            }
+
             compute_min_and_max_heights(grid);
 
             //adjust_height_min_distances(grid, distances_for_paths, width, scale, paths);
@@ -680,7 +787,79 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void adjust_height(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths, int iteration, String iteration_location) throws IOException {
+    public static double[][] compute_height_update(Cell[][] grid, ArrayList distances_for_paths, ArrayList paths,
+                                                   int iteration, String iteration_location) throws IOException {
+
+        System.out.println("adjusting height");
+        log_file_writer.write("adjusting height" + "\n");
+
+        double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
+            System.out.println();
+            for (int col = 0; col < NR_OF_COLUMNS; col++) { //j is the column id
+
+                Cell cell = grid[col][row];
+
+                Iterator path_iterator = distances_for_paths.iterator();
+
+                ArrayList distances_for_cell = new ArrayList();
+
+                while (path_iterator.hasNext()) {
+
+                    DistanceForPathMatrix distances = (DistanceForPathMatrix) path_iterator.next();
+                    double[][] distances_matrix = distances.distance_matrix;
+
+                    distances_for_cell.add(distances_matrix[cell.cell_y][cell.cell_x]);
+
+                }
+
+                double sum = 0;
+                for (int k = 0; k < distances_for_cell.size(); k++) {
+                    sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+                }
+                //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+
+                long startTime = System.currentTimeMillis();
+
+                //double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
+
+                long endTime = System.currentTimeMillis();
+                //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+
+                if (RESET_HEIGHTS == false) {
+
+                    // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+                    double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                    //grid[col][row].height = grid[col][row].height + ((height));
+                    computed_height[col][row] = height;
+
+                } else {
+                    double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+                    computed_height[col][row] = height;
+
+                    //grid[col][row].height = grid[col][row].height + ((height));
+                }
+            }
+        }
+
+
+        if (GENERATE_INTERMEDIATE_RESULTS) {
+            if (GENERATE_INTERMEDIATE_HEIGHT) {
+                compute_min_and_max_heights(grid);
+                draw_matrix(computed_height, paths, iteration, iteration_location, false);
+                draw_matrix(computed_height, paths, iteration, iteration_location, true);
+
+            }
+        }
+
+        return computed_height;
+    }
+
+    public static void update_height_overwrite(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths, int iteration, String iteration_location) throws IOException {
 
         System.out.println("adjusting height");
         log_file_writer.write("adjusting height" + "\n");
@@ -863,6 +1042,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         //factor = 1.0;
                         //System.out.print("row : " + row + " col : " + col + " factor : " + factor + " | ");
+                        //factor = 1.0;
                         sum = sum + factor * gaussian((double) distance_for_path, 0, HEIGHT_FUNCTION_WIDTH);
 
 //                        if (factors[k] == 0) {
