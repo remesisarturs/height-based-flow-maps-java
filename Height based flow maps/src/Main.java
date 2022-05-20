@@ -310,8 +310,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -346,10 +346,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 30;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{10};
+        SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -796,7 +796,7 @@ public class Main extends JFrame implements MouseWheelListener {
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
-            System.out.println();
+            //System.out.println();
             for (int col = 0; col < NR_OF_COLUMNS; col++) { //j is the column id
 
                 Cell cell = grid[col][row];
@@ -874,7 +874,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
-            System.out.println();
+            //System.out.println();
             for (int col = 0; col < NR_OF_COLUMNS; col++) { //j is the column id
 
                 if (PATH_SCALING) {
@@ -883,19 +883,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
                     if (row == 5 && col == 5) {
-                        System.out.println();
+                      // System.out.println();
                     }
 
                     if (row == 5 && col == 0) {
-                        System.out.println();
+                      //  System.out.println();
                     }
 
                     if (row == 9 && col == 0) {
-                        System.out.println();
+                     //   System.out.println();
                     }
 
                     if (row == 5 && col == 8) {
-                        System.out.println();
+                    //    System.out.println();
                     }
 
                     // grid[col][row]
