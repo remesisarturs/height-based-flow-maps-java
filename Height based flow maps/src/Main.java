@@ -102,7 +102,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean MEMORY_MODE = false;
 
-
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -149,25 +148,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
                     initialize_grid_height_Euclidean_squared(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("chebyshev")) {
                     initialize_grid_height_chebyshev_distance(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQRT")) {
                     initialize_grid_height_Euclidean_dist_sqrt(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE")) {
                     initialize_grid_height_to_edge(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQUARED")) {
                     initialize_grid_height_to_edge_squared(grid);
-
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQRT")) {
                     initialize_grid_height_to_edge_sqrt(grid);
-
                 }
 
                 compute_flow(grid, 0);
@@ -201,6 +193,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     distances_for_paths = compute_angular_distance_with_intersection(grid, paths);
                 } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
                     distances_for_paths = compute_anguar_with_arc_length(grid, paths);
+                } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
+                    distances_for_paths = compute_vertical_distances(grid, paths);
                 }
 
                 if (DRAW_DISTANCE_IMAGES) {
@@ -310,8 +304,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_3_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -332,9 +326,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -345,16 +339,17 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
+        DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 30;
+        NR_OF_ITERATIONS = 5;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{100};
+        WIDTHS = new double[]{10};
+        SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = false;
+        EXPERIMENTAL_MODE = true;
 
         PATH_SCALING = false;
 
@@ -453,7 +448,7 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     // adds the propagated height to the base and stores it in global grid
-    public static Cell[][] add_to_base_function (Cell[][] grid, double[][] base, double[][] previous_height) {
+    public static Cell[][] add_to_base_function(Cell[][] grid, double[][] base, double[][] previous_height) {
 
         double[][] result = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
@@ -540,6 +535,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_angular_distance_with_intersection(grid, paths);
             } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
                 distances_for_paths = compute_anguar_with_arc_length(grid, paths);
+            } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
+                distances_for_paths = compute_vertical_distances(grid, paths);
             }
 
             long endTime = System.currentTimeMillis();
@@ -883,19 +880,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
                     if (row == 5 && col == 5) {
-                      // System.out.println();
+                        // System.out.println();
                     }
 
                     if (row == 5 && col == 0) {
-                      //  System.out.println();
+                        //  System.out.println();
                     }
 
                     if (row == 9 && col == 0) {
-                     //   System.out.println();
+                        //   System.out.println();
                     }
 
                     if (row == 5 && col == 8) {
-                    //    System.out.println();
+                        //    System.out.println();
                     }
 
                     // grid[col][row]
@@ -2087,6 +2084,72 @@ public class Main extends JFrame implements MouseWheelListener {
         return null;
     }
 
+    public static ArrayList compute_vertical_distances(Cell[][] grid, ArrayList<Path> paths) throws IOException {
+        System.out.println("computing vertical distances ");
+        log_file_writer.write("computing vertical distances " + "\n");
+
+        Iterator path_iterator = paths.iterator();
+
+        ArrayList distances_for_paths = new ArrayList();
+
+        int path_counter = 0;
+
+        // for all paths
+        while (path_iterator.hasNext()) {
+
+            Path path = (Path) path_iterator.next();
+
+            ArrayList path_cells = path.cells;
+
+            Collections.reverse(path_cells);
+
+            double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+            // for each cell in the grid
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+                for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                    Cell cell = grid[i][j];
+
+                    // inefficient method:
+
+                    Iterator path_cell_iterator = path_cells.iterator();
+
+                    while (path_cell_iterator.hasNext()) {
+
+                        Cell path_cell = (Cell) path_cell_iterator.next();
+
+                        if (path_cell.cell_x == cell.cell_x) {
+
+                            double distance = Math.abs(path_cell.cell_y - cell.cell_y);
+                            distances[i][j] = distance;
+                        }
+
+                    }
+
+                }
+            }
+
+            Iterator path_cell_iter = path_cells.iterator();
+
+            while (path_cell_iter.hasNext()) {
+
+                Cell cell = (Cell) path_cell_iter.next();
+
+                distances[cell.cell_x][cell.cell_y] = 0.0;
+
+            }
+
+            double[][] transposed_distances_matrix = transposeMatrix(distances);
+            DistanceForPathMatrix distanceForPathMatrix = new DistanceForPathMatrix();
+            distanceForPathMatrix.distance_matrix = transposed_distances_matrix;
+            distanceForPathMatrix.path_id = path_counter;
+            path_counter++;
+            distances_for_paths.add(distanceForPathMatrix);
+        }
+        return distances_for_paths;
+
+    }
 
     public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList<Path> paths) throws IOException {
 
@@ -3223,8 +3286,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator it = points_list.iterator();
 
-        ArrayList<ArrayList<Cell>> paths = new ArrayList();
+        // ArrayList<ArrayList<Cell>> paths = new ArrayList();
+        ArrayList<Path> paths = new ArrayList();
 
+        int path_id_counter = 0;
         while (it.hasNext()) {
 
             Point point = (Point) it.next();
@@ -3280,8 +3345,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
-            paths.add(path);
-
+            Path new_path = new Path();
+            new_path.cells = path;
+            new_path.id = path_id_counter;
+            paths.add(new_path);
+            path_id_counter++;
         }
         return paths;
     }
