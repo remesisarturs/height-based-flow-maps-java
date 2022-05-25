@@ -680,26 +680,48 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            for (int i = 0 ; i < multiMap.size(); i ++) {
+            for (int i = 0; i < multiMap.size(); i++) {
                 if (multiMap.get(i).size() > 1) {
 
                     int sum = 0;
-                    for (int j = 0; j < multiMap.get(i).size(); j ++) {
+                    for (int j = 0; j < multiMap.get(i).size(); j++) {
                         sum = sum + multiMap.get(i).get(j);
                     }
                     int avg = sum / multiMap.get(i).size();
 
-                    for (int e = 0; e < y_coordinates_for_column.size(); e ++) {
+                    if (multiMap.get(i).size() > 3) {
+                        //System.out.println();
+                    }
 
-                        Pair pair = (Pair) y_coordinates_for_column.get(e);
+                    Iterator y_iterator = y_coordinates_for_column.iterator();
 
-                        if((Integer) pair.getKey() == i) {
-                            y_coordinates_for_column.remove(e);
+                    ArrayList found = new ArrayList();
+                    while (y_iterator.hasNext()) {
+
+                        Pair pair = (Pair) y_iterator.next();
+
+                        if ((Integer) pair.getKey() == i) {
+                            found.add(pair);
+                            //y_coordinates_for_column.remove(pair);
+                            //e--;
                         }
 
                     }
+                    y_coordinates_for_column.removeAll(found);
 
-                    y_coordinates_for_column.set(i, new Pair<>(i, avg));
+//                    int size = y_coordinates_for_column.size();
+//                    for (int e = 0; e < size; e ++) {
+//
+//                        Pair pair = (Pair) y_coordinates_for_column.get(e);
+//
+//                        if((Integer) pair.getKey() == i) {
+//                            y_coordinates_for_column.remove(e);
+//                            //e--;
+//                        }
+//
+//                    }
+
+                    y_coordinates_for_column.add(i, new Pair<>(i, avg));
 
                 }
             }
@@ -927,19 +949,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
                     if (row == 5 && col == 5) {
-                        System.out.println();
+                        //System.out.println();
                     }
 
                     if (row == 5 && col == 0) {
-                        System.out.println();
+                        //System.out.println();
                     }
 
                     if (row == 9 && col == 0) {
-                        System.out.println();
+                        // System.out.println();
                     }
 
                     if (row == 5 && col == 8) {
-                        System.out.println();
+                        // System.out.println();
                     }
 
                     // grid[col][row]
@@ -1039,11 +1061,11 @@ public class Main extends JFrame implements MouseWheelListener {
                         //Pair new_pair = new Pair();
                         Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
 
-                        try {
+                        //try {
                         factors_for_ids[p] = new Pair<>(pair.getKey(), Math.max(factor_first, factor_last));
-                        } catch (Exception e) {
-                            System.out.println();
-                        }
+//                        } catch (Exception e) {
+//                            System.out.println();
+//                        }
 
                     }
                     // System.out.println();
@@ -1363,12 +1385,12 @@ public class Main extends JFrame implements MouseWheelListener {
                         int index_of_cell = binary_search_2(path, radius);//binarySearch(path, 0, path.size(), radius);
 
                         Cell intersection_cell = null;
-                        try {
-                            intersection_cell = (Cell) path.get(index_of_cell);
+                        //try {
+                        intersection_cell = (Cell) path.get(index_of_cell);
 
-                        } catch (Exception e) {
-                            System.out.println();
-                        }
+//                        } catch (Exception e) {
+//                            System.out.println();
+//                        }
 
                         double dist = (Math.sqrt(Math.pow(source_cell.cell_x - intersection_cell.cell_x, 2) +
                                 Math.pow(source_cell.cell_y - intersection_cell.cell_y, 2)));
@@ -1412,7 +1434,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                //System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -1490,7 +1512,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                //System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -1616,7 +1638,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                //System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -1690,7 +1712,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                // System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -1815,7 +1837,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                // System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -1893,7 +1915,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             }
 
                             if (intersection_point == null) {
-                                System.out.println();
+                                //System.out.println();
                             }
 
                             double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -2001,12 +2023,12 @@ public class Main extends JFrame implements MouseWheelListener {
                     // TODO: check index out of bounds
                     if (index_of_cell + 1 < path.size() && index_of_cell - 1 > 0) {
                         Cell next_cell = null;
-                        try {
-                            next_cell = (Cell) path.get(index_of_cell + 1);
+                        //try {
+                        next_cell = (Cell) path.get(index_of_cell + 1);
 
-                        } catch (Exception e) {
-                            System.out.println();
-                        }
+                        //} catch (Exception e) {
+                        //    System.out.println();
+                        // }
                         Cell previous_cell = (Cell) path.get(index_of_cell - 1);
 
                         double dist_1 = (Math.sqrt(Math.pow(source_cell.cell_x - next_cell.cell_x, 2) +
@@ -2042,7 +2064,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         }
 
                         if (intersection_point == null) {
-                            System.out.println();
+                            // System.out.println();
                         }
 
                         double distance_from_cell_to_intersection = (Math.sqrt(Math.pow(cell.cell_x - intersection_point.first, 2) +
@@ -3035,11 +3057,11 @@ public class Main extends JFrame implements MouseWheelListener {
         int blue = (int) ((float) (bB - aB) * value + aB);      // Evaluates as 255*value + 0.
 
         Color color = null;
-        try {
-            color = new Color(red, green, blue);
-        } catch (Exception e) {
-            System.out.println();
-        }
+        //try {
+        color = new Color(red, green, blue);
+        // } catch (Exception e) {
+        //     System.out.println();
+        // }
 
         return color;
     }
@@ -3142,12 +3164,12 @@ public class Main extends JFrame implements MouseWheelListener {
                     color = getValueBetweenTwoFixedColors(value);
                 }
 
-                try {
-                    image.setRGB(i, j, color.getRGB());
+                // try {
+                image.setRGB(i, j, color.getRGB());
 
-                } catch (Exception e) {
-                    System.out.println();
-                }
+                //  } catch (Exception e) {
+                //      System.out.println();
+                //  }
 
             }
         }
