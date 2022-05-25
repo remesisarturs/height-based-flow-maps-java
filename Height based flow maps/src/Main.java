@@ -74,33 +74,23 @@ public class Main extends JFrame implements MouseWheelListener {
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
-
     public static boolean DRAW_TEXT_DESCRIPTION = true;
-
     public static boolean DRAW_PATHS = true;
-
     public static double previous_sum = 0.0;
     public static double new_sum = 0.0;
-
     public static boolean DRAW_DISTANCE_IMAGES = false;
-
     public static boolean HEIGHT_DECAY_ENABLED = false;
-
     public static double MIN_HEIGHT = Integer.MAX_VALUE;
     public static double MAX_HEIGHT = Integer.MIN_VALUE;
-
     public static boolean GENERATE_INTERMEDIATE_RESULTS = true;
     public static boolean GENERATE_INTERMEDIATE_HEIGHT = true;
-
     public static boolean EXPERIMENTAL_MODE = false;
-
     public static FileWriter log_file_writer;
-
     public static String COLOR_MODE = "";
-
     public static boolean PATH_SCALING = false;
-
     public static boolean MEMORY_MODE = false;
+
+    public static double MEMORY_DECAY_RATE;
 
     public static void main(String[] args) throws IOException {
 
@@ -178,6 +168,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
                     draw(grid, paths, 0, false, iteration_location, width, scale);
+                    //draw_paths(grid, paths, 0, false, iteration_location, width, scale);
+                    //draw_flow(grid, paths, 0, false, iteration_location, width, scale);
                 }
 
                 ArrayList<double[][]> distances_for_paths = null;
@@ -217,6 +209,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 // draw final iteration
                 draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
+                draw_paths(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
+                //draw_flow(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
+
 
                 if (DRAW_DISTANCE_IMAGES) {
                     draw_distances(grid, paths, distances_for_paths, false, width, scale, NR_OF_ITERATIONS, iteration_location);
@@ -305,7 +300,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_3_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -326,7 +321,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
-        BASE_HEIGHT_TYPE = "EUCLID_SQRT";
+        //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
         BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
@@ -339,11 +334,11 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
-        DISTANCE_METRIC = "POLAR_SYSTEM";
+        //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 5;
+        NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{10};
+        WIDTHS = new double[]{20};
         SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
@@ -351,9 +346,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         EXPERIMENTAL_MODE = true;
 
-        PATH_SCALING = false;
+        PATH_SCALING = true;
 
-        MEMORY_MODE = true;
+        MEMORY_MODE = false;
+        MEMORY_DECAY_RATE = 0.5;
 
     }
 
@@ -371,6 +367,9 @@ public class Main extends JFrame implements MouseWheelListener {
         fileWriter.write("RESET_HEIGHTS = " + RESET_HEIGHTS + "\n");
         fileWriter.write("REMOVE_DIAGONAL_BIAS = " + REMOVE_DIAGONAL_BIAS + "\n");
         fileWriter.write("TARGET_NAME = " + TARGET_NAME + "\n");
+        fileWriter.write("PATH_SCALING = " + PATH_SCALING + "\n");
+        fileWriter.write("MEMORY_MODE = " + MEMORY_MODE + "\n");
+        fileWriter.write("MEMORY_DECAY_RATE = " + MEMORY_DECAY_RATE + "\n");
 
         fileWriter.close();
     }
@@ -439,7 +438,8 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                result[i][j] = previous_height[i][j] * 0.5 + new_height[i][j];
+                // MEMORY_DECAY_RATE = 0.5; // ##hardcoded
+                result[i][j] = previous_height[i][j] * MEMORY_DECAY_RATE + new_height[i][j];
 
             }
         }
@@ -514,6 +514,9 @@ public class Main extends JFrame implements MouseWheelListener {
             if (save_outputs == true) {
                 if (GENERATE_INTERMEDIATE_RESULTS) {
                     draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+                    //draw_paths(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+                    //draw_flow(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+
                 }
 
                 if (DRAW_DISTANCE_IMAGES) {
@@ -632,6 +635,7 @@ public class Main extends JFrame implements MouseWheelListener {
             for (int row = 0; row < NR_OF_ROWS; row++) {
 
                 Iterator path_iterator = paths.iterator();
+                int intersection_counter = 0;
 
                 while (path_iterator.hasNext()) {
 
@@ -646,6 +650,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         Cell path_cell = (Cell) path_cell_iterator.next();
 
                         if (grid[col][row] == path_cell) {
+                            intersection_counter++;
 
                             // path cell is on the vertical cell
                             Pair<Integer, Integer> id_and_y_coord = new Pair<>(path_id, row);
@@ -654,6 +659,48 @@ public class Main extends JFrame implements MouseWheelListener {
                             //path_indexes.add(path_index);
                         }
                     }
+                }
+            }
+
+            //Map<Integer, List<Integer>> y_coord_hash_map = new HashMap<>();
+            Map<Integer, List<Integer>> multiMap = new HashMap<Integer, List<Integer>>();
+
+            for (int i = 0; i < y_coordinates_for_column.size(); i++) {
+
+                Pair pair = (Pair) y_coordinates_for_column.get(i);
+
+                List<Integer> list;
+                if (multiMap.containsKey(pair.getKey())) {
+                    list = multiMap.get(pair.getKey());
+                    list.add((Integer) pair.getValue());
+                } else {
+                    list = new ArrayList<Integer>();
+                    list.add((Integer) pair.getValue());
+                    multiMap.put((Integer) pair.getKey(), list);
+                }
+            }
+
+            for (int i = 0 ; i < multiMap.size(); i ++) {
+                if (multiMap.get(i).size() > 1) {
+
+                    int sum = 0;
+                    for (int j = 0; j < multiMap.get(i).size(); j ++) {
+                        sum = sum + multiMap.get(i).get(j);
+                    }
+                    int avg = sum / multiMap.get(i).size();
+
+                    for (int e = 0; e < y_coordinates_for_column.size(); e ++) {
+
+                        Pair pair = (Pair) y_coordinates_for_column.get(e);
+
+                        if((Integer) pair.getKey() == i) {
+                            y_coordinates_for_column.remove(e);
+                        }
+
+                    }
+
+                    y_coordinates_for_column.set(i, new Pair<>(i, avg));
+
                 }
             }
 
@@ -880,19 +927,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
                     if (row == 5 && col == 5) {
-                        // System.out.println();
+                        System.out.println();
                     }
 
                     if (row == 5 && col == 0) {
-                        //  System.out.println();
+                        System.out.println();
                     }
 
                     if (row == 9 && col == 0) {
-                        //   System.out.println();
+                        System.out.println();
                     }
 
                     if (row == 5 && col == 8) {
-                        //    System.out.println();
+                        System.out.println();
                     }
 
                     // grid[col][row]
@@ -906,6 +953,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     //int index = -1;
 
                     // TODO: this could be binary search (if sorted)
+                    // Check where the cell is w.r.t. the intersections of paths (y coordinates)
                     for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
 
                         Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
@@ -916,7 +964,6 @@ public class Main extends JFrame implements MouseWheelListener {
                             if (row > (int) pair.getValue() && row < (int) next_pair.getValue()) {
                                 // index is between two y coordinates
                                 // the two y coordinates should have 1
-                                //index = p;
 
                                 factors_for_ids[p] = new Pair<>(pair.getKey(), 1.0);
                                 factors_for_ids[p + 1] = new Pair<>(next_pair.getKey(), 1.0);
@@ -992,7 +1039,11 @@ public class Main extends JFrame implements MouseWheelListener {
                         //Pair new_pair = new Pair();
                         Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
 
+                        try {
                         factors_for_ids[p] = new Pair<>(pair.getKey(), Math.max(factor_first, factor_last));
+                        } catch (Exception e) {
+                            System.out.println();
+                        }
 
                     }
                     // System.out.println();
@@ -3130,6 +3181,131 @@ public class Main extends JFrame implements MouseWheelListener {
         ImageIO.write(image, "png", file);
     }
 
+    public static void draw_flow(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
+            throws IOException {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                int flow = grid[i][j].flow_direction;
+                Color color = null;
+
+                if (flow == 1) {
+                    color = Color.RED;
+                } else if (flow == 2) {
+                    color = Color.PINK;
+                } else if (flow == 4) {
+                    color = Color.ORANGE;
+                } else if (flow == 8) {
+                    color = Color.YELLOW;
+                } else if (flow == 16) {
+                    color = Color.GREEN;
+                } else if (flow == 32) {
+                    color = Color.CYAN;
+                } else if (flow == 64) {
+                    color = Color.BLUE;
+                } else if (flow == 128) {
+                    color = Color.MAGENTA;
+                }
+
+                image.setRGB(i, j, color.getRGB());
+
+            }
+        }
+
+        if (show_intermediate_results) {
+
+            JPanel pane = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(image, 0, 0, null);
+                }
+            };
+
+            jframe.add(pane);
+
+            jframe.setVisible(true);
+
+            jframe.show();
+        }
+        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
+
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/paths_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+
+    }
+
+    public static void draw_paths(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
+            throws IOException {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                Color color = Color.BLACK;
+
+                image.setRGB(i, j, color.getRGB());
+
+            }
+        }
+
+        if (DRAW_PATHS) {
+
+            Iterator iter = paths.iterator();
+
+            while (iter.hasNext()) {
+
+                Path path = (Path) iter.next();
+
+                Iterator cell_iter = path.cells.iterator();
+
+                while (cell_iter.hasNext()) {
+
+                    Cell cell = (Cell) cell_iter.next();
+
+                    image.setRGB((int) cell.cell_x, (int) cell.cell_y, new Color(255, 255, 255).getRGB());
+
+                }
+            }
+        }
+
+        if (show_intermediate_results) {
+
+            JPanel pane = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(image, 0, 0, null);
+                }
+            };
+
+            jframe.add(pane);
+
+            jframe.setVisible(true);
+
+            jframe.show();
+        }
+        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
+
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/paths_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+
+    }
+
     public static void draw(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
             throws IOException {
 
@@ -3199,10 +3375,11 @@ public class Main extends JFrame implements MouseWheelListener {
 //                }
 
 
-                if (!grid[i][j].title.equals("")) {
+//                if (!grid[i][j].title.equals("")) {
+//
+//                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
+//                }
 
-                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
-                }
             }
         }
 
