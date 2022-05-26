@@ -92,6 +92,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static double MEMORY_DECAY_RATE;
 
+    public static String SCALING_MODE;
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -296,8 +297,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 500;
-        NR_OF_COLUMNS = 500;
+        NR_OF_ROWS = 10;
+        NR_OF_COLUMNS = 10;
 
         TARGET_NAME = "A";//"FL";
         INPUT_FILE_NAME = "./input/to_edge_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
@@ -336,10 +337,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 15;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{1000};
+        SCALES = new double[]{10000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -347,6 +348,8 @@ public class Main extends JFrame implements MouseWheelListener {
         EXPERIMENTAL_MODE = true;
 
         PATH_SCALING = true;
+        SCALING_MODE = "WIDTHS";
+        SCALING_MODE = "FACTORS";
 
         MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.5;
@@ -925,6 +928,207 @@ public class Main extends JFrame implements MouseWheelListener {
         return computed_height;
     }
 
+    public static void factors_for_paths(Cell[][] grid, int col, int row, ArrayList paths,
+                                         ArrayList y_coordinates_for_columns, double[][] computed_height,
+                                         ArrayList distances_for_paths) {
+
+        Cell cell = grid[col][row];
+
+
+        if (row == 5 && col == 5) {
+            System.out.println();
+        }
+
+        if (row == 5 && col == 0) {
+            System.out.println();
+        }
+
+        if (row == 9 && col == 0) {
+            System.out.println();
+        }
+
+        if (row == 5 && col == 8) {
+            System.out.println();
+        }
+
+        // grid[col][row]
+        // TODO: potentially has to be sorted s.t. the path ids are preserved
+        ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_y);
+
+        //double[] factors = new double[paths.size()];
+
+        Pair<Integer, Double>[] factors_for_ids = new Pair[paths.size()];
+
+        //int index = -1;
+
+        // TODO: this could be binary search (if sorted)
+        // Check where the cell is w.r.t. the intersections of paths (y coordinates)
+        for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
+
+            Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
+
+            if (p + 1 < y_coordinates_of_paths_for_cell.size()) {
+                Pair<Integer, Integer> next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + 1);
+
+                if (row > (int) pair.getValue() && row < (int) next_pair.getValue()) {
+                    // index is between two y coordinates
+                    // the two y coordinates should have 1
+
+                    factors_for_ids[p] = new Pair<>(pair.getKey(), 1.0);
+                    factors_for_ids[p + 1] = new Pair<>(next_pair.getKey(), 1.0);
+//
+//                                factors[p] = 1;
+//                                factors[p + 1] = 1;
+                    break;
+                }
+            }
+
+            if (p == (int) pair.getValue()) {
+                // the index is on a path cell. We find all the paths that have the same y and set factors to 1
+                //index = p;
+//
+//                            factors.add(p, 1);
+//
+                int counter = 0;
+                Pair<Integer, Integer> next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + counter);
+                while (p + counter == next_pair.getValue()) {
+
+                    factors_for_ids[p + counter] = new Pair<>(next_pair.getKey(), 1.0);
+                    //factors[p + counter] = 1;
+
+                    counter++;
+
+                    if (p + counter == y_coordinates_of_paths_for_cell.size()) {
+                        break;
+                    }
+                    next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + counter);
+                }
+                break;
+
+            }
+
+            if (p < pair.getValue()) {
+                //index = p;
+                factors_for_ids[p] = new Pair<>(pair.getKey(), 1.0);
+                //factors[p] = 1;
+                break;
+            }
+
+        }
+
+        int n = factors_for_ids.length;
+        int first = -1;
+        int last = -1;
+
+        for (int k = 0; k < n; k++) {
+//                        if () {
+//
+//                        }
+
+            if (factors_for_ids[k] == null) {
+                continue;
+            }
+            if (1.0 != factors_for_ids[k].getValue()) {
+                continue;
+            }
+
+            if (first == -1)
+                first = k;
+            last = k;
+        }
+
+        for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
+
+            int distance_from_index_first = Math.abs(p - first);
+            int distance_from_index_last = Math.abs(p - last);
+
+            double factor_first = 1 / (Math.pow(2, distance_from_index_first));
+            double factor_last = 1 / (Math.pow(2, distance_from_index_last));
+
+            //Pair new_pair = new Pair();
+            Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
+
+            //try {
+            factors_for_ids[p] = new Pair<>(pair.getKey(), Math.max(factor_first, factor_last));
+//                        } catch (Exception e) {
+//                            System.out.println();
+//                        }
+
+        }
+        // System.out.println();
+
+        Iterator path_iterator = distances_for_paths.iterator();
+        ArrayList distances_for_cell = new ArrayList();
+
+        while (path_iterator.hasNext()) {
+
+            DistanceForPathMatrix distanceForPathMatrix = (DistanceForPathMatrix) path_iterator.next();
+
+            Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[cell.cell_y][cell.cell_x]);
+
+            distances_for_cell.add(distances_for_cell_and_id);
+
+        }
+
+        double sum = 0;
+
+        for (int k = 0; k < distances_for_cell.size(); k++) {
+
+            //System.out.println();
+            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
+
+            int path_id = (int) distances_for_cell_and_id.getKey();
+            double distance_for_path = (double) distances_for_cell_and_id.getValue();
+            double factor = 1;
+
+            for (int b = 0; b < factors_for_ids.length; b++) {
+
+                if (factors_for_ids[b] == null) {
+                    factor = 1.0;
+                    break;
+                }
+
+                if (factors_for_ids[b].getKey() == k) {
+                    factor = factors_for_ids[b].getValue();
+                    break;
+                }
+
+            }
+
+            //double factor_for_path_id = factors_for_ids[];
+
+            //factor = 1.0;
+            //System.out.print("row : " + row + " col : " + col + " factor : " + factor + " | ");
+            //factor = 1.0;
+            sum = sum + factor * gaussian((double) distance_for_path, 0, HEIGHT_FUNCTION_WIDTH);
+
+//                        if (factors[k] == 0) {
+//                            factors[k] = 1;
+//                        }
+//
+//                        sum = sum + factors[k] * gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+        }
+        //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+
+        if (RESET_HEIGHTS == false) {
+
+            // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));   // grid[col][row]
+            grid[col][row].height = grid[col][row].height + ((height)); // updates horizontally
+            computed_height[col][row] = height;
+
+        } else {
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            computed_height[col][row] = height;
+
+            grid[col][row].height = grid[col][row].height + ((height));
+        }
+
+    }
+
     public static void update_height_overwrite(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths, int iteration, String iteration_location) throws IOException {
 
         System.out.println("adjusting height");
@@ -945,200 +1149,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (PATH_SCALING) {
 
-                    Cell cell = grid[col][row];
+                    if (SCALING_MODE.equals("FACTORS")) {
+
+                        factors_for_paths(grid, col, row, paths,
+                                y_coordinates_for_columns, computed_height,
+                                distances_for_paths);
+
+                    } else if (SCALING_MODE.equals("WIDTH")) {
 
 
-                    if (row == 5 && col == 5) {
-                        //System.out.println();
-                    }
-
-                    if (row == 5 && col == 0) {
-                        //System.out.println();
-                    }
-
-                    if (row == 9 && col == 0) {
-                        // System.out.println();
-                    }
-
-                    if (row == 5 && col == 8) {
-                        // System.out.println();
-                    }
-
-                    // grid[col][row]
-                    // TODO: potentially has to be sorted s.t. the path ids are preserved
-                    ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_y);
-
-                    //double[] factors = new double[paths.size()];
-
-                    Pair<Integer, Double>[] factors_for_ids = new Pair[paths.size()];
-
-                    //int index = -1;
-
-                    // TODO: this could be binary search (if sorted)
-                    // Check where the cell is w.r.t. the intersections of paths (y coordinates)
-                    for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
-
-                        Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
-
-                        if (p + 1 < y_coordinates_of_paths_for_cell.size()) {
-                            Pair<Integer, Integer> next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + 1);
-
-                            if (row > (int) pair.getValue() && row < (int) next_pair.getValue()) {
-                                // index is between two y coordinates
-                                // the two y coordinates should have 1
-
-                                factors_for_ids[p] = new Pair<>(pair.getKey(), 1.0);
-                                factors_for_ids[p + 1] = new Pair<>(next_pair.getKey(), 1.0);
-//
-//                                factors[p] = 1;
-//                                factors[p + 1] = 1;
-                                break;
-                            }
-                        }
-
-                        if (p == (int) pair.getValue()) {
-                            // the index is on a path cell. We find all the paths that have the same y and set factors to 1
-                            //index = p;
-//
-//                            factors.add(p, 1);
-//
-                            int counter = 0;
-                            Pair<Integer, Integer> next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + counter);
-                            while (p + counter == next_pair.getValue()) {
-
-                                factors_for_ids[p + counter] = new Pair<>(next_pair.getKey(), 1.0);
-                                //factors[p + counter] = 1;
-
-                                counter++;
-
-                                if (p + counter == y_coordinates_of_paths_for_cell.size()) {
-                                    break;
-                                }
-                                next_pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p + counter);
-                            }
-                            break;
-
-                        }
-
-                        if (p < pair.getValue()) {
-                            //index = p;
-                            factors_for_ids[p] = new Pair<>(pair.getKey(), 1.0);
-                            //factors[p] = 1;
-                            break;
-                        }
 
                     }
 
-                    int n = factors_for_ids.length;
-                    int first = -1;
-                    int last = -1;
-
-                    for (int k = 0; k < n; k++) {
-//                        if () {
-//
-//                        }
-
-                        if (factors_for_ids[k] == null) {
-                            continue;
-                        }
-                        if (1.0 != factors_for_ids[k].getValue()) {
-                            continue;
-                        }
-
-                        if (first == -1)
-                            first = k;
-                        last = k;
-                    }
-
-                    for (int p = 0; p < y_coordinates_of_paths_for_cell.size(); p++) {
-
-                        int distance_from_index_first = Math.abs(p - first);
-                        int distance_from_index_last = Math.abs(p - last);
-
-                        double factor_first = 1 / (Math.pow(2, distance_from_index_first));
-                        double factor_last = 1 / (Math.pow(2, distance_from_index_last));
-
-                        //Pair new_pair = new Pair();
-                        Pair<Integer, Integer> pair = (Pair<Integer, Integer>) y_coordinates_of_paths_for_cell.get(p);
-
-                        //try {
-                        factors_for_ids[p] = new Pair<>(pair.getKey(), Math.max(factor_first, factor_last));
-//                        } catch (Exception e) {
-//                            System.out.println();
-//                        }
-
-                    }
-                    // System.out.println();
-
-                    Iterator path_iterator = distances_for_paths.iterator();
-                    ArrayList distances_for_cell = new ArrayList();
-
-                    while (path_iterator.hasNext()) {
-
-                        DistanceForPathMatrix distanceForPathMatrix = (DistanceForPathMatrix) path_iterator.next();
-
-                        Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[cell.cell_y][cell.cell_x]);
-
-                        distances_for_cell.add(distances_for_cell_and_id);
-
-                    }
-
-                    double sum = 0;
-
-                    for (int k = 0; k < distances_for_cell.size(); k++) {
-
-                        //System.out.println();
-                        Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
-
-                        int path_id = (int) distances_for_cell_and_id.getKey();
-                        double distance_for_path = (double) distances_for_cell_and_id.getValue();
-                        double factor = 1;
-
-                        for (int b = 0; b < factors_for_ids.length; b++) {
-
-                            if (factors_for_ids[b] == null) {
-                                factor = 1.0;
-                                break;
-                            }
-
-                            if (factors_for_ids[b].getKey() == k) {
-                                factor = factors_for_ids[b].getValue();
-                                break;
-                            }
-
-                        }
-
-                        //double factor_for_path_id = factors_for_ids[];
-
-                        //factor = 1.0;
-                        //System.out.print("row : " + row + " col : " + col + " factor : " + factor + " | ");
-                        //factor = 1.0;
-                        sum = sum + factor * gaussian((double) distance_for_path, 0, HEIGHT_FUNCTION_WIDTH);
-
-//                        if (factors[k] == 0) {
-//                            factors[k] = 1;
-//                        }
-//
-//                        sum = sum + factors[k] * gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
-                    }
-                    //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
-
-                    if (RESET_HEIGHTS == false) {
-
-                        // wtf is this??
-//                    if (i == 0) {
-//                        i = 1;
-//                    }
-                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));   // grid[col][row]
-                        grid[col][row].height = grid[col][row].height + ((height)); // updates horizontally
-                        computed_height[col][row] = height;
-
-                    } else {
-                        double height = ((-HEIGHT_FUNCTION_SCALE * sum));
-                        computed_height[col][row] = height;
-
-                        grid[col][row].height = grid[col][row].height + ((height));
-                    }
 
                     // =================== PATH SCALING = FALSE
                     // ===================
