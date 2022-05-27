@@ -302,7 +302,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_4.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_5_1.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -999,13 +999,20 @@ public class Main extends JFrame implements MouseWheelListener {
 
         double sum = 0;
 
+        // loops over all the distances for all paths (even the ones outside column)
         for (int k = 0; k < distances_for_cell.size(); k++) {
 
             Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
 
             double distance_for_path = (double) distances_for_cell_and_id.getValue();
 
-            sum = sum + gaussian((double) distance_for_path, 0, 100 * ((int) abs_distances_for_cell.get(distances_for_cell_and_id.getKey()) + 1));
+            int factor = 1;
+
+            if (abs_distances_for_cell.containsKey(distances_for_cell_and_id.getKey())) {
+                factor = ((int) abs_distances_for_cell.get(distances_for_cell_and_id.getKey()) + 1);
+            }
+
+            sum = sum + gaussian((double) distance_for_path, 0, factor);
 
         }
 
@@ -3621,7 +3628,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 continue;
             }
 
-            Cell grid_cell = grid[point.grid_x][point.grid_y];
+            Cell grid_cell = grid[point.grid_col][point.grid_row];
 
             Cell current_cell = grid_cell;
 
@@ -3695,7 +3702,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 continue;
             }
 
-            Cell grid_cell = grid[point.grid_x][point.grid_y];
+            Cell grid_cell = grid[point.grid_col][point.grid_row];
 
             Cell current_cell = grid_cell;
 
@@ -3898,13 +3905,13 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Point point = (Point) it.next();
 
-            grid[point.grid_x][point.grid_y].title = point.name;
+            grid[point.grid_col][point.grid_row].title = point.name;
 
             if (point.name.equals(TARGET_NAME)) {
-                grid[point.grid_x][point.grid_y].height = -10000;
+                grid[point.grid_col][point.grid_row].height = -10000;
 
-                source_x = point.grid_x;
-                source_y = point.grid_y;
+                source_x = point.grid_col;
+                source_y = point.grid_row;
 
             }
         }
@@ -3930,18 +3937,18 @@ public class Main extends JFrame implements MouseWheelListener {
             int i = 1;
             int j = 1;
 
-            while (bounds.min_x + i * step_x < point.x) {
+            while (bounds.min_x + i * step_x < point.col) {
                 i = i + 1;
             }
             int column_index = i - 1;
 
-            while (bounds.min_y + j * step_y < point.y) {
+            while (bounds.min_y + j * step_y < point.row) {
                 j = j + 1;
             }
             int row_index = j - 1;
 
-            point.grid_x = column_index;
-            point.grid_y = row_index;
+            point.grid_col = column_index;
+            point.grid_row = row_index;
 
         }
 
@@ -3960,8 +3967,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Point point = new Point();
             point.name = components.get(0);
-            point.x = Float.parseFloat(components.get(1));
-            point.y = Float.parseFloat(components.get(2));
+            point.col = Float.parseFloat(components.get(1));
+            point.row = Float.parseFloat(components.get(2));
 
             point_list.add(point);
 
@@ -3974,26 +3981,26 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Iterator it = input_points.iterator();
 
-        double min_x = input_points.get(0).x;
-        double min_y = input_points.get(0).y;
-        double max_x = input_points.get(0).x;
-        double max_y = input_points.get(0).y;
+        double min_x = input_points.get(0).col;
+        double min_y = input_points.get(0).row;
+        double max_x = input_points.get(0).col;
+        double max_y = input_points.get(0).row;
 
         while (it.hasNext()) {
 
             Point next_point = (Point) it.next();
 
-            if (next_point.x < min_x) {
-                min_x = next_point.x;
+            if (next_point.col < min_x) {
+                min_x = next_point.col;
             }
-            if (next_point.x > max_x) {
-                max_x = next_point.x;
+            if (next_point.col > max_x) {
+                max_x = next_point.col;
             }
-            if (next_point.y < min_y) {
-                min_y = next_point.y;
+            if (next_point.row < min_y) {
+                min_y = next_point.row;
             }
-            if (next_point.y > max_y) {
-                max_y = next_point.y;
+            if (next_point.row > max_y) {
+                max_y = next_point.row;
             }
 
         }

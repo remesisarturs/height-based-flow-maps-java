@@ -1,9 +1,9 @@
 public class Point {
 
-    double x;
-    double y;
+    double col;
+    double row;
     String name;
-    int grid_x;
-    int grid_y;
+    int grid_col;
+    int grid_row;
 
 }
