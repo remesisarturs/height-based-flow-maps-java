@@ -302,7 +302,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_1.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -340,7 +340,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 10;
 
         WIDTHS = new double[]{100};
-        SCALES = new double[]{10000};
+        SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -666,33 +666,83 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
             //Map<Integer, List<Integer>> y_coord_hash_map = new HashMap<>();
-            Map<Integer, List<Integer>> multiMap = new HashMap<Integer, List<Integer>>();
 
+            // collects all the intersections and puts them in a list. Used to take the average of vertical intersection segments
+            Map<Integer, List<Integer>> multi_intersections = new HashMap<Integer, List<Integer>>();
             for (int i = 0; i < y_coordinates_for_column.size(); i++) {
 
                 Pair pair = (Pair) y_coordinates_for_column.get(i);
 
                 List<Integer> list;
-                if (multiMap.containsKey(pair.getKey())) {
-                    list = multiMap.get(pair.getKey());
+                if (multi_intersections.containsKey(pair.getKey())) {
+                    list = multi_intersections.get(pair.getKey());
                     list.add((Integer) pair.getValue());
                 } else {
                     list = new ArrayList<Integer>();
                     list.add((Integer) pair.getValue());
-                    multiMap.put((Integer) pair.getKey(), list);
+                    multi_intersections.put((Integer) pair.getKey(), list);
                 }
             }
 
-            for (int i = 0; i < multiMap.size(); i++) {
-                if (multiMap.get(i).size() > 1) {
+            for (Map.Entry<Integer, List<Integer>> set : multi_intersections.entrySet()) {
+
+                int key = set.getKey();
+                List<Integer> value = set.getValue();
+
+                if (multi_intersections.get(key).size() > 1) {
 
                     int sum = 0;
-                    for (int j = 0; j < multiMap.get(i).size(); j++) {
-                        sum = sum + multiMap.get(i).get(j);
+                    for (int j = 0; j < multi_intersections.get(key).size(); j++) {
+                        sum = sum + multi_intersections.get(key).get(j);
                     }
-                    int avg = sum / multiMap.get(i).size();
+                    int avg = sum / multi_intersections.get(key).size();
 
-                    if (multiMap.get(i).size() > 3) {
+                    if (multi_intersections.get(key).size() > 3) {
+                        //System.out.println();
+                    }
+
+                    Iterator y_iterator = y_coordinates_for_column.iterator();
+
+                    ArrayList found = new ArrayList();
+                    while (y_iterator.hasNext()) {
+
+                        Pair pair = (Pair) y_iterator.next();
+
+                        if ((Integer) pair.getKey() == key) {
+                            found.add(pair);
+                            //y_coordinates_for_column.remove(pair);
+                            //e--;
+                        }
+
+                    }
+                    y_coordinates_for_column.removeAll(found);
+
+                    y_coordinates_for_column.add(key, new Pair<>(key, avg));
+
+                }
+
+            }
+
+            for (Map.Entry<Integer, List<Integer>> set : multi_intersections.entrySet()) {
+
+//                try{
+//                    if (multi_intersections.get(i).size() > 1);
+//                } catch (Exception e) {
+//                    System.out.println();
+//                }
+                int i = set.getKey();
+                List<Integer> value = set.getValue();
+
+
+                if (multi_intersections.get(i).size() > 1) {
+
+                    int sum = 0;
+                    for (int j = 0; j < multi_intersections.get(i).size(); j++) {
+                        sum = sum + multi_intersections.get(i).get(j);
+                    }
+                    int avg = sum / multi_intersections.get(i).size();
+
+                    if (multi_intersections.get(i).size() > 3) {
                         //System.out.println();
                     }
 
@@ -711,18 +761,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     }
                     y_coordinates_for_column.removeAll(found);
-
-//                    int size = y_coordinates_for_column.size();
-//                    for (int e = 0; e < size; e ++) {
-//
-//                        Pair pair = (Pair) y_coordinates_for_column.get(e);
-//
-//                        if((Integer) pair.getKey() == i) {
-//                            y_coordinates_for_column.remove(e);
-//                            //e--;
-//                        }
-//
-//                    }
 
                     y_coordinates_for_column.add(i, new Pair<>(i, avg));
 
@@ -885,7 +923,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     } else if (SCALING_MODE.equals("WIDTHS")) {
 
-                        widths_for_paths(grid, col, row, paths,
+                        widths_for_paths_2(grid, col, row, paths,
                                 y_coordinates_for_columns, computed_height,
                                 distances_for_paths);
 
@@ -970,15 +1008,15 @@ public class Main extends JFrame implements MouseWheelListener {
         // return the column of y_coordinate intersections of paths for the cell
         ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_col);
 
-        HashMap abs_distances_for_cell = new HashMap();
-
+        // computes the absolute y distance from cell to all the intersections
+        HashMap abs_y_distances_for_cell = new HashMap();
         for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
 
             Pair pair = (Pair) y_coordinates_of_paths_for_cell.get(k);
 
             //Pair abs_d_pair = new Pair(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
 
-            abs_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
+            abs_y_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
 
         }
 
@@ -1008,11 +1046,126 @@ public class Main extends JFrame implements MouseWheelListener {
 
             int factor = 1;
 
-            if (abs_distances_for_cell.containsKey(distances_for_cell_and_id.getKey())) {
-                factor = ((int) abs_distances_for_cell.get(distances_for_cell_and_id.getKey()) + 1);
+            // Check if the path is in the intersections column. If not, the factor is 1
+            if (abs_y_distances_for_cell.containsKey(distances_for_cell_and_id.getKey())) {
+                factor = ((int) abs_y_distances_for_cell.get(distances_for_cell_and_id.getKey()) + 1);
             }
 
-            sum = sum + gaussian((double) distance_for_path, 0, factor);
+            sum = sum + gaussian((double) distance_for_path, 0, WIDTH);
+
+        }
+
+        if (RESET_HEIGHTS == false) {
+
+            // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));   // grid[col][row]
+            grid[col][row].height = grid[col][row].height + ((height)); // updates horizontally
+            computed_height[col][row] = height;
+
+        } else {
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            computed_height[col][row] = height;
+
+            grid[col][row].height = grid[col][row].height + ((height));
+        }
+
+    }
+
+    // this function computes the distances for each pair of adjacent y coordinates and picks the largest one
+    public static void widths_for_paths_2(Cell[][] grid, int col, int row, ArrayList paths,
+                                          ArrayList y_coordinates_for_columns, double[][] computed_height,
+                                          ArrayList distances_for_paths) {
+
+        Cell cell = grid[col][row];
+
+        // return the column of y_coordinate intersections of paths for the cell
+        ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_col);
+
+        // computes the absolute y distance from cell to all the intersections
+        HashMap abs_y_distances_for_cell = new HashMap();
+        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+
+            Pair pair = (Pair) y_coordinates_of_paths_for_cell.get(k);
+
+            //Pair abs_d_pair = new Pair(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
+
+            abs_y_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
+
+        }
+
+        // here we compute the max distance to adjacent neighbors for each y intersection. This is indexed by the path id of the intersection.
+        HashMap max_y_neighbor_distances_for_y_intersection = new HashMap();
+        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+
+            int distance_to_furthest_neighbor;
+
+            if (k == 0) {
+
+                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+                Pair next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+
+                distance_to_furthest_neighbor = Math.abs((int)current_y.getValue() - (int)next_y.getValue());
+
+                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+
+            } else if (k > 0 && k < y_coordinates_of_paths_for_cell.size() - 1) {
+
+                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                Pair next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
+                Pair previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+
+                distance_to_furthest_neighbor = Math.max(Math.abs((int)current_y.getValue() - (int)next_y.getValue()),
+                        Math.abs((int)current_y.getValue() - (int)previous_y.getValue()));
+
+                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+
+            } else if (k > 0 && k == y_coordinates_of_paths_for_cell.size() - 1) {
+
+                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                Pair previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+
+                distance_to_furthest_neighbor = Math.abs((int)current_y.getValue() - (int)previous_y.getValue());
+
+                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+
+            }
+
+        }
+
+
+        // For each path we get the distances to the current cell
+        Iterator path_iterator = distances_for_paths.iterator();
+        ArrayList distances_for_cell = new ArrayList();
+        while (path_iterator.hasNext()) {
+
+            DistanceForPathMatrix distanceForPathMatrix = (DistanceForPathMatrix) path_iterator.next();
+
+            Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[cell.cell_row][cell.cell_col]);
+
+            distances_for_cell.add(distances_for_cell_and_id);
+
+        }
+
+        double sum = 0;
+
+        // loops over all the distances for all paths (even the ones outside column)
+        for (int k = 0; k < distances_for_cell.size(); k++) {
+
+            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
+
+            double distance_for_path = (double) distances_for_cell_and_id.getValue();
+
+            int factor = 1;
+
+            // Check if the path is in the intersections column. If not, the factor is 1
+            if (max_y_neighbor_distances_for_y_intersection.containsKey(distances_for_cell_and_id.getKey())) {
+                factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
+            }
+
+            sum = sum + gaussian((double) distance_for_path, 0,  factor / 5);
 
         }
 
@@ -1043,19 +1196,19 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
         if (row == 5 && col == 5) {
-            System.out.println();
+            //  System.out.println();
         }
 
         if (row == 5 && col == 0) {
-            System.out.println();
+            // System.out.println();
         }
 
         if (row == 9 && col == 0) {
-            System.out.println();
+            //   System.out.println();
         }
 
         if (row == 5 && col == 8) {
-            System.out.println();
+            //    System.out.println();
         }
 
         // grid[col][row]
@@ -1264,7 +1417,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     } else if (SCALING_MODE.equals("WIDTHS")) {
 
-                        widths_for_paths(grid, col, row, paths,
+                        widths_for_paths_2(grid, col, row, paths,
                                 y_coordinates_for_columns, computed_height,
                                 distances_for_paths);
 
@@ -3111,7 +3264,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell cell = (Cell) cell_iter.next();
 
-                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(255, 255, 255).getRGB());
+                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
 
                 }
             }
@@ -3429,7 +3582,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell cell = (Cell) cell_iter.next();
 
-                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(255, 255, 255).getRGB());
+                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
 
                 }
             }
@@ -3550,7 +3703,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell cell = (Cell) cell_iter.next();
 
-                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(255, 255, 255).getRGB());
+                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
 
                 }
             }
