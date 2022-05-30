@@ -37,7 +37,7 @@ public class Main extends JFrame implements MouseWheelListener {
     private static boolean zoomer;
 
 
-    public static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+    public static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM_dd_HH_mm_ss");
     public static LocalDateTime now = LocalDateTime.now();
     public static String storage_location_name = "";
     public static String currentWorkingPath;
@@ -84,21 +84,25 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double MAX_HEIGHT = Integer.MIN_VALUE;
     public static boolean GENERATE_INTERMEDIATE_RESULTS = true;
     public static boolean GENERATE_INTERMEDIATE_HEIGHT = true;
-    public static boolean EXPERIMENTAL_MODE = false;
+    public static boolean HORIZONTAL_FLOW_MODE = false;
     public static FileWriter log_file_writer;
     public static String COLOR_MODE = "";
     public static boolean PATH_SCALING = false;
     public static boolean MEMORY_MODE = false;
-
     public static double MEMORY_DECAY_RATE;
-
     public static String SCALING_MODE;
+
 
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
 
+        String[] parts = INPUT_FILE_NAME.split("/");
+        String test_case_name = parts[2].split("\\.")[0];
+
         storage_location_name = dtf.format(now);
+
+        storage_location_name = storage_location_name.concat("_" + test_case_name);
         storage_location_name = storage_location_name.concat("_" + DISTANCE_METRIC + "_" + BASE_HEIGHT_TYPE);
 
         currentWorkingPath = System.getProperty("user.dir").concat("\\experiments\\");
@@ -158,7 +162,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 ArrayList<Path> paths;
 
-                if (EXPERIMENTAL_MODE) {
+                if (HORIZONTAL_FLOW_MODE) {
                     paths = compute_paths_to_frame_edge(points_list, grid);
                 } else {
                     paths = compute_paths(points_list, grid);
@@ -179,8 +183,6 @@ public class Main extends JFrame implements MouseWheelListener {
                     distances_for_paths = compute_bfs(grid, paths);
                 } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
                     distances_for_paths = compute_Dijkstra(grid, paths);
-                } else if (DISTANCE_METRIC.equals("ANGULAR")) {
-                    distances_for_paths = compute_angular_distance_precise(grid, paths);
                 } else if (DISTANCE_METRIC.equals("ARC")) {
                     distances_for_paths = compute_arc_length(grid, paths);
                 } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
@@ -321,7 +323,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ARC_RADIUS = 20;
 
-        BASE_HEIGHT_TYPE = "EUCLID";
+        //BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
@@ -339,20 +341,20 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{100};
+        WIDTHS = new double[]{20};
         SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        EXPERIMENTAL_MODE = true;
+        HORIZONTAL_FLOW_MODE = true;
 
         PATH_SCALING = true;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "FACTORS";
 
         MEMORY_MODE = false;
-        MEMORY_DECAY_RATE = 0.66;
+        MEMORY_DECAY_RATE = 0.33;
 
     }
 
@@ -504,7 +506,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             compute_flow(grid, i);
 
-            if (EXPERIMENTAL_MODE) {
+            if (HORIZONTAL_FLOW_MODE) {
                 paths = compute_paths_to_frame_edge(points_list, grid);
             } else {
                 paths = compute_paths(points_list, grid);
@@ -533,8 +535,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 distances_for_paths = compute_bfs(grid, paths);
             } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
                 distances_for_paths = compute_Dijkstra(grid, paths);
-            } else if (DISTANCE_METRIC.equals("ANGULAR")) {
-                distances_for_paths = compute_angular_distance_precise(grid, paths);
             } else if (DISTANCE_METRIC.equals("ARC")) {
                 distances_for_paths = compute_arc_length(grid, paths);
             } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
@@ -609,7 +609,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         compute_flow(grid, NR_OF_ITERATIONS);
 
-        if (EXPERIMENTAL_MODE) {
+        if (HORIZONTAL_FLOW_MODE) {
             paths = compute_paths_to_frame_edge(points_list, grid);
         } else {
             paths = compute_paths(points_list, grid);
@@ -1085,49 +1085,64 @@ public class Main extends JFrame implements MouseWheelListener {
         ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_col);
 
         // computes the absolute y distance from cell to all the intersections
-        HashMap abs_y_distances_for_cell = new HashMap();
-        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
-
-            Pair pair = (Pair) y_coordinates_of_paths_for_cell.get(k);
-
-            //Pair abs_d_pair = new Pair(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
-
-            abs_y_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
-
-        }
+//        HashMap abs_y_distances_for_cell = new HashMap();
+//        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+//
+//            Pair pair = (Pair) y_coordinates_of_paths_for_cell.get(k);
+//
+//            //Pair abs_d_pair = new Pair(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
+//
+//            abs_y_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
+//
+//        }
 
         // here we compute the max distance to adjacent neighbors for each y intersection. This is indexed by the path id of the intersection.
-        HashMap max_y_neighbor_distances_for_y_intersection = new HashMap();
+
+        // TODO: this can be computed once per column! (currently it is computed for each cell)
+        HashMap<Integer, Integer> max_y_neighbor_distances_for_y_intersection = new HashMap();
         for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
 
             int distance_to_furthest_neighbor;
 
             if (k == 0) {
 
-                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
-                Pair next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+                if (y_coordinates_of_paths_for_cell.size() == 1) {
+                    // if there is only one intersection in the column :
+                    // we should take the largest distance to the edge
+                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
 
-                distance_to_furthest_neighbor = Math.abs((int)current_y.getValue() - (int)next_y.getValue());
+                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - NR_OF_COLUMNS);
 
-                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+                    distance_to_furthest_neighbor = Math.max((int) current_y.getValue(),
+                            distance_to_furthest_neighbor);
+
+                    max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+                } else if (y_coordinates_of_paths_for_cell.size() > 1) {
+                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+                    Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+
+                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) next_y.getValue());
+
+                    max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+                }
 
             } else if (k > 0 && k < y_coordinates_of_paths_for_cell.size() - 1) {
 
-                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
-                Pair next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
-                Pair previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
+                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
 
-                distance_to_furthest_neighbor = Math.max(Math.abs((int)current_y.getValue() - (int)next_y.getValue()),
-                        Math.abs((int)current_y.getValue() - (int)previous_y.getValue()));
+                distance_to_furthest_neighbor = Math.max(Math.abs((int) current_y.getValue() - (int) next_y.getValue()),
+                        Math.abs((int) current_y.getValue() - (int) previous_y.getValue()));
 
                 max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
 
             } else if (k > 0 && k == y_coordinates_of_paths_for_cell.size() - 1) {
 
-                Pair current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
-                Pair previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
 
-                distance_to_furthest_neighbor = Math.abs((int)current_y.getValue() - (int)previous_y.getValue());
+                distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) previous_y.getValue());
 
                 max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
 
@@ -1152,22 +1167,36 @@ public class Main extends JFrame implements MouseWheelListener {
         double sum = 0;
 
         // loops over all the distances for all paths (even the ones outside column)
-        for (int k = 0; k < distances_for_cell.size(); k++) {
 
-            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
+        for (HashMap.Entry<Integer, Integer> entry : max_y_neighbor_distances_for_y_intersection.entrySet()) {
+            int path_id = entry.getKey();
+            int distance_from_cell_to_furthest_intersection = entry.getValue();
 
+            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(path_id);
             double distance_for_path = (double) distances_for_cell_and_id.getValue();
 
-            int factor = 1;
+            //double factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
 
-            // Check if the path is in the intersections column. If not, the factor is 1
-            if (max_y_neighbor_distances_for_y_intersection.containsKey(distances_for_cell_and_id.getKey())) {
-                factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
-            }
-
-            sum = sum + gaussian((double) distance_for_path, 0,  factor / 5);
+            sum = sum + gaussian((double) distance_for_path, 0, distance_from_cell_to_furthest_intersection);
 
         }
+
+//        for (int k = 0; k < distances_for_cell.size(); k++) {
+//
+//            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
+//
+//            double distance_for_path = (double) distances_for_cell_and_id.getValue();
+//
+//            int factor = 1;
+//
+//            // Check if the path is in the intersections column. If not, the factor is 1
+//            if (max_y_neighbor_distances_for_y_intersection.containsKey(distances_for_cell_and_id.getKey())) {
+//                factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
+//            }
+//
+//            sum = sum + gaussian((double) distance_for_path, 0, factor);
+//
+//        }
 
         if (RESET_HEIGHTS == false) {
 
@@ -2630,131 +2659,6 @@ public class Main extends JFrame implements MouseWheelListener {
         return transposedMatrix;
     }
 
-    public static ArrayList compute_angular_distance_precise(Cell[][] grid, ArrayList paths) throws IOException {
-
-        System.out.println("computing angular distance");
-        log_file_writer.write("computing angular distance" + "\n");
-
-        Iterator path_iterator = paths.iterator();
-
-        ArrayList distances_for_paths = new ArrayList();
-
-        // for all paths
-        while (path_iterator.hasNext()) {
-
-            ArrayList path = (ArrayList) path_iterator.next();
-
-            Collections.reverse(path);
-
-            // the first cell in the path is the source node (A). The last cell is the target (B)
-            ArrayList<IntermediateCell> finer_path = new ArrayList<IntermediateCell>();
-
-            //double distance = 0.0;
-            // Make path finer:
-
-            double sum = 0.0;
-
-            for (int i = 0; i < path.size() - 1; i++) { // potentially up to size - 1
-
-                Cell cell = (Cell) path.get(i);
-                Cell next_cell = (Cell) path.get(i + 1);
-
-//                double distance = (Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2) +
-//                        Math.pow(next_cell.cell_y - cell.cell_y, 2)));
-
-                int cell_x = cell.cell_col;
-                int next_cell_x = next_cell.cell_col;
-
-                int cell_y = cell.cell_row;
-                int next_cell_y = next_cell.cell_row;
-
-//                double distance_x = Math.sqrt(Math.pow(next_cell.cell_x - cell.cell_x, 2));
-//                double distance_y = Math.sqrt(Math.pow(next_cell.cell_y - cell.cell_y, 2));
-
-                double abs_x = Math.abs(cell_x - next_cell_x);
-                double abs_y = Math.abs(cell_y - next_cell_y);
-
-                double splits = 1;
-
-                double split_x = abs_x / splits;
-                double split_y = abs_y / splits;
-
-                for (int j = 0; j < splits; j++) {
-
-                    IntermediateCell intermediate_cell = new IntermediateCell();
-
-                    intermediate_cell.cell_x = cell_x - split_x * j;
-                    intermediate_cell.cell_y = cell_y - split_y * j;
-
-                    finer_path.add(intermediate_cell);
-                    //sum = sum + split_distance;
-                    //finer_path.add(sum);
-                }
-            }
-            IntermediateCell last_cell = new IntermediateCell();
-
-            Cell last_path_cell = (Cell) path.get(path.size() - 1);
-            last_cell.cell_x = last_path_cell.cell_col;
-            last_cell.cell_y = last_path_cell.cell_row;
-
-            finer_path.add(last_cell);
-
-            double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
-
-            // for each cell in the grid
-            for (int i = 0; i < NR_OF_COLUMNS; i++) {
-                for (int j = 0; j < NR_OF_ROWS; j++) {
-
-                    Cell cell = grid[i][j];
-
-                    double radius = (Math.sqrt(Math.pow(source_cell.cell_col - cell.cell_col, 2) +
-                            Math.pow(source_cell.cell_row - cell.cell_row, 2)));
-
-                    // We don't actually need an index of a cell. We just need the distance
-                    // For our binary search: we split the actual path into a much finer path (each cell split into 10)
-                    // Then run binary search on the finer path.
-                    // Input: Arraylist/array of bins. |array| = number of cells + cumber of finer cells
-                    // Each smaller cell holds the distance it corresponds to in the split
-
-                    //double distance = binary_serach_for_finer_path(finer_path, radius);
-
-                    int index_of_cell = binary_serach_for_finer_path(finer_path, radius);
-
-                    double x = finer_path.get(index_of_cell).cell_x;
-                    double y = finer_path.get(index_of_cell).cell_y;
-
-                    IntermediateCell intersection_cell = (IntermediateCell) finer_path.get(index_of_cell);
-
-                    // Here we can either use radius as dist or the actual distance. Matter of precision.
-                    double dist = (Math.sqrt(Math.pow(intersection_cell.cell_x - source_cell.cell_col, 2) +
-                            Math.pow(intersection_cell.cell_y - source_cell.cell_row, 2)));
-
-                    double dist_2 = (Math.sqrt(Math.pow(intersection_cell.cell_x - cell.cell_col, 2) +
-                            Math.pow(intersection_cell.cell_y - cell.cell_row, 2)));
-
-                    double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(dist_2, 2)) /
-                            (2.0 * radius * dist));
-
-                    distances[i][j] = angle;
-                }
-            }
-
-            Iterator path_cell_iter = path.iterator();
-
-            while (path_cell_iter.hasNext()) {
-
-                Cell cell = (Cell) path_cell_iter.next();
-
-                distances[cell.cell_col][cell.cell_row] = 0.0;
-
-            }
-
-            distances_for_paths.add(transposeMatrix(distances));
-        }
-        return distances_for_paths;
-
-    }
-
     public static ArrayList compute_angular_distance(Cell[][] grid, ArrayList paths) throws IOException {
 
         System.out.println("computing angular distance");
@@ -2814,34 +2718,6 @@ public class Main extends JFrame implements MouseWheelListener {
         }
         return distances_for_paths;
 
-    }
-
-    public static int binary_serach_for_finer_path(ArrayList path, double distance_target) {
-
-        int start = 0;
-        int end = path.size() - 1;
-
-        int ans = -1;
-
-        while (start <= end) {
-            int mid = (start + end) / 2;
-            IntermediateCell mid_cell = (IntermediateCell) path.get(mid);
-
-            double dist_to_mid = (Math.sqrt(Math.pow(source_cell.cell_col - mid_cell.cell_x, 2) +
-                    Math.pow(source_cell.cell_row - mid_cell.cell_y, 2)));
-
-            if (dist_to_mid == distance_target) {
-                return mid;
-            }
-
-            if (dist_to_mid <= distance_target) {
-                start = mid + 1;
-            } else {
-                ans = mid;
-                end = mid - 1;
-            }
-        }
-        return end;
     }
 
     public static int binary_search_2(ArrayList<Cell> path, double distance_target) {
