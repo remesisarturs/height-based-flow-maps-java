@@ -304,7 +304,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_4_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -323,11 +323,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ARC_RADIUS = 20;
 
-        //BASE_HEIGHT_TYPE = "EUCLID";
+        BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -347,14 +347,14 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
         PATH_SCALING = true;
-        SCALING_MODE = "WIDTHS";
-        //SCALING_MODE = "FACTORS";
+        //SCALING_MODE = "WIDTHS";
+        SCALING_MODE = "OVERLAPS";
 
-        MEMORY_MODE = false;
-        MEMORY_DECAY_RATE = 0.33;
+        MEMORY_MODE = true;
+        MEMORY_DECAY_RATE = 0.66;
 
     }
 
@@ -891,6 +891,111 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+    }
+
+    public static Map<Pair, List<Cell>> compute_path_overlaps(ArrayList<Path> paths) {
+
+        // holds the info about overlapping cells.
+        // indexed by pair of two overlapping paths. Value of index is the overlapping cell
+        Map<Pair, List<Cell>> overlaps = new HashMap<Pair, List<Cell>>();
+
+        for (int i = 0; i < paths.size(); i++) {
+
+            Path path_1 = paths.get(i);
+
+            for (int j = i + 1; j < paths.size(); j++) {
+
+                if (i == j) {
+                    continue;
+                }
+
+                Path path_2 = paths.get(j);
+
+                Iterator path_1_iterator = path_1.cells.iterator();
+
+                while (path_1_iterator.hasNext()) {
+
+                    Cell path_1_cell = (Cell) path_1_iterator.next();
+
+                    Iterator path_2_iterator = path_2.cells.iterator();
+
+                    while (path_2_iterator.hasNext()) {
+
+                        Cell path_2_cell = (Cell) path_2_iterator.next();
+
+                        // TODO: potentiall check if they are within some range
+                        if (path_1_cell.cell_row == path_2_cell.cell_row &&
+                                path_1_cell.cell_col == path_2_cell.cell_col) {
+
+                            // we have an overlapping cell between path_1 and path_2
+
+                            Pair<Integer, Integer> overlapping_path_ids = new Pair<>(i, j);
+                            //overlaps.put(overlapping_path_ids, path_1_cell);
+
+                            List<Cell> list;
+
+                            if (overlaps.containsKey(overlapping_path_ids)) {
+                                list = overlaps.get(overlapping_path_ids);
+                                list.add(path_1_cell);
+                            } else {
+                                list = new ArrayList<Cell>();
+                                list.add(path_1_cell);
+                                overlaps.put((Pair) overlapping_path_ids, list);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (overlaps.size() > 0) {
+            System.out.println();
+
+            for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
+
+                Pair two_overlapping_path_ids_1 = entry_1.getKey();
+                int hash1 = System.identityHashCode(two_overlapping_path_ids_1);
+                List<Cell> list_of_overlapping_cells_1 = entry_1.getValue();
+
+                for (HashMap.Entry<Pair, List<Cell>> entry_2 : overlaps.entrySet()) {
+
+                    Pair two_overlapping_path_ids_2 = entry_2.getKey();
+
+                    if (hash1 > System.identityHashCode(two_overlapping_path_ids_2)) {
+                        continue;
+                    }
+
+                    List<Cell> list_of_overlapping_cells_2 = entry_2.getValue();
+
+                    if (list_of_overlapping_cells_1.containsAll(list_of_overlapping_cells_2) && !list_of_overlapping_cells_2.containsAll(list_of_overlapping_cells_1)) {
+                        System.out.println();
+
+                        list_of_overlapping_cells_1.removeAll(list_of_overlapping_cells_2);
+
+                    }
+                }
+            }
+
+            System.out.println();
+
+
+//            // TODO: check where the segments overlap
+//            for (int i = 0; i < overlaps.size(); i++) {
+//
+//                for (int j = i + 1; j < overlaps.size(); j++) {
+//
+//                    if (i == j) {
+//                        continue;
+//                    }
+//
+//                    // check if an overlap is fully contained within another overlap
+//
+//
+//                }
+//            }
+
+        }
+        return overlaps;
 
     }
 
@@ -903,8 +1008,67 @@ public class Main extends JFrame implements MouseWheelListener {
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         ArrayList y_coordinates_for_columns = null;
+        Map<Pair, List<Cell>> overlaps = null;
         if (PATH_SCALING) {
             y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
+            overlaps = compute_path_overlaps(paths);
+
+            ArrayList overlapping_paths = new ArrayList();
+
+            for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
+
+                Pair two_overlapping_path_ids = entry_1.getKey();
+                ArrayList<Cell> list_of_overlapping_cells = (ArrayList<Cell>) entry_1.getValue();
+
+                Path path = new Path();
+                path.cells = list_of_overlapping_cells;
+
+                overlapping_paths.add(path);
+
+            }
+
+            HashMap<Path, Integer> overlapping_path_and_nr_of_overlaps = new HashMap<>();
+
+            for (int i = 0; i < overlapping_paths.size(); i++) {
+
+                Path p_1 = (Path) overlapping_paths.get(i);
+
+                for (int j = i + 1; j < overlaps.size(); j++) {
+
+                    if (i == j) {
+                        continue;
+                    }
+                    Path p_2 = (Path) overlapping_paths.get(j);
+
+                    if (p_1.cells.containsAll(p_2.cells) && p_2.cells.containsAll(p_1.cells)) {
+
+                        // paths are equal
+
+                        if () {
+
+                        }
+
+                    }
+                }
+            }
+
+
+            if (SCALING_MODE.equals("OVERLAPS")) {
+                if (DISTANCE_METRIC.equals("BFS")) {
+                    distances_for_paths = compute_bfs(grid, overlapping_paths);
+                } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+                    distances_for_paths = compute_Dijkstra(grid, overlapping_paths);
+                } else if (DISTANCE_METRIC.equals("ARC")) {
+                    distances_for_paths = compute_arc_length(grid, overlapping_paths);
+                } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
+                    distances_for_paths = compute_angular_distance_with_intersection(grid, overlapping_paths);
+                } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
+                    distances_for_paths = compute_anguar_with_arc_length(grid, overlapping_paths);
+                } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
+                    distances_for_paths = compute_vertical_distances(grid, overlapping_paths);
+                }
+            }
+
         }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
@@ -927,6 +1091,12 @@ public class Main extends JFrame implements MouseWheelListener {
                                 y_coordinates_for_columns, computed_height,
                                 distances_for_paths);
 
+                    } else if (SCALING_MODE.equals("OVERLAPS")) {
+
+                        height_update_overlaps(grid, col, row, paths,
+                                y_coordinates_for_columns, computed_height,
+                                distances_for_paths, overlaps);
+
                     }
 
 
@@ -936,7 +1106,6 @@ public class Main extends JFrame implements MouseWheelListener {
                     // ===================
 
                 } else {
-
 
                     Cell cell = grid[col][row];
 
@@ -997,6 +1166,59 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         return computed_height;
+    }
+
+    public static void height_update_overlaps(Cell[][] grid, int col, int row, ArrayList paths,
+                                              ArrayList y_coordinates_for_columns, double[][] computed_height,
+                                              ArrayList distances_for_paths, Map<Pair, List<Cell>> overlaps) {
+
+
+        Cell cell = grid[col][row];
+
+        Iterator path_iterator = distances_for_paths.iterator();
+
+        ArrayList distances_for_cell = new ArrayList();
+
+        while (path_iterator.hasNext()) {
+
+            DistanceForPathMatrix distances = (DistanceForPathMatrix) path_iterator.next();
+            double[][] distances_matrix = distances.distance_matrix;
+
+            distances_for_cell.add(distances_matrix[cell.cell_row][cell.cell_col]);
+
+        }
+
+        double sum = 0;
+        for (int k = 0; k < distances_for_cell.size(); k++) {
+            sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+        }
+        //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+
+        long startTime = System.currentTimeMillis();
+
+        //double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
+
+        long endTime = System.currentTimeMillis();
+        //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+
+        if (RESET_HEIGHTS == false) {
+
+            // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            //grid[col][row].height = grid[col][row].height + ((height));
+            computed_height[col][row] = height;
+
+        } else {
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            computed_height[col][row] = height;
+
+            //grid[col][row].height = grid[col][row].height + ((height));
+        }
+
+
     }
 
     public static void widths_for_paths(Cell[][] grid, int col, int row, ArrayList paths,
@@ -1428,8 +1650,12 @@ public class Main extends JFrame implements MouseWheelListener {
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         ArrayList y_coordinates_for_columns = null;
+        Map<Pair, List<Cell>> overlaps = null;
+
         if (PATH_SCALING) {
             y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
+            overlaps = compute_path_overlaps(paths);
+
         }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
@@ -1449,6 +1675,12 @@ public class Main extends JFrame implements MouseWheelListener {
                         widths_for_paths_2(grid, col, row, paths,
                                 y_coordinates_for_columns, computed_height,
                                 distances_for_paths);
+
+                    } else if (SCALING_MODE.equals("OVERLAPS")) {
+
+                        height_update_overlaps(grid, col, row, paths,
+                                y_coordinates_for_columns, computed_height,
+                                distances_for_paths, overlaps);
 
                     }
 
