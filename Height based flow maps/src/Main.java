@@ -960,7 +960,9 @@ public class Main extends JFrame implements MouseWheelListener {
                 for (HashMap.Entry<Pair, List<Cell>> entry_2 : overlaps.entrySet()) {
 
                     Pair two_overlapping_path_ids_2 = entry_2.getKey();
-
+                    if (entry_1 == entry_2) {
+                        continue;
+                    }
                     if (hash1 > System.identityHashCode(two_overlapping_path_ids_2)) {
                         continue;
                     }
@@ -975,26 +977,49 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                 }
             }
-
-            System.out.println();
-
-
-//            // TODO: check where the segments overlap
-//            for (int i = 0; i < overlaps.size(); i++) {
-//
-//                for (int j = i + 1; j < overlaps.size(); j++) {
-//
-//                    if (i == j) {
-//                        continue;
-//                    }
-//
-//                    // check if an overlap is fully contained within another overlap
-//
-//
-//                }
-//            }
-
         }
+
+
+        HashMap<List<Cell>, Integer> overlap_count = new HashMap<>();
+
+        for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
+
+            Pair two_overlapping_path_ids_1 = entry_1.getKey();
+            int hash1 = System.identityHashCode(two_overlapping_path_ids_1);
+            List<Cell> list_of_overlapping_cells_1 = entry_1.getValue();
+
+            for (HashMap.Entry<Pair, List<Cell>> entry_2 : overlaps.entrySet()) {
+
+                Pair two_overlapping_path_ids_2 = entry_2.getKey();
+
+                if (entry_1 == entry_2) {
+                    continue;
+                }
+
+                if (hash1 > System.identityHashCode(two_overlapping_path_ids_2)) {
+                    continue;
+                }
+
+                List<Cell> list_of_overlapping_cells_2 = entry_2.getValue();
+
+                if (list_of_overlapping_cells_1.containsAll(list_of_overlapping_cells_2) && list_of_overlapping_cells_2.containsAll(list_of_overlapping_cells_1)) {
+                    System.out.println();
+                    // we have two equal paths
+
+                    //Path path = new Path();
+                    //path.cells = (ArrayList) list_of_overlapping_cells_1;
+
+                    if (overlap_count.containsKey(list_of_overlapping_cells_1)) {
+                        int count = overlap_count.get(list_of_overlapping_cells_1);
+                        overlap_count.put(list_of_overlapping_cells_1, count + 1);
+                    } else if (!overlap_count.containsKey(list_of_overlapping_cells_1)) {
+                        overlap_count.put(list_of_overlapping_cells_1, 2);
+                    }
+
+                }
+            }
+        }
+
         return overlaps;
 
     }
@@ -1028,29 +1053,6 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
             HashMap<Path, Integer> overlapping_path_and_nr_of_overlaps = new HashMap<>();
-
-            for (int i = 0; i < overlapping_paths.size(); i++) {
-
-                Path p_1 = (Path) overlapping_paths.get(i);
-
-                for (int j = i + 1; j < overlaps.size(); j++) {
-
-                    if (i == j) {
-                        continue;
-                    }
-                    Path p_2 = (Path) overlapping_paths.get(j);
-
-                    if (p_1.cells.containsAll(p_2.cells) && p_2.cells.containsAll(p_1.cells)) {
-
-                        // paths are equal
-
-                        if () {
-
-                        }
-
-                    }
-                }
-            }
 
 
             if (SCALING_MODE.equals("OVERLAPS")) {
