@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -304,7 +305,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_4_t.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -313,7 +314,7 @@ public class Main extends JFrame implements MouseWheelListener {
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
-        DRAW_PATHS = true;
+        DRAW_PATHS = false;
 
         COLOR_MODE = "GRAY_SCALE";
         COLOR_MODE = "MULTIPLE_COLORS";
@@ -327,7 +328,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -347,13 +348,13 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = false;
+        HORIZONTAL_FLOW_MODE = true;
 
         PATH_SCALING = true;
-        //SCALING_MODE = "WIDTHS";
-        SCALING_MODE = "OVERLAPS";
+        SCALING_MODE = "WIDTHS";
+        //SCALING_MODE = "OVERLAPS";
 
-        MEMORY_MODE = true;
+        MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
 
     }
@@ -1024,6 +1025,71 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static ArrayList compute_max_distances_for_columns(ArrayList y_coordinates_of_paths_for_cell) {
+
+        ArrayList max_dist_for_all_cols = new ArrayList();
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+
+            HashMap<Integer, Integer> max_y_neighbor_distances_for_column = new HashMap();
+            for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+
+                int distance_to_furthest_neighbor;
+
+                if (k == 0) {
+
+                    if (y_coordinates_of_paths_for_cell.size() == 1) {
+                        // if there is only one intersection in the column :
+                        // we should take the largest distance to the edge
+                        Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+
+                        distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - NR_OF_COLUMNS);
+
+                        distance_to_furthest_neighbor = Math.max((int) current_y.getValue(),
+                                distance_to_furthest_neighbor);
+
+                        max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+                    } else if (y_coordinates_of_paths_for_cell.size() > 1) {
+                        Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+                        Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+
+                        distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) next_y.getValue());
+
+                        max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+                    }
+
+                } else if (k > 0 && k < y_coordinates_of_paths_for_cell.size() - 1) {
+
+                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                    Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
+                    Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+
+                    distance_to_furthest_neighbor = Math.max(Math.abs((int) current_y.getValue() - (int) next_y.getValue()),
+                            Math.abs((int) current_y.getValue() - (int) previous_y.getValue()));
+
+                    max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+
+                } else if (k > 0 && k == y_coordinates_of_paths_for_cell.size() - 1) {
+
+                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+                    Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+
+                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) previous_y.getValue());
+
+                    max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+
+                }
+            }
+
+            max_dist_for_all_cols.add(max_y_neighbor_distances_for_column);
+
+        }
+
+
+        return max_dist_for_all_cols;
+
+    }
+
     public static double[][] compute_height_update(Cell[][] grid, ArrayList distances_for_paths, ArrayList paths,
                                                    int iteration, String iteration_location) throws IOException {
 
@@ -1033,44 +1099,55 @@ public class Main extends JFrame implements MouseWheelListener {
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         ArrayList y_coordinates_for_columns = null;
+        ArrayList max_distances_for_columns = null;
         Map<Pair, List<Cell>> overlaps = null;
         if (PATH_SCALING) {
-            y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
-            overlaps = compute_path_overlaps(paths);
+            if (SCALING_MODE.equals("WIDTHS")) {
+                y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
 
-            ArrayList overlapping_paths = new ArrayList();
+                // TODO: compute max distances for paths here (for all columns)
+                //max_distances_for_columns = compute_max_distances_for_columns(y_coordinates_for_columns);
 
-            for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
-
-                Pair two_overlapping_path_ids = entry_1.getKey();
-                ArrayList<Cell> list_of_overlapping_cells = (ArrayList<Cell>) entry_1.getValue();
-
-                Path path = new Path();
-                path.cells = list_of_overlapping_cells;
-
-                overlapping_paths.add(path);
+                //System.out.println();
 
             }
-
-            HashMap<Path, Integer> overlapping_path_and_nr_of_overlaps = new HashMap<>();
-
 
             if (SCALING_MODE.equals("OVERLAPS")) {
-                if (DISTANCE_METRIC.equals("BFS")) {
-                    distances_for_paths = compute_bfs(grid, overlapping_paths);
-                } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
-                    distances_for_paths = compute_Dijkstra(grid, overlapping_paths);
-                } else if (DISTANCE_METRIC.equals("ARC")) {
-                    distances_for_paths = compute_arc_length(grid, overlapping_paths);
-                } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
-                    distances_for_paths = compute_angular_distance_with_intersection(grid, overlapping_paths);
-                } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
-                    distances_for_paths = compute_anguar_with_arc_length(grid, overlapping_paths);
-                } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
-                    distances_for_paths = compute_vertical_distances(grid, overlapping_paths);
+                overlaps = compute_path_overlaps(paths);
+
+                ArrayList overlapping_paths = new ArrayList();
+
+                for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
+
+                    Pair two_overlapping_path_ids = entry_1.getKey();
+                    ArrayList<Cell> list_of_overlapping_cells = (ArrayList<Cell>) entry_1.getValue();
+
+                    Path path = new Path();
+                    path.cells = list_of_overlapping_cells;
+
+                    overlapping_paths.add(path);
+
+                }
+
+                HashMap<Path, Integer> overlapping_path_and_nr_of_overlaps = new HashMap<>();
+
+
+                if (SCALING_MODE.equals("OVERLAPS")) {
+                    if (DISTANCE_METRIC.equals("BFS")) {
+                        distances_for_paths = compute_bfs(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+                        distances_for_paths = compute_Dijkstra(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ARC")) {
+                        distances_for_paths = compute_arc_length(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
+                        distances_for_paths = compute_angular_distance_with_intersection(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
+                        distances_for_paths = compute_anguar_with_arc_length(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
+                        distances_for_paths = compute_vertical_distances(grid, overlapping_paths);
+                    }
                 }
             }
-
         }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
@@ -1275,7 +1352,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 factor = ((int) abs_y_distances_for_cell.get(distances_for_cell_and_id.getKey()) + 1);
             }
 
-            sum = sum + gaussian((double) distance_for_path, 0, WIDTH);
+            sum = sum + gaussian((double) distance_for_path, 0, HEIGHT_FUNCTION_WIDTH);
 
         }
 
@@ -1298,6 +1375,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static void widths_for_paths_radial () {
+
+    }
+
     // this function computes the distances for each pair of adjacent y coordinates and picks the largest one
     public static void widths_for_paths_2(Cell[][] grid, int col, int row, ArrayList paths,
                                           ArrayList y_coordinates_for_columns, double[][] computed_height,
@@ -1305,135 +1386,171 @@ public class Main extends JFrame implements MouseWheelListener {
 
         Cell cell = grid[col][row];
 
+
+        // here we compute the max distance to adjacent neighbors for each y intersection. This is indexed by the path id of the intersection.
+        // TODO: this can be computed once per column! (currently it is computed for each cell)
+//        HashMap<Integer, Integer> max_y_neighbor_distances_for_column = new HashMap();
+//        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+//
+//            int distance_to_furthest_neighbor;
+//
+//            if (k == 0) {
+//
+//                if (y_coordinates_of_paths_for_cell.size() == 1) {
+//                    // if there is only one intersection in the column :
+//                    // we should take the largest distance to the edge
+//                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+//
+//                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - NR_OF_COLUMNS);
+//
+//                    distance_to_furthest_neighbor = Math.max((int) current_y.getValue(),
+//                            distance_to_furthest_neighbor);
+//
+//                    max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+//                } else if (y_coordinates_of_paths_for_cell.size() > 1) {
+//                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+//                    Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+//
+//                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) next_y.getValue());
+//
+//                    max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+//                }
+//
+//            } else if (k > 0 && k < y_coordinates_of_paths_for_cell.size() - 1) {
+//
+//                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+//                Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
+//                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+//
+//                distance_to_furthest_neighbor = Math.max(Math.abs((int) current_y.getValue() - (int) next_y.getValue()),
+//                        Math.abs((int) current_y.getValue() - (int) previous_y.getValue()));
+//
+//                max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+//
+//            } else if (k > 0 && k == y_coordinates_of_paths_for_cell.size() - 1) {
+//
+//                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
+//                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+//
+//                distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) previous_y.getValue());
+//
+//                max_y_neighbor_distances_for_column.put(current_y.getKey(), distance_to_furthest_neighbor);
+//
+//            }
+//        }
+
         // return the column of y_coordinate intersections of paths for the cell
         ArrayList y_coordinates_of_paths_for_cell = (ArrayList) y_coordinates_for_columns.get(cell.cell_col);
 
-        // computes the absolute y distance from cell to all the intersections
-//        HashMap abs_y_distances_for_cell = new HashMap();
-//        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
-//
-//            Pair pair = (Pair) y_coordinates_of_paths_for_cell.get(k);
-//
-//            //Pair abs_d_pair = new Pair(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
-//
-//            abs_y_distances_for_cell.put(pair.getKey(), Math.abs(row - (Integer) pair.getValue()));
-//
-//        }
+        //int width = 0;
 
-        // here we compute the max distance to adjacent neighbors for each y intersection. This is indexed by the path id of the intersection.
+        double update = 0.0;
 
-        // TODO: this can be computed once per column! (currently it is computed for each cell)
-        HashMap<Integer, Integer> max_y_neighbor_distances_for_y_intersection = new HashMap();
-        for (int k = 0; k < y_coordinates_of_paths_for_cell.size(); k++) {
+        double constant = 0.5;
 
-            int distance_to_furthest_neighbor;
+        double update_factor = 10;
 
-            if (k == 0) {
+        HEIGHT_FUNCTION_SCALE = 100;
 
-                if (y_coordinates_of_paths_for_cell.size() == 1) {
-                    // if there is only one intersection in the column :
-                    // we should take the largest distance to the edge
-                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
+        for (int i = 0; i < y_coordinates_of_paths_for_cell.size() - 1; i++) {
 
-                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - NR_OF_COLUMNS);
+            Pair intersection_for_path_1 = (Pair) y_coordinates_of_paths_for_cell.get(i);
+            Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
 
-                    distance_to_furthest_neighbor = Math.max((int) current_y.getValue(),
-                            distance_to_furthest_neighbor);
+            // Check for overlaps:
+            if (cell.cell_row == (int) intersection_for_path_1.getValue() &&
+                    cell.cell_row == (int) intersection_for_path_2.getValue()) {
+                // cell is on these two paths. They are overlapping
 
-                    max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
-                } else if (y_coordinates_of_paths_for_cell.size() > 1) {
-                    Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(0);
-                    Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(1);
+                update = HEIGHT_FUNCTION_SCALE;
+                break;
+            } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
+                // cell is on path 1
 
-                    distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) next_y.getValue());
+                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
+                //  and take the max distance
 
-                    max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
-                }
+                update = HEIGHT_FUNCTION_SCALE;
 
-            } else if (k > 0 && k < y_coordinates_of_paths_for_cell.size() - 1) {
+                break;
+            } else if (cell.cell_row == (int) intersection_for_path_2.getValue()) {
+                // cell is on path 2
 
-                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
-                Pair<Integer, Integer> next_y = (Pair) y_coordinates_of_paths_for_cell.get(k + 1);
-                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
+                //  and take the max distance
 
-                distance_to_furthest_neighbor = Math.max(Math.abs((int) current_y.getValue() - (int) next_y.getValue()),
-                        Math.abs((int) current_y.getValue() - (int) previous_y.getValue()));
+                update = HEIGHT_FUNCTION_SCALE;
+                break;
+            }
 
-                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+            // if cell is at the top (before first path)
+            if (cell.cell_row < (int) intersection_for_path_1.getValue() && i == 0) {
 
-            } else if (k > 0 && k == y_coordinates_of_paths_for_cell.size() - 1) {
+                double width = Math.abs((int) intersection_for_path_1.getValue());
 
-                Pair<Integer, Integer> current_y = (Pair) y_coordinates_of_paths_for_cell.get(k);
-                Pair<Integer, Integer> previous_y = (Pair) y_coordinates_of_paths_for_cell.get(k - 1);
+                width = width * constant;
 
-                distance_to_furthest_neighbor = Math.abs((int) current_y.getValue() - (int) previous_y.getValue());
+                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
+                double influence_1 = gaussian(distance_to_p_1, 0, width);
 
-                max_y_neighbor_distances_for_y_intersection.put(current_y.getKey(), distance_to_furthest_neighbor);
+                update = (influence_1) * HEIGHT_FUNCTION_SCALE * update_factor;
+                break;
 
             }
 
+            // if cell is at the bottom (after all the paths)
+            if (cell.cell_row > (int) intersection_for_path_2.getValue() && i == y_coordinates_of_paths_for_cell.size()) {
+
+                double width = Math.abs(NR_OF_ROWS - (int) intersection_for_path_2.getValue());
+
+                width = width * constant;
+
+                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
+                double influence_2 = gaussian(distance_to_p_2, 0, width);
+
+                update = (influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
+                break;
+            }
+
+            // Check if cell is between paths:
+            if (cell.cell_row > (int) intersection_for_path_1.getValue() &&
+                    cell.cell_row < (int) intersection_for_path_2.getValue()) {
+                // cell is between path 1 and path 2
+
+                // path 1 is the path above cell
+                // path 2 is the path below cell
+
+                double width = Math.abs((int) intersection_for_path_2.getValue() - (int) intersection_for_path_1.getValue());
+
+                width = width * constant;
+
+                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
+                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
+
+                double influence_1 = gaussian(distance_to_p_1, 0, width);
+                double influence_2 = gaussian(distance_to_p_2, 0, width);
+
+                update = (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
+
+                break;
+            }
         }
 
+        //System.out.println();
 
-        // For each path we get the distances to the current cell
-        Iterator path_iterator = distances_for_paths.iterator();
-        ArrayList distances_for_cell = new ArrayList();
-        while (path_iterator.hasNext()) {
-
-            DistanceForPathMatrix distanceForPathMatrix = (DistanceForPathMatrix) path_iterator.next();
-
-            Pair distances_for_cell_and_id = new Pair(distanceForPathMatrix.path_id, distanceForPathMatrix.distance_matrix[cell.cell_row][cell.cell_col]);
-
-            distances_for_cell.add(distances_for_cell_and_id);
-
-        }
-
-        double sum = 0;
-
-        // loops over all the distances for all paths (even the ones outside column)
-
-        for (HashMap.Entry<Integer, Integer> entry : max_y_neighbor_distances_for_y_intersection.entrySet()) {
-            int path_id = entry.getKey();
-            int distance_from_cell_to_furthest_intersection = entry.getValue();
-
-            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(path_id);
-            double distance_for_path = (double) distances_for_cell_and_id.getValue();
-
-            //double factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
-
-            sum = sum + gaussian((double) distance_for_path, 0, distance_from_cell_to_furthest_intersection);
-
-        }
-
-//        for (int k = 0; k < distances_for_cell.size(); k++) {
-//
-//            Pair distances_for_cell_and_id = (Pair) distances_for_cell.get(k);
-//
-//            double distance_for_path = (double) distances_for_cell_and_id.getValue();
-//
-//            int factor = 1;
-//
-//            // Check if the path is in the intersections column. If not, the factor is 1
-//            if (max_y_neighbor_distances_for_y_intersection.containsKey(distances_for_cell_and_id.getKey())) {
-//                factor = ((int) max_y_neighbor_distances_for_y_intersection.get(distances_for_cell_and_id.getKey()) + 1);
-//            }
-//
-//            sum = sum + gaussian((double) distance_for_path, 0, factor);
-//
-//        }
-
+        // only the two surrounding paths influence the height update
         if (RESET_HEIGHTS == false) {
 
             // wtf is this??
 //                    if (i == 0) {
 //                        i = 1;
 //                    }
-            double height = ((-HEIGHT_FUNCTION_SCALE * sum));   // grid[col][row]
+            double height = ((-update));   // grid[col][row]
             grid[col][row].height = grid[col][row].height + ((height)); // updates horizontally
             computed_height[col][row] = height;
 
         } else {
-            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            double height = ((-update));
             computed_height[col][row] = height;
 
             grid[col][row].height = grid[col][row].height + ((height));
@@ -1652,12 +1769,55 @@ public class Main extends JFrame implements MouseWheelListener {
         double[][] computed_height = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         ArrayList y_coordinates_for_columns = null;
+        ArrayList max_distances_for_columns = null;
         Map<Pair, List<Cell>> overlaps = null;
-
         if (PATH_SCALING) {
-            y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
-            overlaps = compute_path_overlaps(paths);
+            if (SCALING_MODE.equals("WIDTHS")) {
+                y_coordinates_for_columns = compute_y_coordinates_for_columns(grid, paths);
 
+                // TODO: compute max distances for paths here (for all columns)
+                //max_distances_for_columns = compute_max_distances_for_columns(y_coordinates_for_columns);
+
+                //System.out.println();
+
+            }
+
+            if (SCALING_MODE.equals("OVERLAPS")) {
+                overlaps = compute_path_overlaps(paths);
+
+                ArrayList overlapping_paths = new ArrayList();
+
+                for (HashMap.Entry<Pair, List<Cell>> entry_1 : overlaps.entrySet()) {
+
+                    Pair two_overlapping_path_ids = entry_1.getKey();
+                    ArrayList<Cell> list_of_overlapping_cells = (ArrayList<Cell>) entry_1.getValue();
+
+                    Path path = new Path();
+                    path.cells = list_of_overlapping_cells;
+
+                    overlapping_paths.add(path);
+
+                }
+
+                HashMap<Path, Integer> overlapping_path_and_nr_of_overlaps = new HashMap<>();
+
+
+                if (SCALING_MODE.equals("OVERLAPS")) {
+                    if (DISTANCE_METRIC.equals("BFS")) {
+                        distances_for_paths = compute_bfs(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
+                        distances_for_paths = compute_Dijkstra(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ARC")) {
+                        distances_for_paths = compute_arc_length(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
+                        distances_for_paths = compute_angular_distance_with_intersection(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
+                        distances_for_paths = compute_anguar_with_arc_length(grid, overlapping_paths);
+                    } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
+                        distances_for_paths = compute_vertical_distances(grid, overlapping_paths);
+                    }
+                }
+            }
         }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
