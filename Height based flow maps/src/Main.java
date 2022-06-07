@@ -307,7 +307,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
+        TARGET_NAME = "CO";//"FL";
         INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
@@ -346,7 +346,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 10;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{200};
+        SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -478,7 +478,9 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
 
             for (int row = 0; row < NR_OF_ROWS; row++) {
-
+                if (col == source_x && row == source_y) {
+                    continue;
+                }
                 grid[col][row].flow_accumulation = 0;
 
             }
@@ -487,7 +489,9 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
 
             for (int row = 0; row < NR_OF_ROWS; row++) {
-
+                if (col == source_x && row == source_y) {
+                    continue;
+                }
                 int flow_direction = grid[col][row].flow_direction;
 
                 Cell flows_into = null;
@@ -4332,14 +4336,18 @@ public class Main extends JFrame implements MouseWheelListener {
         System.out.println("computing flow");
         log_file_writer.write("computing flow" + "\n");
 
-        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
 
-            for (int j = 0; j < NR_OF_ROWS; j++) {
+            for (int row = 0; row < NR_OF_ROWS; row++) {
 
-                int x = (int) grid[i][j].cell_col;
-                int y = (int) grid[i][j].cell_row;
+//                int col = (int) grid[col][row].cell_col;
+//                int row = (int) grid[col][row].cell_row;
 
                 ArrayList<Cell> neighbors = new ArrayList();
+
+                if (col == source_x && row == source_y) {
+                    continue;
+                }
 
                 Cell left = null;
                 Cell right = null;
@@ -4350,43 +4358,43 @@ public class Main extends JFrame implements MouseWheelListener {
                 Cell bottom_left = null;
                 Cell bottom_right = null;
 
-                if (x - 1 >= 0) {
-                    left = grid[x - 1][y];
+                if (col - 1 >= 0) {
+                    left = grid[col - 1][row];
                     neighbors.add(left);
                 }
 
-                if (y + 1 < NR_OF_ROWS) {
-                    bottom = grid[x][y + 1];
+                if (row + 1 < NR_OF_ROWS) {
+                    bottom = grid[col][row + 1];
                     neighbors.add(bottom);
                 }
 
-                if (x + 1 < NR_OF_COLUMNS) {
-                    right = grid[x + 1][y];
+                if (col + 1 < NR_OF_COLUMNS) {
+                    right = grid[col + 1][row];
                     neighbors.add(right);
                 }
 
-                if (y - 1 >= 0) {
-                    top = grid[x][y - 1];
+                if (row - 1 >= 0) {
+                    top = grid[col][row - 1];
                     neighbors.add(top);
                 }
 
-                if (x - 1 >= 0 && y - 1 >= 0) {
-                    top_left = grid[x - 1][y - 1];
+                if (col - 1 >= 0 && row - 1 >= 0) {
+                    top_left = grid[col - 1][row - 1];
                     neighbors.add(top_left);
                 }
 
-                if (y - 1 >= 0 && x + 1 < NR_OF_COLUMNS) {
-                    top_right = grid[x + 1][y - 1];
+                if (row - 1 >= 0 && col + 1 < NR_OF_COLUMNS) {
+                    top_right = grid[col + 1][row - 1];
                     neighbors.add(top_right);
                 }
 
-                if (x - 1 >= 0 && y + 1 < NR_OF_ROWS) {
-                    bottom_left = grid[x - 1][y + 1];
+                if (col - 1 >= 0 && row + 1 < NR_OF_ROWS) {
+                    bottom_left = grid[col - 1][row + 1];
                     neighbors.add(bottom_left);
                 }
 
-                if (x + 1 < NR_OF_COLUMNS && y + 1 < NR_OF_ROWS) {
-                    bottom_right = grid[x + 1][y + 1];
+                if (col + 1 < NR_OF_COLUMNS && row + 1 < NR_OF_ROWS) {
+                    bottom_right = grid[col + 1][row + 1];
                     neighbors.add(bottom_right);
                 }
 
@@ -4398,7 +4406,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell neighbor = (Cell) it.next();
 
-                    double change_in_height = grid[x][y].height - neighbor.height;
+                    double change_in_height = grid[col][row].height - neighbor.height;
 
                     double distance = 0.0;
 
@@ -4408,7 +4416,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     } else if (neighbor == top_left || neighbor == top_right || neighbor == bottom_left || neighbor == bottom_right) {
 
-                        double dist_from_source_to_cell = Math.sqrt(Math.pow(grid[j][i].cell_col - source_x, 2) + Math.pow(grid[j][i].cell_row - source_y, 2));
+                        double dist_from_source_to_cell = Math.sqrt(Math.pow(grid[row][col].cell_col - source_x, 2) + Math.pow(grid[row][col].cell_row - source_y, 2));
 
                         if (true) {//dist_from_source_to_cell < 100) {
 
@@ -4442,21 +4450,21 @@ public class Main extends JFrame implements MouseWheelListener {
                 Cell max_drop_neighbor = (Cell) neighbors.get(max_drop_index);
 
                 if (max_drop_neighbor == left) {
-                    grid[x][y].flow_direction = 16;
+                    grid[col][row].flow_direction = 16;
                 } else if (max_drop_neighbor == right) {
-                    grid[x][y].flow_direction = 1;
+                    grid[col][row].flow_direction = 1;
                 } else if (max_drop_neighbor == bottom) {
-                    grid[x][y].flow_direction = 4;
+                    grid[col][row].flow_direction = 4;
                 } else if (max_drop_neighbor == top) {
-                    grid[x][y].flow_direction = 64;
+                    grid[col][row].flow_direction = 64;
                 } else if (max_drop_neighbor == top_left) {
-                    grid[x][y].flow_direction = 32;
+                    grid[col][row].flow_direction = 32;
                 } else if (max_drop_neighbor == top_right) {
-                    grid[x][y].flow_direction = 128;
+                    grid[col][row].flow_direction = 128;
                 } else if (max_drop_neighbor == bottom_left) {
-                    grid[x][y].flow_direction = 8;
+                    grid[col][row].flow_direction = 8;
                 } else if (max_drop_neighbor == bottom_right) {
-                    grid[x][y].flow_direction = 2;
+                    grid[col][row].flow_direction = 2;
                 }
 
             }
