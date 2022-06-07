@@ -9,4 +9,6 @@ public class Cell {
     double distance;
     boolean is_obstacle;
 
+    int flow_accumulation;
+
 }

@@ -160,6 +160,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 compute_flow(grid, 0);
+                compute_flow_accumulation(grid);
 
                 ArrayList<Path> paths;
 
@@ -177,6 +178,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     draw(grid, paths, 0, false, iteration_location, width, scale);
                     //draw_paths(grid, paths, 0, false, iteration_location, width, scale);
                     //draw_flow(grid, paths, 0, false, iteration_location, width, scale);
+                    draw_flow_accumulation(grid, paths, 0, false, iteration_location, width, scale);
                 }
 
                 ArrayList<double[][]> distances_for_paths = null;
@@ -216,6 +218,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
                 draw_paths(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
                 //draw_flow(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
+                draw_flow_accumulation(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
 
 
                 if (DRAW_DISTANCE_IMAGES) {
@@ -304,8 +307,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -314,9 +317,9 @@ public class Main extends JFrame implements MouseWheelListener {
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
-        DRAW_PATHS = false;
+        DRAW_PATHS = true;
 
-        COLOR_MODE = "GRAY_SCALE";
+        //COLOR_MODE = "GRAY_SCALE";
         COLOR_MODE = "MULTIPLE_COLORS";
         //COLOR_MODE = "RED_BLUE";
 
@@ -328,7 +331,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -343,14 +346,14 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 10;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{1000};
+        SCALES = new double[]{200};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -469,6 +472,51 @@ public class Main extends JFrame implements MouseWheelListener {
         return grid;
     }
 
+
+    public static void compute_flow_accumulation(Cell[][] grid) {
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+
+            for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                grid[col][row].flow_accumulation = 0;
+
+            }
+        }
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+
+            for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                int flow_direction = grid[col][row].flow_direction;
+
+                Cell flows_into = null;
+
+                if (flow_direction == 1) {
+                    flows_into = grid[col + 1][row];
+                } else if (flow_direction == 2) {
+                    flows_into = grid[col + 1][row + 1];
+                } else if (flow_direction == 4) {
+                    flows_into = grid[col][row + 1];
+                } else if (flow_direction == 8) {
+                    flows_into = grid[col - 1][row + 1];
+                } else if (flow_direction == 16) {
+                    flows_into = grid[col - 1][row];
+                } else if (flow_direction == 32) {
+                    flows_into = grid[col - 1][row - 1];
+                } else if (flow_direction == 64) {
+                    flows_into = grid[col][row - 1];
+                } else if (flow_direction == 128) {
+                    flows_into = grid[col + 1][row - 1];
+                }
+
+                flows_into.flow_accumulation = flows_into.flow_accumulation + 1;
+
+            }
+        }
+
+    }
+
     public static Tuple<Cell[][], ArrayList<Path>> iterate(
             Cell[][] grid, ArrayList points_list, ArrayList paths,
             ArrayList distances_for_paths, int NR_OF_ITERATIONS,
@@ -507,6 +555,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
             compute_flow(grid, i);
 
+            compute_flow_accumulation(grid);
+
             if (HORIZONTAL_FLOW_MODE) {
                 paths = compute_paths_to_frame_edge(points_list, grid);
             } else {
@@ -522,6 +572,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     draw(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
                     //draw_paths(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
                     //draw_flow(grid, paths, i, show_intermediate_results, iteration_location, width, scale);
+                    draw_flow_accumulation(grid, paths, i, false, iteration_location, width, scale);
 
                 }
 
@@ -609,6 +660,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         compute_flow(grid, NR_OF_ITERATIONS);
+        compute_flow_accumulation(grid);
 
         if (HORIZONTAL_FLOW_MODE) {
             paths = compute_paths_to_frame_edge(points_list, grid);
@@ -1203,7 +1255,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     double sum = 0;
                     for (int k = 0; k < distances_for_cell.size(); k++) {
-                        sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+
+                        double distance = (double) distances_for_cell.get(k);
+
+                        sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
                     }
                     //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
 
@@ -1375,7 +1430,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void widths_for_paths_radial () {
+    public static void widths_for_paths_radial() {
+
 
     }
 
@@ -1870,7 +1926,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     double sum = 0;
                     for (int k = 0; k < distances_for_cell.size(); k++) {
-                        sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+
+                        double distance = (double) distances_for_cell.get(k);
+
+
+                        sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
                     }
                     //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
 
@@ -3757,6 +3817,117 @@ public class Main extends JFrame implements MouseWheelListener {
         ImageIO.write(image, "png", file);
     }
 
+    public static void draw_flow_accumulation(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
+            throws IOException {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        double max_height = grid[0][0].flow_accumulation;
+        double min_hieght = grid[0][0].flow_accumulation;
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                if (grid[i][j].flow_accumulation > max_height) {
+                    max_height = grid[i][j].flow_accumulation;
+                }
+                if (grid[i][j].flow_accumulation < min_hieght) {
+                    min_hieght = grid[i][j].flow_accumulation;
+                }
+            }
+        }
+
+        System.out.println("min flow_accumulation : " + min_hieght + " max flow_accumulation : " + max_height);
+        log_file_writer.write("min flow_accumulation : " + min_hieght + " max flow_accumulation : " + max_height + "\n");
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                float value = (float) ((grid[i][j].flow_accumulation - min_hieght) / (max_height - min_hieght));
+
+                Color color = null;
+                if (COLOR_MODE == "GRAY_SCALE") {
+                    color = getValueBetweenTwoFixedColors(value);
+
+                } else if (COLOR_MODE == "MULTIPLE_COLORS") {
+                    float minHue = 210f / 255;//210f / 255; //corresponds to green
+                    float maxHue = 0; //corresponds to red
+                    float hue = value * maxHue + (1 - value) * minHue;
+                    color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                } else if (COLOR_MODE == "RED_BLUE") {
+                    color = getValueBetweenTwoFixedColors(value);
+                }
+
+                image.setRGB(i, j, color.getRGB());
+
+            }
+        }
+
+//        if (DRAW_PATHS) {
+//
+//            Iterator iter = paths.iterator();
+//
+//            while (iter.hasNext()) {
+//
+//                Path path = (Path) iter.next();
+//
+//                Iterator cell_iter = path.cells.iterator();
+//
+//                while (cell_iter.hasNext()) {
+//
+//                    Cell cell = (Cell) cell_iter.next();
+//
+//                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
+//
+//                }
+//            }
+//        }
+
+
+        // draw string in image:
+
+        if (DRAW_TEXT_DESCRIPTION) {
+            Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+            String s = "width: " + width + " scale: " + scale + " i: " + image_index;
+            Graphics g = image.getGraphics();
+            g.setColor(Color.BLUE);
+            g.setFont(f);
+            FontMetrics fm = g.getFontMetrics();
+            int x = image.getWidth() - fm.stringWidth(s) - 5;
+            int y = fm.getHeight();
+            g.drawString(s, x, y);
+            g.dispose();
+        }
+
+        if (show_intermediate_results) {
+
+            JPanel pane = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(image, 0, 0, null);
+                }
+            };
+
+            jframe.add(pane);
+
+            jframe.setVisible(true);
+
+            jframe.show();
+        }
+        //dir = new File(currentWorkingPath.concat("\\" +  storage_location_name + "\\" + iteration_location + "\\"));
+
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/flow_accumulation_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+
+    }
+
     public static void draw_flow(Cell[][] grid, ArrayList paths, int image_index, boolean show_intermediate_results, String iteration_location, double width, double scale)
             throws IOException {
 
@@ -3928,33 +4099,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     color = getValueBetweenTwoFixedColors(value);
                 }
 
-//                Color colorOfYourDataPoint = null;
-//                try {
-//                    colorOfYourDataPoint = new Color((int) value*255, (int)value*255, (int)value*255);
-//                } catch (Exception e ) {
-//                    System.out.println();
-//                }
-
                 image.setRGB(i, j, color.getRGB());
-
-                //int c = (int) (grid[i][j].height * 255.0 / max_height);
-//                if (c < 0) {
-//                    c = (int) (grid[i][j].height * 255.0 / min_hieght);
-//                    image.setRGB(i, j, new Color(0, 0, c).getRGB());
-//                } else {
-//                    c = (int) (grid[i][j].height * 255.0 / max_height);
-//                    try {
-//                        image.setRGB(i, j, new Color(c, 0, 0).getRGB());
-//                    } catch (Exception e) {
-//                        System.out.println();
-//                    }
-//                }
-
-
-//                if (!grid[i][j].title.equals("")) {
-//
-//                    image.setRGB(i, j, new Color(0, 255, 0).getRGB());
-//                }
 
             }
         }
