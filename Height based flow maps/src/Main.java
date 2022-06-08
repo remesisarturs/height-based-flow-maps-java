@@ -93,6 +93,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double MEMORY_DECAY_RATE;
     public static String SCALING_MODE;
 
+    public static boolean FLOW_ACCUMULATION;
 
     public static void main(String[] args) throws IOException {
 
@@ -160,7 +161,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 compute_flow(grid, 0);
-                compute_flow_accumulation(grid);
+                //compute_flow_accumulation(grid);
 
                 ArrayList<Path> paths;
 
@@ -307,8 +308,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "CO";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/to_edge_10.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -327,11 +328,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ARC_RADIUS = 20;
 
-        BASE_HEIGHT_TYPE = "EUCLID";
+        //BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -343,7 +344,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 100;
 
         WIDTHS = new double[]{20};
         SCALES = new double[]{100};
@@ -351,11 +352,13 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = false;
+        HORIZONTAL_FLOW_MODE = true;
 
-        PATH_SCALING = false;
+        PATH_SCALING = true;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
+
+        FLOW_ACCUMULATION = false;
 
         MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
@@ -473,6 +476,10 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
+    public static void sample_flow_accumulation(Cell[][] grid) {
+
+    }
+
     public static void compute_flow_accumulation(Cell[][] grid) {
 
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
@@ -559,7 +566,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             compute_flow(grid, i);
 
-            compute_flow_accumulation(grid);
+            // compute_flow_accumulation(grid);
 
             if (HORIZONTAL_FLOW_MODE) {
                 paths = compute_paths_to_frame_edge(points_list, grid);
@@ -664,7 +671,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
         compute_flow(grid, NR_OF_ITERATIONS);
-        compute_flow_accumulation(grid);
+        // compute_flow_accumulation(grid);
 
         if (HORIZONTAL_FLOW_MODE) {
             paths = compute_paths_to_frame_edge(points_list, grid);
@@ -754,8 +761,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                     int avg = sum / multi_intersections.get(key).size();
 
-                    if (multi_intersections.get(key).size() > 3) {
-                        //System.out.println();
+                    if (multi_intersections.get(key).size() > 1) {
+                        System.out.println();
                     }
 
                     Iterator y_iterator = y_coordinates_for_column.iterator();
@@ -774,55 +781,69 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                     y_coordinates_for_column.removeAll(found);
 
-                    y_coordinates_for_column.add(key, new Pair<>(key, avg));
+                    y_coordinates_for_column.add(new Pair<>(key, avg));
 
                 }
 
+                // sort y_coordinates_for_column
+                //y_coordinates_for_column.sort();
+
+               // System.out.println();
+                Collections.sort(y_coordinates_for_column, new Comparator<Pair<Integer, Integer>>() {
+                    @Override
+                    public int compare(Pair<Integer, Integer> p1, Pair<Integer, Integer> p2) {
+                        return p1.getValue().compareTo(p2.getValue());
+                    }
+                });
+               // System.out.println();
+
             }
 
-            for (Map.Entry<Integer, List<Integer>> set : multi_intersections.entrySet()) {
 
-//                try{
-//                    if (multi_intersections.get(i).size() > 1);
-//                } catch (Exception e) {
-//                    System.out.println();
+
+//            for (Map.Entry<Integer, List<Integer>> set : multi_intersections.entrySet()) {
+//
+////                try{
+////                    if (multi_intersections.get(i).size() > 1);
+////                } catch (Exception e) {
+////                    System.out.println();
+////                }
+//                int i = set.getKey();
+//                List<Integer> value = set.getValue();
+//
+//
+//                if (multi_intersections.get(i).size() > 1) {
+//
+//                    int sum = 0;
+//                    for (int j = 0; j < multi_intersections.get(i).size(); j++) {
+//                        sum = sum + multi_intersections.get(i).get(j);
+//                    }
+//                    int avg = sum / multi_intersections.get(i).size();
+//
+//                    if (multi_intersections.get(i).size() > 3) {
+//                        //System.out.println();
+//                    }
+//
+//                    Iterator y_iterator = y_coordinates_for_column.iterator();
+//
+//                    ArrayList found = new ArrayList();
+//                    while (y_iterator.hasNext()) {
+//
+//                        Pair pair = (Pair) y_iterator.next();
+//
+//                        if ((Integer) pair.getKey() == i) {
+//                            found.add(pair);
+//                            //y_coordinates_for_column.remove(pair);
+//                            //e--;
+//                        }
+//
+//                    }
+//                    y_coordinates_for_column.removeAll(found);
+//
+//                    y_coordinates_for_column.add(i, new Pair<>(i, avg));
+//
 //                }
-                int i = set.getKey();
-                List<Integer> value = set.getValue();
-
-
-                if (multi_intersections.get(i).size() > 1) {
-
-                    int sum = 0;
-                    for (int j = 0; j < multi_intersections.get(i).size(); j++) {
-                        sum = sum + multi_intersections.get(i).get(j);
-                    }
-                    int avg = sum / multi_intersections.get(i).size();
-
-                    if (multi_intersections.get(i).size() > 3) {
-                        //System.out.println();
-                    }
-
-                    Iterator y_iterator = y_coordinates_for_column.iterator();
-
-                    ArrayList found = new ArrayList();
-                    while (y_iterator.hasNext()) {
-
-                        Pair pair = (Pair) y_iterator.next();
-
-                        if ((Integer) pair.getKey() == i) {
-                            found.add(pair);
-                            //y_coordinates_for_column.remove(pair);
-                            //e--;
-                        }
-
-                    }
-                    y_coordinates_for_column.removeAll(found);
-
-                    y_coordinates_for_column.add(i, new Pair<>(i, avg));
-
-                }
-            }
+//            }
 
             y_coordinates_for_all_columns.add(y_coordinates_for_column);
 
@@ -903,6 +924,12 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double gaussian(double x, double mu, double sigma) {
 
         return (double) (1.0 / (Math.sqrt(2.0 * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
+
+    }
+
+    public static double gaussian_2(double x, double mu, double sigma) {
+
+        return (double) (Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
 
     }
 
@@ -1508,92 +1535,154 @@ public class Main extends JFrame implements MouseWheelListener {
 
         double constant = 0.5;
 
-        double update_factor = 10;
+        double update_factor = 1;
 
-        HEIGHT_FUNCTION_SCALE = 100;
+        HEIGHT_FUNCTION_SCALE = 10;
 
-        for (int i = 0; i < y_coordinates_of_paths_for_cell.size() - 1; i++) {
+        for (int i = 0; i < y_coordinates_of_paths_for_cell.size(); i++) {
 
             Pair intersection_for_path_1 = (Pair) y_coordinates_of_paths_for_cell.get(i);
-            Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
+            // Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
 
-            // Check for overlaps:
-            if (cell.cell_row == (int) intersection_for_path_1.getValue() &&
-                    cell.cell_row == (int) intersection_for_path_2.getValue()) {
-                // cell is on these two paths. They are overlapping
+            if (cell.cell_row > (int) intersection_for_path_1.getValue()) {
 
-                update = HEIGHT_FUNCTION_SCALE;
-                break;
+                int intersection_2;
+
+                if (i < y_coordinates_of_paths_for_cell.size() - 1) {
+
+                    Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
+
+                    intersection_2 = (int) intersection_for_path_2.getValue();
+
+                } else {
+
+                    intersection_2 = NR_OF_ROWS + 50;
+
+                }
+
+                double width = intersection_2 - (int) intersection_for_path_1.getValue();
+
+                width = width * constant;
+
+                double distance = cell.cell_row - (int) intersection_for_path_1.getValue();
+
+                double influence = gaussian_2(distance, 0, width);
+
+                update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
+
+            } else if (cell.cell_row < (int) intersection_for_path_1.getValue()) {
+
+                int intersection_2;
+
+                if (i > 0) {
+
+                    Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i - 1);
+
+                    intersection_2 = (int) intersection_for_path_2.getValue();
+
+                } else {
+
+                    intersection_2 = 0 - 50;
+
+                }
+
+                double width = (int) intersection_for_path_1.getValue() - intersection_2;
+
+                width = width * constant;
+
+                double distance = (int) intersection_for_path_1.getValue() - cell.cell_row;
+
+                double influence = gaussian_2(distance, 0, width);
+
+                update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
+
+
             } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
-                // cell is on path 1
 
-                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
-                //  and take the max distance
-
-                update = HEIGHT_FUNCTION_SCALE;
-
-                break;
-            } else if (cell.cell_row == (int) intersection_for_path_2.getValue()) {
-                // cell is on path 2
-
-                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
-                //  and take the max distance
-
-                update = HEIGHT_FUNCTION_SCALE;
-                break;
-            }
-
-            // if cell is at the top (before first path)
-            if (cell.cell_row < (int) intersection_for_path_1.getValue() && i == 0) {
-
-                double width = Math.abs((int) intersection_for_path_1.getValue());
-
-                width = width * constant;
-
-                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
-                double influence_1 = gaussian(distance_to_p_1, 0, width);
-
-                update = (influence_1) * HEIGHT_FUNCTION_SCALE * update_factor;
-                break;
+                update = update + HEIGHT_FUNCTION_SCALE * update_factor;
 
             }
 
-            // if cell is at the bottom (after all the paths)
-            if (cell.cell_row > (int) intersection_for_path_2.getValue() && i == y_coordinates_of_paths_for_cell.size()) {
-
-                double width = Math.abs(NR_OF_ROWS - (int) intersection_for_path_2.getValue());
-
-                width = width * constant;
-
-                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
-                double influence_2 = gaussian(distance_to_p_2, 0, width);
-
-                update = (influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
-                break;
-            }
-
-            // Check if cell is between paths:
-            if (cell.cell_row > (int) intersection_for_path_1.getValue() &&
-                    cell.cell_row < (int) intersection_for_path_2.getValue()) {
-                // cell is between path 1 and path 2
-
-                // path 1 is the path above cell
-                // path 2 is the path below cell
-
-                double width = Math.abs((int) intersection_for_path_2.getValue() - (int) intersection_for_path_1.getValue());
-
-                width = width * constant;
-
-                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
-                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
-
-                double influence_1 = gaussian(distance_to_p_1, 0, width);
-                double influence_2 = gaussian(distance_to_p_2, 0, width);
-
-                update = (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
-
-                break;
-            }
+//
+//            // Check for overlaps:
+//            if (cell.cell_row == (int) intersection_for_path_1.getValue() &&
+//                    cell.cell_row == (int) intersection_for_path_2.getValue()) {
+//                // cell is on these two paths. They are overlapping
+//
+//                update = HEIGHT_FUNCTION_SCALE;
+//                break;
+//            } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
+//                // cell is on path 1
+//
+//                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
+//                //  and take the max distance
+//
+//                update = HEIGHT_FUNCTION_SCALE;
+//
+//                break;
+//            } else if (cell.cell_row == (int) intersection_for_path_2.getValue()) {
+//                // cell is on path 2
+//
+//                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
+//                //  and take the max distance
+//
+//                update = HEIGHT_FUNCTION_SCALE;
+//                break;
+//            }
+//
+//            // if cell is at the top (before first path)
+//            if (cell.cell_row < (int) intersection_for_path_1.getValue() && i == 0) {
+//
+//                double width = Math.abs((int) intersection_for_path_1.getValue());
+//
+//                width = width * constant;
+//
+//                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
+//                double influence_1 = gaussian_2(distance_to_p_1, 0, width);
+//
+//                update = (influence_1) * HEIGHT_FUNCTION_SCALE * update_factor;
+//                break;
+//
+//            }
+//
+//            // if cell is at the bottom (after all the paths)
+//            if (cell.cell_row > (int) intersection_for_path_2.getValue() && i == y_coordinates_of_paths_for_cell.size()) {
+//
+//                double width = Math.abs(NR_OF_ROWS - (int) intersection_for_path_2.getValue());
+//
+//                width = width * constant;
+//
+//                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
+//                double influence_2 = gaussian_2(distance_to_p_2, 0, width);
+//
+//                update = (influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
+//                break;
+//            }
+//
+//            // Check if cell is between paths:
+//            if (cell.cell_row > (int) intersection_for_path_1.getValue() &&
+//                    cell.cell_row < (int) intersection_for_path_2.getValue()) {
+//                // cell is between path 1 and path 2
+//
+//                // path 1 is the path above cell
+//                // path 2 is the path below cell
+//
+//                double width = Math.abs((int) intersection_for_path_2.getValue() - (int) intersection_for_path_1.getValue());
+//
+//                width = width * constant;
+//
+//                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
+//                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
+//
+//                double test = gaussian_2(0, 0, width);
+//
+//                double influence_1 = gaussian_2(distance_to_p_1, 0, width);
+//                double influence_2 = gaussian_2(distance_to_p_2, 0, width);
+//
+//                update = (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
+//
+//                break;
+//            }
         }
 
         //System.out.println();
@@ -1879,6 +1968,25 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
         }
+        int min_flow_accumulation = Integer.MAX_VALUE;
+        int max_flow_accumulation = Integer.MIN_VALUE;
+        if (FLOW_ACCUMULATION) {
+
+            for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+                for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                    if (grid[i][j].flow_accumulation < min_flow_accumulation) {
+                        min_flow_accumulation = grid[i][j].flow_accumulation;
+                    }
+
+                    if (grid[i][j].flow_accumulation > max_flow_accumulation) {
+                        max_flow_accumulation = grid[i][j].flow_accumulation;
+                    }
+                }
+            }
+
+        }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
             //System.out.println();
@@ -1904,6 +2012,10 @@ public class Main extends JFrame implements MouseWheelListener {
                                 y_coordinates_for_columns, computed_height,
                                 distances_for_paths, overlaps);
 
+                    } else if (SCALING_MODE.equals("OVERLAPS_2")) {
+                        height_update_overlaps_2(grid, col, row, paths,
+                                y_coordinates_for_columns, computed_height,
+                                distances_for_paths, overlaps);
                     }
 
 
@@ -1927,15 +2039,30 @@ public class Main extends JFrame implements MouseWheelListener {
                         distances_for_cell.add(distances_matrix[cell.cell_row][cell.cell_col]);
 
                     }
-
                     double sum = 0;
-                    for (int k = 0; k < distances_for_cell.size(); k++) {
 
-                        double distance = (double) distances_for_cell.get(k);
+                    if (FLOW_ACCUMULATION) {
+                        int flow_accumulation_for_cell = grid[col][row].flow_accumulation;
+                        double flow_acc_normalized = (flow_accumulation_for_cell - min_flow_accumulation) / (min_flow_accumulation - max_flow_accumulation);
+                        double factor = 1 - flow_acc_normalized;
+                        factor = 1;
 
+                        for (int k = 0; k < distances_for_cell.size(); k++) {
 
-                        sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
+                            double distance = (double) distances_for_cell.get(k);
+
+                            sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH) * factor;
+                        }
+                    } else {
+                        for (int k = 0; k < distances_for_cell.size(); k++) {
+
+                            double distance = (double) distances_for_cell.get(k);
+
+                            sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
+                        }
                     }
+
+
                     //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
 
                     long startTime = System.currentTimeMillis();
@@ -1973,6 +2100,63 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+    }
+
+    private static void height_update_overlaps_2(Cell[][] grid, int col, int row, ArrayList paths,
+                                                 ArrayList y_coordinates_for_columns, double[][] computed_height,
+                                                 ArrayList distances_for_paths, Map<Pair, List<Cell>> overlaps) {
+
+        Cell cell = grid[col][row];
+
+
+        for (int i = 0; i < paths.size(); i++) {
+
+
+        }
+
+        Iterator path_iterator = distances_for_paths.iterator();
+
+        ArrayList distances_for_cell = new ArrayList();
+
+        while (path_iterator.hasNext()) {
+
+            DistanceForPathMatrix distances = (DistanceForPathMatrix) path_iterator.next();
+            double[][] distances_matrix = distances.distance_matrix;
+
+            distances_for_cell.add(distances_matrix[cell.cell_row][cell.cell_col]);
+
+        }
+
+        double sum = 0;
+        for (int k = 0; k < distances_for_cell.size(); k++) {
+            sum = sum + gaussian((double) distances_for_cell.get(k), 0, HEIGHT_FUNCTION_WIDTH);
+        }
+        //System.out.print("i : " + row + " j : " + col + " : " + sum + " | ");
+
+        long startTime = System.currentTimeMillis();
+
+        //double sum_2 = compute_scaled_path_factors(grid, paths, distances_for_cell, cell);
+
+        long endTime = System.currentTimeMillis();
+        //System.out.println("That took " + (endTime - startTime) + " milliseconds");
+
+        if (RESET_HEIGHTS == false) {
+
+            // wtf is this??
+//                    if (i == 0) {
+//                        i = 1;
+//                    }
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            //grid[col][row].height = grid[col][row].height + ((height));
+            computed_height[col][row] = height;
+
+        } else {
+            double height = ((-HEIGHT_FUNCTION_SCALE * sum));
+            computed_height[col][row] = height;
+
+            //grid[col][row].height = grid[col][row].height + ((height));
+        }
+
     }
 
     public static void initialize_grid_height_Euclidean_squared(Cell[][] grid) {
@@ -4027,7 +4211,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     Cell cell = (Cell) cell_iter.next();
 
-                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
+                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(255, 255, 255).getRGB());
 
                 }
             }
