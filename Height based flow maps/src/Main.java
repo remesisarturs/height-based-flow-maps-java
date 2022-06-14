@@ -95,6 +95,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean FLOW_ACCUMULATION;
 
+    public static boolean CIRCULAR_MODE;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -309,12 +311,12 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_10.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_10_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -346,8 +348,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 100;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{100};
+        WIDTHS = new double[]{60};
+        SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -362,6 +364,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
+
+        CIRCULAR_MODE = true;
 
     }
 
@@ -788,17 +792,16 @@ public class Main extends JFrame implements MouseWheelListener {
                 // sort y_coordinates_for_column
                 //y_coordinates_for_column.sort();
 
-               // System.out.println();
+                // System.out.println();
                 Collections.sort(y_coordinates_for_column, new Comparator<Pair<Integer, Integer>>() {
                     @Override
                     public int compare(Pair<Integer, Integer> p1, Pair<Integer, Integer> p2) {
                         return p1.getValue().compareTo(p2.getValue());
                     }
                 });
-               // System.out.println();
+                // System.out.println();
 
             }
-
 
 
 //            for (Map.Entry<Integer, List<Integer>> set : multi_intersections.entrySet()) {
@@ -1533,167 +1536,93 @@ public class Main extends JFrame implements MouseWheelListener {
 
         double update = 0.0;
 
-        double constant = 0.5;
+        double constant = 3;
 
         double update_factor = 1;
 
-        HEIGHT_FUNCTION_SCALE = 10;
+        HEIGHT_FUNCTION_SCALE = 3;
 
+        boolean path_overlapped = false;
+
+        //boolean circular_mode = true;
+
+        // loop over all paths
         for (int i = 0; i < y_coordinates_of_paths_for_cell.size(); i++) {
 
+            // intersection of path i
             Pair intersection_for_path_1 = (Pair) y_coordinates_of_paths_for_cell.get(i);
-            // Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
 
+            double width_1 = 0;
+            if (i < y_coordinates_of_paths_for_cell.size() - 1) {
+                // get the intersection of next path if there is one. Width = distance from i to i + 1 (width of the rectangle defined by two intersections)
+                width_1 = (int) ((Pair) y_coordinates_of_paths_for_cell.get(i + 1)).getValue() - (int) intersection_for_path_1.getValue();
+            } else {
+                // if there is no next path, we loop to first path, width = total (looped) width of these two sections
+                width_1 = NR_OF_ROWS - (int) intersection_for_path_1.getValue() + (int) ((Pair) y_coordinates_of_paths_for_cell.get(0)).getValue();
+            }
+
+            double width_2 = 0.0;
+            if (i > 0) {
+                // if there is a path before path_1, we also compute width between i and i - 1
+                width_2 = (int) intersection_for_path_1.getValue() - (int) ((Pair) y_coordinates_of_paths_for_cell.get(i - 1)).getValue();
+            } else {
+                // if there was no path, we take the last path. Width = looped width of the two sections
+                width_2 = NR_OF_ROWS + (int) intersection_for_path_1.getValue() -
+                        (int) ((Pair) y_coordinates_of_paths_for_cell.get(y_coordinates_of_paths_for_cell.size() - 1)).getValue();
+            }
+            // width_1 and width_2 are widths of paths i - 1, i, i + 1. They are looped if out of bounds
+            width_1 *= constant;
+            width_2 *= constant;
+
+            // take the max width:
+            width_1 = Math.max(width_1, width_2);
+            width_2 = width_1;
+
+            // if path is above cell
             if (cell.cell_row > (int) intersection_for_path_1.getValue()) {
 
-                int intersection_2;
+                // distance_1 = distance from current cell to intersection of path i
+                double distance_1 = cell.cell_row - (int) intersection_for_path_1.getValue();
+                // distance_2 = residual distance (everything except distance from cell to p_i)
+                double distance_2 = NR_OF_ROWS - distance_1;
 
-                if (i < y_coordinates_of_paths_for_cell.size() - 1) {
+                // influence_1 = contribution of path i
+                double influence_1 = gaussian_2(distance_1, 0, width_1);
+                // influence_2 = contribution of rest
+                double influence_2 = gaussian_2(distance_2, 0, width_2);
 
-                    Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i + 1);
+                double influence = Math.max(influence_1, influence_2);
 
-                    intersection_2 = (int) intersection_for_path_2.getValue();
-
-                } else {
-
-                    intersection_2 = NR_OF_ROWS + 50;
-
-                }
-
-                double width = intersection_2 - (int) intersection_for_path_1.getValue();
-
-                width = width * constant;
-
-                double distance = cell.cell_row - (int) intersection_for_path_1.getValue();
-
-                double influence = gaussian_2(distance, 0, width);
-
+                //update = update + (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
                 update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
             } else if (cell.cell_row < (int) intersection_for_path_1.getValue()) {
+                // if path is below cell:
+                // distance_1 = distance from path i above cell to cell
+                double distance_1 = (int) intersection_for_path_1.getValue() - cell.cell_row;
+                // distance_2 = residual distance
+                double distance_2 = NR_OF_ROWS - distance_1;
 
-                int intersection_2;
+                double influence_1 = gaussian_2(distance_1, 0, width_2);
+                double influence_2 = gaussian_2(distance_2, 0, width_1);
 
-                if (i > 0) {
+                double influence = Math.max(influence_1, influence_2);
 
-                    Pair intersection_for_path_2 = (Pair) y_coordinates_of_paths_for_cell.get(i - 1);
-
-                    intersection_2 = (int) intersection_for_path_2.getValue();
-
-                } else {
-
-                    intersection_2 = 0 - 50;
-
-                }
-
-                double width = (int) intersection_for_path_1.getValue() - intersection_2;
-
-                width = width * constant;
-
-                double distance = (int) intersection_for_path_1.getValue() - cell.cell_row;
-
-                double influence = gaussian_2(distance, 0, width);
-
+                //update = update + (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
                 update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
-
 
             } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
 
-                update = update + HEIGHT_FUNCTION_SCALE * update_factor;
-
+                // only add one overlap
+                if (!path_overlapped) {
+                    update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
+                    path_overlapped = true;
+                }
             }
-
-//
-//            // Check for overlaps:
-//            if (cell.cell_row == (int) intersection_for_path_1.getValue() &&
-//                    cell.cell_row == (int) intersection_for_path_2.getValue()) {
-//                // cell is on these two paths. They are overlapping
-//
-//                update = HEIGHT_FUNCTION_SCALE;
-//                break;
-//            } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
-//                // cell is on path 1
-//
-//                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
-//                //  and take the max distance
-//
-//                update = HEIGHT_FUNCTION_SCALE;
-//
-//                break;
-//            } else if (cell.cell_row == (int) intersection_for_path_2.getValue()) {
-//                // cell is on path 2
-//
-//                // here we potentially need to look at the two paths that are surrounding the path that the cell is on
-//                //  and take the max distance
-//
-//                update = HEIGHT_FUNCTION_SCALE;
-//                break;
-//            }
-//
-//            // if cell is at the top (before first path)
-//            if (cell.cell_row < (int) intersection_for_path_1.getValue() && i == 0) {
-//
-//                double width = Math.abs((int) intersection_for_path_1.getValue());
-//
-//                width = width * constant;
-//
-//                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
-//                double influence_1 = gaussian_2(distance_to_p_1, 0, width);
-//
-//                update = (influence_1) * HEIGHT_FUNCTION_SCALE * update_factor;
-//                break;
-//
-//            }
-//
-//            // if cell is at the bottom (after all the paths)
-//            if (cell.cell_row > (int) intersection_for_path_2.getValue() && i == y_coordinates_of_paths_for_cell.size()) {
-//
-//                double width = Math.abs(NR_OF_ROWS - (int) intersection_for_path_2.getValue());
-//
-//                width = width * constant;
-//
-//                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
-//                double influence_2 = gaussian_2(distance_to_p_2, 0, width);
-//
-//                update = (influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
-//                break;
-//            }
-//
-//            // Check if cell is between paths:
-//            if (cell.cell_row > (int) intersection_for_path_1.getValue() &&
-//                    cell.cell_row < (int) intersection_for_path_2.getValue()) {
-//                // cell is between path 1 and path 2
-//
-//                // path 1 is the path above cell
-//                // path 2 is the path below cell
-//
-//                double width = Math.abs((int) intersection_for_path_2.getValue() - (int) intersection_for_path_1.getValue());
-//
-//                width = width * constant;
-//
-//                double distance_to_p_1 = Math.abs(cell.cell_row - (int) intersection_for_path_1.getValue());
-//                double distance_to_p_2 = Math.abs(cell.cell_row - (int) intersection_for_path_2.getValue());
-//
-//                double test = gaussian_2(0, 0, width);
-//
-//                double influence_1 = gaussian_2(distance_to_p_1, 0, width);
-//                double influence_2 = gaussian_2(distance_to_p_2, 0, width);
-//
-//                update = (influence_1 + influence_2) * HEIGHT_FUNCTION_SCALE * update_factor;
-//
-//                break;
-//            }
         }
 
-        //System.out.println();
-
-        // only the two surrounding paths influence the height update
         if (RESET_HEIGHTS == false) {
 
-            // wtf is this??
-//                    if (i == 0) {
-//                        i = 1;
-//                    }
             double height = ((-update));   // grid[col][row]
             grid[col][row].height = grid[col][row].height + ((height)); // updates horizontally
             computed_height[col][row] = height;
@@ -4402,27 +4331,57 @@ public class Main extends JFrame implements MouseWheelListener {
                     return null;
                 }
 
-                int node_x = (int) current_cell.cell_col;
-                int node_y = (int) current_cell.cell_row;
+                int col = (int) current_cell.cell_col;
+                int row = (int) current_cell.cell_row;
 
                 double flow = current_cell.flow_direction;
 
                 if (flow == 1) {
-                    current_cell = grid[node_x + 1][node_y];
+                    current_cell = grid[col + 1][row];
                 } else if (flow == 2) {
-                    current_cell = grid[node_x + 1][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col + 1][row + 1];
                 } else if (flow == 4) {
-                    current_cell = grid[node_x][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col][row + 1];
                 } else if (flow == 8) {
-                    current_cell = grid[node_x - 1][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col - 1][row + 1];
                 } else if (flow == 16) {
-                    current_cell = grid[node_x - 1][node_y];
+                    current_cell = grid[col - 1][row];
                 } else if (flow == 32) {
-                    current_cell = grid[node_x - 1][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col - 1][row - 1];
                 } else if (flow == 64) {
-                    current_cell = grid[node_x][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col][row - 1];
                 } else if (flow == 128) {
-                    current_cell = grid[node_x + 1][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col + 1][row - 1];
                 }
 
                 path.add(current_cell);
@@ -4454,7 +4413,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             Point point = (Point) it.next();
 
-            if (point.name.equals(TARGET_NAME)) {
+            if (point.name.equals(TARGET_NAME) || point.name.equals("S")) {
                 continue;
             }
 
@@ -4480,27 +4439,57 @@ public class Main extends JFrame implements MouseWheelListener {
                     return null;
                 }
 
-                int node_x = (int) current_cell.cell_col;
-                int node_y = (int) current_cell.cell_row;
+                int col = (int) current_cell.cell_col;
+                int row = (int) current_cell.cell_row;
 
                 double flow = current_cell.flow_direction;
 
                 if (flow == 1) {
-                    current_cell = grid[node_x + 1][node_y];
+                    current_cell = grid[col + 1][row];
                 } else if (flow == 2) {
-                    current_cell = grid[node_x + 1][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col + 1][row + 1];
                 } else if (flow == 4) {
-                    current_cell = grid[node_x][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col][row + 1];
                 } else if (flow == 8) {
-                    current_cell = grid[node_x - 1][node_y + 1];
+
+                    if (row + 1 == NR_OF_ROWS && CIRCULAR_MODE) {
+                        row = -1;
+                    }
+
+                    current_cell = grid[col - 1][row + 1];
                 } else if (flow == 16) {
-                    current_cell = grid[node_x - 1][node_y];
+                    current_cell = grid[col - 1][row];
                 } else if (flow == 32) {
-                    current_cell = grid[node_x - 1][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col - 1][row - 1];
                 } else if (flow == 64) {
-                    current_cell = grid[node_x][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col][row - 1];
                 } else if (flow == 128) {
-                    current_cell = grid[node_x + 1][node_y - 1];
+
+                    if (row - 1 == -1 && CIRCULAR_MODE) {
+                        row = 500;
+                    }
+
+                    current_cell = grid[col + 1][row - 1];
                 }
 
                 path.cells.add(current_cell);
@@ -4533,6 +4522,10 @@ public class Main extends JFrame implements MouseWheelListener {
                     continue;
                 }
 
+                if (grid[col][row].title.equals("right_edge") && HORIZONTAL_FLOW_MODE) {
+                    continue;
+                }
+
                 Cell left = null;
                 Cell right = null;
                 Cell top = null;
@@ -4542,44 +4535,119 @@ public class Main extends JFrame implements MouseWheelListener {
                 Cell bottom_left = null;
                 Cell bottom_right = null;
 
-                if (col - 1 >= 0) {
-                    left = grid[col - 1][row];
-                    neighbors.add(left);
-                }
+                if (CIRCULAR_MODE) {
 
-                if (row + 1 < NR_OF_ROWS) {
-                    bottom = grid[col][row + 1];
-                    neighbors.add(bottom);
-                }
+                    if (row == 0) {
+                        top = grid[col][NR_OF_ROWS - 1];
+                        neighbors.add(top);
+                    }
 
-                if (col + 1 < NR_OF_COLUMNS) {
-                    right = grid[col + 1][row];
-                    neighbors.add(right);
-                }
+                    if (row == NR_OF_ROWS - 1) {
+                        bottom = grid[col][0];
+                        neighbors.add(bottom);
+                    }
 
-                if (row - 1 >= 0) {
-                    top = grid[col][row - 1];
-                    neighbors.add(top);
-                }
+                    if (row == 0 && col != NR_OF_COLUMNS - 1) {
+                        top_right = grid[col + 1][NR_OF_ROWS - 1];
+                        neighbors.add(top_right);
+                    }
 
-                if (col - 1 >= 0 && row - 1 >= 0) {
-                    top_left = grid[col - 1][row - 1];
-                    neighbors.add(top_left);
-                }
+                    if (row == 0 && col != 0) {
+                        top_left = grid[col - 1][NR_OF_ROWS - 1];
+                        neighbors.add(top_left);
+                    }
 
-                if (row - 1 >= 0 && col + 1 < NR_OF_COLUMNS) {
-                    top_right = grid[col + 1][row - 1];
-                    neighbors.add(top_right);
-                }
+                    if (row == NR_OF_ROWS - 1 && col != NR_OF_COLUMNS - 1) {
+                        bottom_right = grid[col + 1][0];
+                        neighbors.add(bottom_right);
+                    }
 
-                if (col - 1 >= 0 && row + 1 < NR_OF_ROWS) {
-                    bottom_left = grid[col - 1][row + 1];
-                    neighbors.add(bottom_left);
-                }
+                    if (row == NR_OF_ROWS - 1 && col != 0) {
+                        bottom_left = grid[col - 1][0];
+                        neighbors.add(bottom_left);
+                    }
 
-                if (col + 1 < NR_OF_COLUMNS && row + 1 < NR_OF_ROWS) {
-                    bottom_right = grid[col + 1][row + 1];
-                    neighbors.add(bottom_right);
+                    if (col - 1 >= 0) {
+                        left = grid[col - 1][row];
+                        neighbors.add(left);
+                    }
+
+                    if (row + 1 < NR_OF_ROWS) {
+                        bottom = grid[col][row + 1];
+                        neighbors.add(bottom);
+                    }
+
+                    if (col + 1 < NR_OF_COLUMNS) {
+                        right = grid[col + 1][row];
+                        neighbors.add(right);
+                    }
+
+                    if (row - 1 >= 0) {
+                        top = grid[col][row - 1];
+                        neighbors.add(top);
+                    }
+
+                    if (col - 1 >= 0 && row - 1 >= 0) {
+                        top_left = grid[col - 1][row - 1];
+                        neighbors.add(top_left);
+                    }
+
+                    if (row - 1 >= 0 && col + 1 < NR_OF_COLUMNS) {
+                        top_right = grid[col + 1][row - 1];
+                        neighbors.add(top_right);
+                    }
+
+                    if (col - 1 >= 0 && row + 1 < NR_OF_ROWS) {
+                        bottom_left = grid[col - 1][row + 1];
+                        neighbors.add(bottom_left);
+                    }
+
+                    if (col + 1 < NR_OF_COLUMNS && row + 1 < NR_OF_ROWS) {
+                        bottom_right = grid[col + 1][row + 1];
+                        neighbors.add(bottom_right);
+                    }
+
+                } else {
+
+                    if (col - 1 >= 0) {
+                        left = grid[col - 1][row];
+                        neighbors.add(left);
+                    }
+
+                    if (row + 1 < NR_OF_ROWS) {
+                        bottom = grid[col][row + 1];
+                        neighbors.add(bottom);
+                    }
+
+                    if (col + 1 < NR_OF_COLUMNS) {
+                        right = grid[col + 1][row];
+                        neighbors.add(right);
+                    }
+
+                    if (row - 1 >= 0) {
+                        top = grid[col][row - 1];
+                        neighbors.add(top);
+                    }
+
+                    if (col - 1 >= 0 && row - 1 >= 0) {
+                        top_left = grid[col - 1][row - 1];
+                        neighbors.add(top_left);
+                    }
+
+                    if (row - 1 >= 0 && col + 1 < NR_OF_COLUMNS) {
+                        top_right = grid[col + 1][row - 1];
+                        neighbors.add(top_right);
+                    }
+
+                    if (col - 1 >= 0 && row + 1 < NR_OF_ROWS) {
+                        bottom_left = grid[col - 1][row + 1];
+                        neighbors.add(bottom_left);
+                    }
+
+                    if (col + 1 < NR_OF_COLUMNS && row + 1 < NR_OF_ROWS) {
+                        bottom_right = grid[col + 1][row + 1];
+                        neighbors.add(bottom_right);
+                    }
                 }
 
                 Iterator it = neighbors.iterator();
