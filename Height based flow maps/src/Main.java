@@ -323,8 +323,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/to_edge_5_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -347,7 +347,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -368,9 +368,9 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = false;
+        HORIZONTAL_FLOW_MODE = true;
 
-        PATH_SCALING = false;
+        PATH_SCALING = true;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -379,7 +379,7 @@ public class Main extends JFrame implements MouseWheelListener {
         MEMORY_MODE = true;
         MEMORY_DECAY_RATE = 0.66;
 
-        CIRCULAR_MODE = false;
+        CIRCULAR_MODE = true;
 
     }
 
@@ -948,6 +948,23 @@ public class Main extends JFrame implements MouseWheelListener {
 
         return (double) (Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
 
+    }
+
+    public static double heigth_function(double x, double width) {
+
+        double result = 0.0;
+
+        double sigma = 2 * width / 5;
+
+        if (x < sigma) {
+            result = Math.exp(((Math.pow(-x, 2)) / (2 * Math.pow(sigma, 2))));
+        } else if (x < 2 * sigma) {
+            result = Math.exp(-1/2) * (2 - x / sigma);
+        } else {
+            result = 0;
+            //y.append(result)
+        }
+        return result;
     }
 
     public static void adjust_height_min_distances(Cell[][] grid, ArrayList distances_for_paths, double width, double scale, ArrayList paths) throws IOException {
@@ -1597,8 +1614,8 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
 
-            width_1 *= constant;
-            width_2 *= constant;
+            //width_1 *= constant;
+            //width_2 *= constant;
 
             // take the max width:
             //width_1 = Math.max(width_1, width_2);
@@ -1614,14 +1631,21 @@ public class Main extends JFrame implements MouseWheelListener {
                 double distance_2 = NR_OF_ROWS - distance_1;
 
                 // influence_1 = contribution of path i
-                double influence_1 = gaussian_2(distance_1, 0, width_1);
-                // influence_2 = contribution of rest
-                double influence_2 = gaussian_2(distance_2, 0, width_2);
+//                double influence_1 = gaussian_2(distance_1, 0, width_1);
+//                // influence_2 = contribution of rest
+//                double influence_2 = gaussian_2(distance_2, 0, width_2);
+//
+
+//                double normalized_distance_1 = distance_1 / width_1;
+//                double normalized_distance_2 = distance_2 / width_2;
+
+                double influence_1 = heigth_function(distance_1, width_1);
+                double influence_2 = heigth_function(distance_2, width_2);
 
                 double influence = Math.max(influence_1, influence_2);
 
-                //update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE * update_factor;
-                update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
+                update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE * update_factor;
+                //update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
             } else if (cell.cell_row < (int) intersection_for_path_1.getValue()) {
                 // if path is below cell:
@@ -1630,19 +1654,27 @@ public class Main extends JFrame implements MouseWheelListener {
                 // distance_2 = residual distance
                 double distance_2 = NR_OF_ROWS - distance_1;
 
-                double influence_1 = gaussian_2(distance_1, 0, width_2);
-                double influence_2 = gaussian_2(distance_2, 0, width_1);
+//                double influence_1 = gaussian_2(distance_1, 0, width_2);
+//                double influence_2 = gaussian_2(distance_2, 0, width_1);
+
+//                double normalized_distance_1 = distance_1 / width_1;
+//                double normalized_distance_2 = distance_2 / width_2;
+
+                double influence_1 = heigth_function(distance_1, width_2);
+                double influence_2 = heigth_function(distance_2, width_1);
 
                 double influence = Math.max(influence_1, influence_2);
 
-                //update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE * update_factor;
-                update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
+                update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE * update_factor;
+                //update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
             } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
 
                 // only add one overlap
                 //if (!path_overlapped) {
-                    update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
+//                update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
+                update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
+
                 //    path_overlapped = true;
                 //}
             }
@@ -1875,8 +1907,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         double[][] height_matrix = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
-        for (int a = 0 ; a < NR_OF_COLUMNS; a ++) {
-            for (int b = 0 ; b < NR_OF_ROWS; b ++) {
+        for (int a = 0; a < NR_OF_COLUMNS; a++) {
+            for (int b = 0; b < NR_OF_ROWS; b++) {
 
                 height_matrix[a][b] = grid[a][b].height;
 
