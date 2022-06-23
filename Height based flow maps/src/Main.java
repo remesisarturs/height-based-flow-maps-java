@@ -324,7 +324,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_10_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -376,10 +376,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
         FLOW_ACCUMULATION = false;
 
-        MEMORY_MODE = true;
+        MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
 
-        CIRCULAR_MODE = true;
+        CIRCULAR_MODE = false;
 
     }
 
@@ -950,11 +950,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static double heigth_function(double x, double width) {
+    public static double height_function(double x, double width) {
 
-        double result = 0.0;
+        double result;
 
-        double sigma = 2 * width / 5;
+        double sigma = 0.5 * width; //width;//2 * width / 5;
 
         if (x < sigma) {
             result = Math.exp(((Math.pow(-x, 2)) / (2 * Math.pow(sigma, 2))));
@@ -962,7 +962,6 @@ public class Main extends JFrame implements MouseWheelListener {
             result = Math.exp(-1/2) * (2 - x / sigma);
         } else {
             result = 0;
-            //y.append(result)
         }
         return result;
     }
@@ -1568,7 +1567,7 @@ public class Main extends JFrame implements MouseWheelListener {
         double update = 0.0;
         double constant = 0.5;//0.5;          //3
         double update_factor = 1;
-        HEIGHT_FUNCTION_SCALE = 100;     //3
+        HEIGHT_FUNCTION_SCALE = 1;     //3
 
         boolean path_overlapped = false;
 
@@ -1598,6 +1597,12 @@ public class Main extends JFrame implements MouseWheelListener {
                 width_2 = NR_OF_ROWS + (int) intersection_for_path_1.getValue() -
                         (int) ((Pair) y_coordinates_of_paths_for_cell.get(y_coordinates_of_paths_for_cell.size() - 1)).getValue();
             }
+
+            if (width_1 < 1 || width_2 < 1) {
+                continue;
+                //System.out.println();;
+            }
+
             // width_1 and width_2 are widths of paths i - 1, i, i + 1. They are looped if out of bounds
 
             if (cell.cell_row == 32 && cell.cell_col == 0) {
@@ -1613,9 +1618,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
-
-            //width_1 *= constant;
-            //width_2 *= constant;
+//            width_1 *= constant;
+//            width_2 *= constant;
 
             // take the max width:
             //width_1 = Math.max(width_1, width_2);
@@ -1639,12 +1643,11 @@ public class Main extends JFrame implements MouseWheelListener {
 //                double normalized_distance_1 = distance_1 / width_1;
 //                double normalized_distance_2 = distance_2 / width_2;
 
-                double influence_1 = heigth_function(distance_1, width_1);
-                double influence_2 = heigth_function(distance_2, width_2);
+                double influence_1 = height_function(distance_1, width_1);
+                double influence_2 = height_function(distance_2, width_2);
 
-                double influence = Math.max(influence_1, influence_2);
+                update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE;
 
-                update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE * update_factor;
                 //update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
             } else if (cell.cell_row < (int) intersection_for_path_1.getValue()) {
@@ -1660,23 +1663,23 @@ public class Main extends JFrame implements MouseWheelListener {
 //                double normalized_distance_1 = distance_1 / width_1;
 //                double normalized_distance_2 = distance_2 / width_2;
 
-                double influence_1 = heigth_function(distance_1, width_2);
-                double influence_2 = heigth_function(distance_2, width_1);
+                double influence_1 = height_function(distance_1, width_2);
+                double influence_2 = height_function(distance_2, width_1);
 
                 double influence = Math.max(influence_1, influence_2);
 
-                update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE * update_factor;
+                update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE;
                 //update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
             } else if (cell.cell_row == (int) intersection_for_path_1.getValue()) {
 
                 // only add one overlap
-                //if (!path_overlapped) {
-//                update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
-                update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE * update_factor;
+                if (!path_overlapped) {
+                update = update + (1 + height_function(NR_OF_ROWS, width_1)) * HEIGHT_FUNCTION_SCALE;
+                //update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE;
 
-                //    path_overlapped = true;
-                //}
+                    path_overlapped = true;
+                }
             }
         }
 
@@ -3974,25 +3977,25 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-//        if (DRAW_PATHS) {
-//
-//            Iterator iter = paths.iterator();
-//
-//            while (iter.hasNext()) {
-//
-//                Path path = (Path) iter.next();
-//
-//                Iterator cell_iter = path.cells.iterator();
-//
-//                while (cell_iter.hasNext()) {
-//
-//                    Cell cell = (Cell) cell_iter.next();
-//
-//                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
-//
-//                }
-//            }
-//        }
+        if (DRAW_PATHS) {
+
+            Iterator iter = paths.iterator();
+
+            while (iter.hasNext()) {
+
+                Path path = (Path) iter.next();
+
+                Iterator cell_iter = path.cells.iterator();
+
+                while (cell_iter.hasNext()) {
+
+                    Cell cell = (Cell) cell_iter.next();
+
+                    image.setRGB((int) cell.cell_col, (int) cell.cell_row, new Color(0, 0, 0).getRGB());
+
+                }
+            }
+        }
         File file;
         if (relative_to_total) {
             file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/update_global_height_" + image_index + ".png"));
