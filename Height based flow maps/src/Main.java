@@ -96,6 +96,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean CIRCULAR_MODE;
 
+    public static String INTERPOLATION;
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -145,6 +146,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 initialize_points_in_grid(grid, points_list);
 
+
+//                if (INTERPOLATION.equals("BICUBIC")) {
+//                    initialize_grid_height_interpolation(grid);
+//                }
+
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
@@ -160,6 +166,19 @@ public class Main extends JFrame implements MouseWheelListener {
                 } else if (BASE_HEIGHT_TYPE.equals("TO_EDGE_SQRT")) {
                     initialize_grid_height_to_edge_sqrt(grid);
                 }
+
+
+                BicubicInterpolator interpolator = new BicubicInterpolator();
+
+                double[][] test = new double[4][4];
+
+                for (int n = 0; n < 4; n ++) {
+                    for (int m = 0 ; m < 4; m ++) {
+                        test[n][m] = grid[n][m].height;
+                    }
+                }
+
+                double test_result = interpolator.getValue(test, 1.5, 1.5);
 
                 compute_flow(grid, 0);
                 //compute_flow_accumulation(grid);
@@ -320,8 +339,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 500;
-        NR_OF_COLUMNS = 500;
+        NR_OF_ROWS = 10;
+        NR_OF_COLUMNS = 10;
 
         TARGET_NAME = "A";//"FL";
         INPUT_FILE_NAME = "./input/to_edge_10_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
@@ -368,9 +387,9 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -380,6 +399,9 @@ public class Main extends JFrame implements MouseWheelListener {
         MEMORY_DECAY_RATE = 0.66;
 
         CIRCULAR_MODE = false;
+
+        INTERPOLATION = "BICUBIC";
+
 
     }
 
@@ -2258,6 +2280,11 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
 
+    public static void initialize_grid_height_interpolation() {
+
+    }
+
+
     public static void initialize_grid_height_Euclidean_dist(Cell[][] grid) {
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
@@ -2267,7 +2294,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
-
     }
 
     public static void assign_zeros_to_grid(Cell[][] grid) {
