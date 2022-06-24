@@ -24,8 +24,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static int NR_OF_ROWS;
     public static int NR_OF_COLUMNS;
 
-    public static int source_x;
-    public static int source_y;
+    public static int source_col;
+    public static int source_row;
 
     public static String TARGET_NAME;
 
@@ -97,6 +97,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static boolean CIRCULAR_MODE;
 
     public static String INTERPOLATION;
+
     public static void main(String[] args) throws IOException {
 
         initialize_parameters();
@@ -167,27 +168,34 @@ public class Main extends JFrame implements MouseWheelListener {
                     initialize_grid_height_to_edge_sqrt(grid);
                 }
 
-                BicubicInterpolator interpolator = new BicubicInterpolator();
+                //initialize_height_test(grid);
 
-                double[][] test = new double[4][4];
+//                BicubicInterpolator interpolator = new BicubicInterpolator();
+//
+//                double[][] test = new double[4][4];
+//
+//                for (int n = 0; n < 4; n ++) {
+//                    for (int m = 0 ; m < 4; m ++) {
+//                        test[n][m] = grid[n][m].height;
+//                    }
+//                }
+//
+//                double test_result = interpolator.getValue(test, 0.5, 0.5);
+//
+//                CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
+//                cachedBicubicInterpolator.updateCoefficients(test);
+//
+//                double test_result_2 = cachedBicubicInterpolator.getValue(0.5, 0.5);
+//
+//                double test_result_3 = cachedBicubicInterpolator.get_gradient(0.5, 0.5);
 
-                for (int n = 0; n < 4; n ++) {
-                    for (int m = 0 ; m < 4; m ++) {
-                        test[n][m] = grid[n][m].height;
-                    }
-                }
-
-                double test_result = interpolator.getValue(test, 0.5, 0.5);
-
-                CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
-                cachedBicubicInterpolator.updateCoefficients(test);
-
-                double test_result_2 = cachedBicubicInterpolator.getValue(0.5, 0.5);
-
-                double test_result_3 = cachedBicubicInterpolator.get_gradient(0.5, 0.5);
-
-                compute_flow(grid, 0);
+                //compute_flow(grid, 0);
                 //compute_flow_accumulation(grid);
+
+                compute_interpolated_gradient(4.5, 4.5, grid);
+
+                compute_flow_gradient(grid, points_list);
+
 
                 ArrayList<Path> paths;
 
@@ -282,8 +290,55 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
+    public static void compute_flow_gradient(Cell[][] grid, ArrayList<Point> points_list) {
+
+        Iterator point_interator = points_list.iterator();
+
+        while (point_interator.hasNext()) {
+            Point point = (Point) point_interator.next();
+
+            if (!(point.name.equals(TARGET_NAME) || point.name.equals("S"))) {
+                continue;
+            }
+
+            double current_col = point.grid_col;
+            double current_row = point.grid_row;
+
+            double distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
+
+            for (int i = 0 ; i < 100000 ; i ++) {
+
+                Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
+
+                System.out.println("col: " + current_col + " row: " + current_row);
+
+                double next_x = current_col - gradient.first;
+                double next_y = current_row - gradient.second;
+
+                current_col = next_x;
+                current_row = next_y;
+
+                distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
+
+                System.out.println(distance_to_target);
+
+                System.out.println();
+            }
+        }
+    }
+
+    public static void initialize_height_test(Cell[][] grid) {
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+                grid[i][j].height = (NR_OF_COLUMNS - 2 * j);//i * 10 + j//NR_OF_COLUMNS - i;//0;//i * 10 + j;
+            }
+        }
+
+    }
+
     // input x and y are coordinates 0<=x<=NR_COLS , 0<=y<=NR_ROWS
-    public static double compute_interpolated_height (double x, double y, Cell[][] grid) {
+    public static double compute_interpolated_height(double x, double y, Cell[][] grid) {
 
         int upper_x = (int) Math.ceil(x);
         int lower_x = (int) Math.floor(x);
@@ -295,8 +350,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         double[][] test = new double[4][4];
 
-        for (int n = 0; n < 4; n ++) {
-            for (int m = 0 ; m < 4; m ++) {
+        for (int n = 0; n < 4; n++) {
+            for (int m = 0; m < 4; m++) {
                 test[n][m] = grid[n][m].height;
             }
         }
@@ -306,6 +361,157 @@ public class Main extends JFrame implements MouseWheelListener {
         double result = 0.0;
 
         return result;
+    }
+
+    public static Tuple compute_interpolated_gradient(double col, double row, Cell[][] grid) {
+
+        double result = 0;
+
+        double[][] neighbors = new double[4][4];
+
+        int upper_col = (int) Math.ceil(col);
+        int lower_col = (int) Math.floor(col);
+
+        int upper_row = (int) Math.ceil(row);
+        int lower_row = (int) Math.floor(row);
+
+        double[][] height = new double[NR_OF_ROWS][NR_OF_COLUMNS];
+        for (int i = 0; i < NR_OF_ROWS; i++) {
+            for (int j = 0; j < NR_OF_COLUMNS; j++) {
+                height[i][j] = grid[i][j].height;
+            }
+        }
+
+         height = transposeMatrix(height);
+
+        double h00, h01, h02, h03;
+        double h10, h11, h12, h13;
+        double h20, h21, h22, h23;
+        double h30, h31, h32, h33;
+
+        // grid[col][row]
+
+//        if (lower_col == 0 && lower_row != 0) {
+//
+//            // if we're at the first column we duplicate values for this column
+//            h00 = grid[lower_col][lower_row - 1].height;
+//            h10 = grid[lower_col][lower_row].height;
+//            h20 = grid[lower_col][lower_row + 1].height;
+//            h30 = grid[lower_col][lower_row + 2].height;
+//
+//        } else if (lower_col == 0 && lower_row == 0) {
+//
+//            h00 = grid[lower_col][lower_row].height;
+//            h10 = grid[lower_col][lower_row].height;
+//            h20 = grid[lower_col][lower_row + 1].height;
+//            h30 = grid[lower_col][lower_row + 2].height;
+//
+//        } else if (lower_col == NR_OF_COLUMNS - 1 && lower_row == 0) {
+//
+//            h03 = ;
+//            h13 = ;
+//            h23 = ;
+//            h33 = ;
+//
+//        } else if (lower_col == NR_OF_COLUMNS -2  && lower_row == 0) {
+//
+//
+//
+//            h03 = ;
+//            h13 = ;
+//            h23 = ;
+//            h33 = ;
+//
+//        }
+//
+//        else if (lower_col + 1 == NR_OF_COLUMNS || lower_col + 2 == NR_OF_COLUMNS) {
+//
+//
+//
+//        } else if (lower_row == 0) {
+//
+//            // if we're at the first row, we duplicate the values
+//            // TODO: for circular mode we should take the values of the last row
+//
+//
+//        } else if (lower_row + 1 == NR_OF_ROWS || lower_row + 2 == NR_OF_ROWS) {
+//
+//        }
+
+        h00 = grid[lower_col - 1][lower_row - 1].height;
+        h01 = grid[lower_col][lower_row - 1].height;
+        h02 = grid[lower_col + 1][lower_row - 1].height;
+        h03 = grid[lower_col + 2][lower_row - 1].height;
+
+        h10 = grid[lower_col - 1][lower_row].height;
+        h11 = grid[lower_col][lower_row].height;
+        h12 = grid[lower_col + 1][lower_row].height;
+        h13 = grid[lower_col + 2][lower_row].height;
+
+        h20 = grid[lower_col - 1][lower_row + 1].height;
+        h21 = grid[lower_col][lower_row + 1].height;
+        h22 = grid[lower_col + 1][lower_row + 1].height;
+        h23 = grid[lower_col + 2][lower_row + 1].height;
+
+        h30 = grid[lower_col - 1][lower_row + 2].height;
+        h31 = grid[lower_col][lower_row + 2].height;
+        h32 = grid[lower_col + 1][lower_row + 2].height;
+        h33 = grid[lower_col + 2][lower_row + 2].height;
+
+        neighbors[0][0] = h00;
+        neighbors[0][1] = h01;
+        neighbors[0][2] = h02;
+        neighbors[0][3] = h03;
+        neighbors[1][0] = h10;
+        neighbors[1][1] = h11;
+        neighbors[1][2] = h12;
+        neighbors[1][3] = h13;
+        neighbors[2][0] = h20;
+        neighbors[2][1] = h21;
+        neighbors[2][2] = h22;
+        neighbors[2][3] = h23;
+        neighbors[3][0] = h30;
+        neighbors[3][1] = h31;
+        neighbors[3][2] = h32;
+        neighbors[3][3] = h33;
+
+        //System.out.println();
+
+
+//
+//        for (int i = lower_x - 1; i < lower_x + 5; i++) {
+//            int index_i = 0;
+//            for (int j = lower_y - 1; j < lower_y + 5; j++) {
+//                int index_j = 0;
+//                neighbors[index_i][index_j] = grid[i][j].height;
+//                index_j++;
+//            }
+//            index_i++;
+//        }
+
+//        if (upper_col == NR_OF_COLUMNS) {
+//
+//        }
+//        if (lower_col == 0) {
+//
+//        }
+//        if (upper_row == NR_OF_ROWS) {
+//
+//        }
+//        if (lower_row == 0) {
+//
+//        }
+
+
+        CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
+        cachedBicubicInterpolator.updateCoefficients(neighbors);
+        Tuple<Double, Double> result_vect = cachedBicubicInterpolator.get_gradient(col, row);
+
+        double result_x = (double) result_vect.first;
+        double result_y = (double) result_vect.second;
+
+        return result_vect;
+
     }
 
     public static void copy_height(Cell[][] grid, double[][] memory_grid) {
@@ -371,11 +577,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initialize_parameters() {
 
-        NR_OF_ROWS = 10;
-        NR_OF_COLUMNS = 10;
+        NR_OF_ROWS = 500;
+        NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_10_3.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_2_t_extended.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -398,7 +604,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -557,7 +763,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
 
             for (int row = 0; row < NR_OF_ROWS; row++) {
-                if (col == source_x && row == source_y) {
+                if (col == source_col && row == source_row) {
                     continue;
                 }
                 grid[col][row].flow_accumulation = 0;
@@ -568,7 +774,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
 
             for (int row = 0; row < NR_OF_ROWS; row++) {
-                if (col == source_x && row == source_y) {
+                if (col == source_col && row == source_row) {
                     continue;
                 }
                 int flow_direction = grid[col][row].flow_direction;
@@ -1013,7 +1219,7 @@ public class Main extends JFrame implements MouseWheelListener {
         if (x < sigma) {
             result = Math.exp(((Math.pow(-x, 2)) / (2 * Math.pow(sigma, 2))));
         } else if (x < 2 * sigma) {
-            result = Math.exp(-1/2) * (2 - x / sigma);
+            result = Math.exp(-1 / 2) * (2 - x / sigma);
         } else {
             result = 0;
         }
@@ -1700,7 +1906,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 double influence_1 = height_function(distance_1, width_1);
                 double influence_2 = height_function(distance_2, width_2);
 
-                update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE;
+                update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE;
 
                 //update = update + (influence) * HEIGHT_FUNCTION_SCALE * update_factor;
 
@@ -1729,8 +1935,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 // only add one overlap
                 if (!path_overlapped) {
-                update = update + (1 + height_function(NR_OF_ROWS, width_1)) * HEIGHT_FUNCTION_SCALE;
-                //update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE;
+                    update = update + (1 + height_function(NR_OF_ROWS, width_1)) * HEIGHT_FUNCTION_SCALE;
+                    //update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE;
 
                     path_overlapped = true;
                 }
@@ -2219,7 +2425,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (BASE_SCALE * (Math.pow(grid[j][i].cell_col - source_x, 2) + Math.pow(grid[j][i].cell_row - source_y, 2)));
+                grid[j][i].height = (BASE_SCALE * (Math.pow(grid[j][i].cell_col - source_col, 2) + Math.pow(grid[j][i].cell_row - source_row, 2)));
 
             }
         }
@@ -2230,7 +2436,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.sqrt(Math.pow(grid[j][i].cell_col - source_x, 2) + Math.pow(grid[j][i].cell_row - source_y, 2))));
+                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.sqrt(Math.pow(grid[j][i].cell_col - source_col, 2) + Math.pow(grid[j][i].cell_row - source_row, 2))));
 
             }
         }
@@ -2242,7 +2448,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (BASE_SCALE * Math.pow(2, Math.sqrt(Math.pow(grid[j][i].cell_col - source_x, 2) + Math.pow(grid[j][i].cell_row - source_y, 2))));
+                grid[j][i].height = (BASE_SCALE * Math.pow(2, Math.sqrt(Math.pow(grid[j][i].cell_col - source_col, 2) + Math.pow(grid[j][i].cell_row - source_row, 2))));
 
             }
         }
@@ -2270,7 +2476,7 @@ public class Main extends JFrame implements MouseWheelListener {
         Queue<Cell> queue = new LinkedList<>();
 
 
-        Cell source_cell = grid[source_y][source_x];
+        Cell source_cell = grid[source_row][source_col];
 
         // add all cells of a path to queue
         queue.add(source_cell);
@@ -2322,7 +2528,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.pow(grid[j][i].cell_col - source_x, 2) + Math.pow(grid[j][i].cell_row - source_y, 2)));
+                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.pow(grid[j][i].cell_col - source_col, 2) + Math.pow(grid[j][i].cell_row - source_row, 2)));
 
             }
         }
@@ -2428,7 +2634,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2439,7 +2645,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -2506,7 +2712,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2517,7 +2723,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -2632,7 +2838,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2643,7 +2849,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -2706,7 +2912,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2717,7 +2923,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -2831,7 +3037,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2842,7 +3048,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -2909,7 +3115,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection point
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         previous_cell.cell_col, previous_cell.cell_row);
 
@@ -2920,7 +3126,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 // here compute the intersection
 
                                 intersection_point = compute_intersection_of_circle_and_line_segment(
-                                        source_x, source_y, radius,
+                                        source_col, source_row, radius,
                                         intersection_cell.cell_col, intersection_cell.cell_row,
                                         next_cell.cell_col, next_cell.cell_row);
 
@@ -3058,7 +3264,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             // here compute the intersection point
 
                             intersection_point = compute_intersection_of_circle_and_line_segment(
-                                    source_x, source_y, radius,
+                                    source_col, source_row, radius,
                                     intersection_cell.cell_col, intersection_cell.cell_row,
                                     previous_cell.cell_col, previous_cell.cell_row);
 
@@ -3069,7 +3275,7 @@ public class Main extends JFrame implements MouseWheelListener {
                             // here compute the intersection
 
                             intersection_point = compute_intersection_of_circle_and_line_segment(
-                                    source_x, source_y, radius,
+                                    source_col, source_row, radius,
                                     intersection_cell.cell_col, intersection_cell.cell_row,
                                     next_cell.cell_col, next_cell.cell_row);
 
@@ -3484,7 +3690,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList distances_for_paths = new ArrayList();
 
-        Cell source_cell = grid[source_x][source_y];
+        Cell source_cell = grid[source_col][source_row];
 
         // for all paths
         while (path_iterator.hasNext()) {
@@ -4648,7 +4854,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 ArrayList<Cell> neighbors = new ArrayList();
 
-                if (col == source_x && row == source_y) {
+                if (col == source_col && row == source_row) {
                     continue;
                 }
 
@@ -4798,7 +5004,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     } else if (neighbor == top_left || neighbor == top_right || neighbor == bottom_left || neighbor == bottom_right) {
 
-                        double dist_from_source_to_cell = Math.sqrt(Math.pow(grid[row][col].cell_col - source_x, 2) + Math.pow(grid[row][col].cell_row - source_y, 2));
+                        double dist_from_source_to_cell = Math.sqrt(Math.pow(grid[row][col].cell_col - source_col, 2) + Math.pow(grid[row][col].cell_row - source_row, 2));
 
                         if (true) {//dist_from_source_to_cell < 100) {
 
@@ -4868,13 +5074,13 @@ public class Main extends JFrame implements MouseWheelListener {
             if (point.name.equals(TARGET_NAME)) {
                 grid[point.grid_col][point.grid_row].height = -10000;
 
-                source_x = point.grid_col;
-                source_y = point.grid_row;
+                source_col = point.grid_col;
+                source_row = point.grid_row;
 
             }
         }
 
-        source_cell = grid[source_x][source_y];
+        source_cell = grid[source_col][source_row];
     }
 
 

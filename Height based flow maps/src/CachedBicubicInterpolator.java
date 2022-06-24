@@ -1,3 +1,5 @@
+import javafx.util.Pair;
+
 public class CachedBicubicInterpolator {
     private double a00, a01, a02, a03;
     private double a10, a11, a12, a13;
@@ -36,7 +38,7 @@ public class CachedBicubicInterpolator {
                 (a30 + a31 * y + a32 * y2 + a33 * y3) * x3;
     }
 
-    public double get_gradient(double x, double y) {
+    public Tuple<Double, Double> get_gradient(double x, double y) {
 
         double x2 = x * x;
         double x3 = x2 * x;
@@ -52,7 +54,9 @@ public class CachedBicubicInterpolator {
                 (a21 * x2 + a22 * 2 * x2 * y + a23 * 3 * x2 * y2) +
                 (a31 * x3 + a32 * 2 * x3 * y + a33 * 3 * x3 * y2);
 
-        return getValue(factor_x, factor_y);
+        Tuple<Double, Double> result = new Tuple<Double, Double>(factor_x, factor_y);
+
+        return result;
 
     }
 
