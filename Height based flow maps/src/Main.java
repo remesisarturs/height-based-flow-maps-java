@@ -167,7 +167,6 @@ public class Main extends JFrame implements MouseWheelListener {
                     initialize_grid_height_to_edge_sqrt(grid);
                 }
 
-
                 BicubicInterpolator interpolator = new BicubicInterpolator();
 
                 double[][] test = new double[4][4];
@@ -178,7 +177,14 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                 }
 
-                double test_result = interpolator.getValue(test, 1.5, 1.5);
+                double test_result = interpolator.getValue(test, 0.5, 0.5);
+
+                CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
+                cachedBicubicInterpolator.updateCoefficients(test);
+
+                double test_result_2 = cachedBicubicInterpolator.getValue(0.5, 0.5);
+
+                double test_result_3 = cachedBicubicInterpolator.get_gradient(0.5, 0.5);
 
                 compute_flow(grid, 0);
                 //compute_flow_accumulation(grid);
@@ -274,6 +280,32 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+    }
+
+    // input x and y are coordinates 0<=x<=NR_COLS , 0<=y<=NR_ROWS
+    public static double compute_interpolated_height (double x, double y, Cell[][] grid) {
+
+        int upper_x = (int) Math.ceil(x);
+        int lower_x = (int) Math.floor(x);
+
+        int upper_y = (int) Math.ceil(y);
+        int lower_y = (int) Math.floor(y);
+
+        BicubicInterpolator interpolator = new BicubicInterpolator();
+
+        double[][] test = new double[4][4];
+
+        for (int n = 0; n < 4; n ++) {
+            for (int m = 0 ; m < 4; m ++) {
+                test[n][m] = grid[n][m].height;
+            }
+        }
+
+        double test_result = interpolator.getValue(test, 1.5, 1.5);
+
+        double result = 0.0;
+
+        return result;
     }
 
     public static void copy_height(Cell[][] grid, double[][] memory_grid) {
