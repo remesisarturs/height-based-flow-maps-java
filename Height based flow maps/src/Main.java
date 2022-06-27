@@ -217,11 +217,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
 
-            for (int i = 0 ; i < 1000 ; i ++) {
+            for (int i = 0 ; i < 300 ; i ++) {
 
                 Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
 
                 System.out.println("col: " + current_col + " row: " + current_row);
+
+                double l = Math.sqrt(gradient.first * gradient.first + gradient.second * gradient.second);
+
+                if (l > 0) {
+                    gradient.first /= l;
+                    gradient.second /= l;
+                }
 
                 double next_x = current_col - gradient.first;
                 double next_y = current_row - gradient.second;
@@ -369,14 +376,14 @@ public class Main extends JFrame implements MouseWheelListener {
         int upper_row = (int) Math.ceil(row);
         int lower_row = (int) Math.floor(row);
 
-        double[][] height = new double[NR_OF_ROWS][NR_OF_COLUMNS];
-        for (int i = 0; i < NR_OF_ROWS; i++) {
-            for (int j = 0; j < NR_OF_COLUMNS; j++) {
-                height[i][j] = grid[i][j].height;
-            }
-        }
+//        double[][] height = new double[NR_OF_ROWS][NR_OF_COLUMNS];
+//        for (int i = 0; i < NR_OF_ROWS; i++) {
+//            for (int j = 0; j < NR_OF_COLUMNS; j++) {
+//                height[i][j] = grid[i][j].height;
+//            }
+//        }
 
-         height = transposeMatrix(height);
+       //  height = transposeMatrix(height);
 
         double h00, h01, h02, h03;
         double h10, h11, h12, h13;
@@ -469,6 +476,8 @@ public class Main extends JFrame implements MouseWheelListener {
         neighbors[3][2] = h32;
         neighbors[3][3] = h33;
 
+        neighbors = transposeMatrix(neighbors);
+
         //System.out.println();
 
 
@@ -499,7 +508,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
         cachedBicubicInterpolator.updateCoefficients(neighbors);
-        Tuple<Double, Double> result_vect = cachedBicubicInterpolator.get_gradient(col, row);
+        Tuple<Double, Double> result_vect = cachedBicubicInterpolator.get_gradient(col - lower_col, row -lower_row);
 
         double result_x = (double) result_vect.first;
         double result_y = (double) result_vect.second;
@@ -630,7 +639,7 @@ public class Main extends JFrame implements MouseWheelListener {
         MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
 
-        CIRCULAR_MODE = false;
+        CIRCULAR_MODE = true;
 
         INTERPOLATION = "BICUBIC";
 
