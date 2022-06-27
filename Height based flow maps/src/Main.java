@@ -217,8 +217,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
 
-            for (int i = 0 ; i < 300 ; i ++) {
-
+            while (distance_to_target > 1.0) {
                 Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
 
                 System.out.println("col: " + current_col + " row: " + current_row);
@@ -242,7 +241,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 System.out.println(distance_to_target);
 
-                System.out.println();
+                //System.out.println();
             }
             gradientPaths.add(gradientPath);
         }
