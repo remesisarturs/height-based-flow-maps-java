@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 public class Path {
 
-    ArrayList cells;
+    ArrayList<Cell> cells;
     int id;
 
 }

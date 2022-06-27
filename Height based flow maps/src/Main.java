@@ -148,10 +148,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 initialize_points_in_grid(grid, points_list);
 
 
-//                if (INTERPOLATION.equals("BICUBIC")) {
-//                    initialize_grid_height_interpolation(grid);
-//                }
-
                 if (BASE_HEIGHT_TYPE.equals("EUCLID")) {
                     initialize_grid_height_Euclidean_dist(grid);
                 } else if (BASE_HEIGHT_TYPE.equals("EUCLID_SQUARED")) {
@@ -168,145 +164,60 @@ public class Main extends JFrame implements MouseWheelListener {
                     initialize_grid_height_to_edge_sqrt(grid);
                 }
 
-                //initialize_height_test(grid);
+                //compute_interpolated_gradient(4.5, 4.5, grid);
 
-//                BicubicInterpolator interpolator = new BicubicInterpolator();
-//
-//                double[][] test = new double[4][4];
-//
-//                for (int n = 0; n < 4; n ++) {
-//                    for (int m = 0 ; m < 4; m ++) {
-//                        test[n][m] = grid[n][m].height;
-//                    }
-//                }
-//
-//                double test_result = interpolator.getValue(test, 0.5, 0.5);
-//
-//                CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
-//                cachedBicubicInterpolator.updateCoefficients(test);
-//
-//                double test_result_2 = cachedBicubicInterpolator.getValue(0.5, 0.5);
-//
-//                double test_result_3 = cachedBicubicInterpolator.get_gradient(0.5, 0.5);
+                ArrayList<GradientPath> gradientPaths = compute_gradient_paths (grid, points_list);
 
-                //compute_flow(grid, 0);
-                //compute_flow_accumulation(grid);
-
-                compute_interpolated_gradient(4.5, 4.5, grid);
-
-                compute_flow_gradient(grid, points_list);
-
-
-                ArrayList<Path> paths;
-
-                if (HORIZONTAL_FLOW_MODE) {
-                    paths = compute_paths_to_frame_edge(points_list, grid);
-                } else {
-                    paths = compute_paths(points_list, grid);
-                }
-
-                if (paths == null) {
-                    continue;
-                }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    draw(grid, paths, 0, false, iteration_location, width, scale);
-                    //draw_paths(grid, paths, 0, false, iteration_location, width, scale);
-                    //draw_flow(grid, paths, 0, false, iteration_location, width, scale);
-                    //draw_flow_accumulation(grid, paths, 0, false, iteration_location, width, scale);
+                    draw_height_and_gradient_paths(grid, gradientPaths, 0, false, iteration_location, width, scale);
                 }
 
-                ArrayList<DistanceForPathMatrix> distances_for_paths = null;
-                if (DISTANCE_METRIC.equals("BFS")) {
-                    distances_for_paths = compute_bfs(grid, paths);
-                } else if (DISTANCE_METRIC.equals("DIJKSTRA")) {
-                    distances_for_paths = compute_Dijkstra(grid, paths);
-                } else if (DISTANCE_METRIC.equals("ARC")) {
-                    distances_for_paths = compute_arc_length(grid, paths);
-                } else if (DISTANCE_METRIC.equals("ANGULAR_INTERSECTION")) {
-                    distances_for_paths = compute_angular_distance_with_intersection(grid, paths);
-                } else if (DISTANCE_METRIC.equals("ANGULAR_WITH_ARC_LENGTH")) {
-                    distances_for_paths = compute_anguar_with_arc_length(grid, paths);
-                } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
-                    distances_for_paths = compute_vertical_distances(grid, paths);
-                }
 
-                if (DRAW_DISTANCE_IMAGES) {
-                    draw_distances(grid, paths, distances_for_paths, false, width, scale, 0, iteration_location);
-                }
-
-                // copies the initial state of grid into memory
-
-                DistanceForPathMatrix d = (DistanceForPathMatrix) distances_for_paths.get(0);
-
-//                for (int r = 0 ; r < NR_OF_ROWS; r ++) {
-//
-//                    for (int c = 0 ; c < NR_OF_COLUMNS; c ++) {
-//
-//                        int value = (int) d.distance_matrix[r][c];
-//                        System.out.print(value + " & ");
-//
-//                    }
-//                    System.out.println(" \\\\ \\hline");
+//                if (GENERATE_INTERMEDIATE_RESULTS) {
+//                    generate_gif(iteration_location, "global_height");
 //                }
-
-                copy_height(grid, base_function);
-
-                Tuple<Cell[][], ArrayList<Path>> result = iterate(grid, points_list, paths, distances_for_paths, NR_OF_ITERATIONS,
-                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iteration_location, base_function);
-
-                if (result == null) {
-                    continue;
-                }
-
-                grid = result.first;
-
-                paths = result.second;
-
-                // draw final iteration
-                draw(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
-                draw_paths(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
-                //draw_flow(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
-                //draw_flow_accumulation(grid, paths, NR_OF_ITERATIONS, false, iteration_location, width, scale);
-
-
-                if (DRAW_DISTANCE_IMAGES) {
-                    draw_distances(grid, paths, distances_for_paths, false, width, scale, NR_OF_ITERATIONS, iteration_location);
-                }
-
-                if (GENERATE_INTERMEDIATE_RESULTS) {
-                    generate_gif(iteration_location, "global_height");
-                }
-
-                if (GENERATE_INTERMEDIATE_HEIGHT) {
-                    generate_gif(iteration_location, "update_local_height");
-                    generate_gif(iteration_location, "update_global_height");
-                }
+//
+//                if (GENERATE_INTERMEDIATE_HEIGHT) {
+//                    generate_gif(iteration_location, "update_local_height");
+//                    generate_gif(iteration_location, "update_global_height");
+//                }
 
                 log_file_writer.close();
-
 
             }
         }
     }
 
-    public static void compute_flow_gradient(Cell[][] grid, ArrayList<Point> points_list) {
+    public static ArrayList<GradientPath> compute_gradient_paths (Cell[][] grid, ArrayList<Point> points_list) {
 
         Iterator point_interator = points_list.iterator();
 
+        ArrayList<GradientPath> gradientPaths = new ArrayList<>();
+
+        int counter = 0;
+
         while (point_interator.hasNext()) {
+
+            //ArrayList<Tuple<Double, Double>> path_coordinates = new ArrayList<>();
+
             Point point = (Point) point_interator.next();
 
-            if (!(point.name.equals(TARGET_NAME) || point.name.equals("S"))) {
+            if ((point.name.equals(TARGET_NAME) || point.name.equals("S"))) {
                 continue;
             }
+
+            GradientPath gradientPath = new GradientPath();
 
             double current_col = point.grid_col;
             double current_row = point.grid_row;
 
+            gradientPath.id = counter;
+            gradientPath.path_coordinates.add(new Tuple<>(current_col, current_row));
+
             double distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
 
-            for (int i = 0 ; i < 100000 ; i ++) {
+            for (int i = 0 ; i < 1000 ; i ++) {
 
                 Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
 
@@ -320,11 +231,15 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
 
+                gradientPath.path_coordinates.add(new Tuple<>(current_col, current_row));
+
                 System.out.println(distance_to_target);
 
                 System.out.println();
             }
+            gradientPaths.add(gradientPath);
         }
+        return gradientPaths;
     }
 
     public static void initialize_height_test(Cell[][] grid) {
@@ -361,6 +276,85 @@ public class Main extends JFrame implements MouseWheelListener {
         double result = 0.0;
 
         return result;
+    }
+
+    public static void draw_height_and_gradient_paths (Cell[][] grid, ArrayList<GradientPath> gradientPaths,
+                                                       int image_index, boolean show_intermediate_results,
+                                                       String iteration_location, double width, double scale) throws IOException {
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        double max_height = grid[0][0].height;
+        double min_hieght = grid[0][0].height;
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                if (grid[i][j].height > max_height) {
+                    max_height = grid[i][j].height;
+                }
+                if (grid[i][j].height < min_hieght) {
+                    min_hieght = grid[i][j].height;
+                }
+            }
+        }
+
+        System.out.println("min height : " + min_hieght + " max height : " + max_height);
+        log_file_writer.write("min height : " + min_hieght + " max height : " + max_height + "\n");
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                float value = (float) ((grid[i][j].height - min_hieght) / (max_height - min_hieght));
+
+                Color color = null;
+                if (COLOR_MODE == "GRAY_SCALE") {
+                    color = getValueBetweenTwoFixedColors(value);
+
+                } else if (COLOR_MODE == "MULTIPLE_COLORS") {
+                    float minHue = 210f / 255;//210f / 255; //corresponds to green
+                    float maxHue = 0; //corresponds to red
+                    float hue = value * maxHue + (1 - value) * minHue;
+                    color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                } else if (COLOR_MODE == "RED_BLUE") {
+                    color = getValueBetweenTwoFixedColors(value);
+                }
+
+                image.setRGB(i, j, color.getRGB());
+
+            }
+        }
+
+        if (DRAW_PATHS) {
+
+            Iterator iter = gradientPaths.iterator();
+
+            while (iter.hasNext()) {
+
+                GradientPath path = (GradientPath) iter.next();
+
+                Iterator<Tuple<Double, Double>> cell_iter = path.path_coordinates.iterator();
+
+                while (cell_iter.hasNext()) {
+
+                    Tuple <Double, Double> coordinates = cell_iter.next();
+
+                    double x = coordinates.first;
+                    double y = coordinates.second;
+
+                    image.setRGB((int) x, (int) y, new Color(0, 0, 0).getRGB());
+
+                }
+            }
+        }
+
+        File file = new File(currentWorkingPath.concat("/" + storage_location_name + "/" + iteration_location + "/gradient_path_" + image_index + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
     }
 
     public static Tuple compute_interpolated_gradient(double col, double row, Cell[][] grid) {
