@@ -251,7 +251,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
             //int counter2 = 0;
 
-            while (distance_to_target > 4) {
+            double previous_distance;
+            previous_distance = distance_to_target;
+            while (distance_to_target > 15) {
                 //counter2++;
                 Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
 
@@ -259,7 +261,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 double l = Math.sqrt(gradient.first * gradient.first + gradient.second * gradient.second);
 
-                if (l > 1) {
+                if (l > 0) {
                     gradient.first /= l;
                     gradient.second /= l;
                 }
@@ -271,6 +273,14 @@ public class Main extends JFrame implements MouseWheelListener {
                 current_row = next_y;
 
                 distance_to_target = Math.sqrt(Math.pow(current_col - source_col, 2) + Math.pow(current_row - source_row, 2));
+
+//                if ((previous_distance - distance_to_target) < 0.0000001) {
+//                    System.out.println();
+//                    gradientPath.path_coordinates.add(new Tuple<>(current_col, current_row));
+//                    break;
+//                }
+
+                previous_distance = distance_to_target;
                 // TUPLE = col, row
                 gradientPath.path_coordinates.add(new Tuple<>(current_col, current_row));
 
@@ -665,7 +675,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 100;
 
-        WIDTHS = new double[]{20};
+        WIDTHS = new double[]{15};
         SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
@@ -679,7 +689,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         FLOW_ACCUMULATION = false;
 
-        MEMORY_MODE = false;
+        MEMORY_MODE = true;
         MEMORY_DECAY_RATE = 0.66;
 
         CIRCULAR_MODE = false;
@@ -4333,8 +4343,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 // try {
-                image.setRGB(i, j, new Color(255, 255, 255).getRGB());
-                //image.setRGB(i, j, color.getRGB());
+                //image.setRGB(i, j, new Color(255, 255, 255).getRGB());
+                image.setRGB(i, j, color.getRGB());
 
                 //  } catch (Exception e) {
                 //      System.out.println();
