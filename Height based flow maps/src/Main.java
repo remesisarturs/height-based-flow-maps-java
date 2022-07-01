@@ -1,4 +1,5 @@
 import javafx.util.Pair;
+import org.omg.CosNaming._BindingIteratorImplBase;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
@@ -263,7 +264,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double previous_distance;
             previous_distance = distance_to_target;
-            while (distance_to_target > 15) {
+            while (distance_to_target > 1) {
                 //counter2++;
                 Tuple<Double, Double> gradient = compute_interpolated_gradient(current_col, current_row, grid);
 
@@ -438,88 +439,79 @@ public class Main extends JFrame implements MouseWheelListener {
         int upper_row = (int) Math.ceil(row);
         int lower_row = (int) Math.floor(row);
 
-//        double[][] height = new double[NR_OF_ROWS][NR_OF_COLUMNS];
-//        for (int i = 0; i < NR_OF_ROWS; i++) {
-//            for (int j = 0; j < NR_OF_COLUMNS; j++) {
-//                height[i][j] = grid[i][j].height;
-//            }
-//        }
+        double h00= 0, h01= 0, h02 = 0, h03 = 0;
+        double h10= 0, h11= 0, h12= 0, h13 = 0;
+        double h20= 0, h21= 0, h22= 0, h23 = 0;
+        double h30= 0, h31= 0, h32= 0, h33 = 0;
 
-        //  height = transposeMatrix(height);
+        int next_col = 1;
+        int next_two_cols = 2;
 
-        double h00, h01, h02, h03;
-        double h10, h11, h12, h13;
-        double h20, h21, h22, h23;
-        double h30, h31, h32, h33;
+        int next_row = 1;
+        int next_two_rows = 1;
 
-        // grid[col][row]
+        int previous_row = 1;
+        int previous_col = 1;
 
-//        if (lower_col == 0 && lower_row != 0) {
-//
-//            // if we're at the first column we duplicate values for this column
-//            h00 = grid[lower_col][lower_row - 1].height;
-//            h10 = grid[lower_col][lower_row].height;
-//            h20 = grid[lower_col][lower_row + 1].height;
-//            h30 = grid[lower_col][lower_row + 2].height;
-//
-//        } else if (lower_col == 0 && lower_row == 0) {
-//
-//            h00 = grid[lower_col][lower_row].height;
-//            h10 = grid[lower_col][lower_row].height;
-//            h20 = grid[lower_col][lower_row + 1].height;
-//            h30 = grid[lower_col][lower_row + 2].height;
-//
-//        } else if (lower_col == NR_OF_COLUMNS - 1 && lower_row == 0) {
-//
-//            h03 = ;
-//            h13 = ;
-//            h23 = ;
-//            h33 = ;
-//
-//        } else if (lower_col == NR_OF_COLUMNS -2  && lower_row == 0) {
-//
-//
-//
-//            h03 = ;
-//            h13 = ;
-//            h23 = ;
-//            h33 = ;
-//
-//        }
-//
-//        else if (lower_col + 1 == NR_OF_COLUMNS || lower_col + 2 == NR_OF_COLUMNS) {
-//
-//
-//
-//        } else if (lower_row == 0) {
-//
-//            // if we're at the first row, we duplicate the values
-//            // TODO: for circular mode we should take the values of the last row
-//
-//
-//        } else if (lower_row + 1 == NR_OF_ROWS || lower_row + 2 == NR_OF_ROWS) {
-//
-//        }
+        if (lower_row == NR_OF_ROWS - 1) {
+            // we're on the lowest row
+            next_row = 0;
+            next_two_rows = 0;
 
-        h00 = grid[lower_col - 1][lower_row - 1].height;
-        h01 = grid[lower_col][lower_row - 1].height;
-        h02 = grid[lower_col + 1][lower_row - 1].height;
-        h03 = grid[lower_col + 2][lower_row - 1].height;
+        }
 
-        h10 = grid[lower_col - 1][lower_row].height;
-        h11 = grid[lower_col][lower_row].height;
-        h12 = grid[lower_col + 1][lower_row].height;
-        h13 = grid[lower_col + 2][lower_row].height;
+        if (lower_row == NR_OF_ROWS - 2) {
+            // we're on the second to lowest row
+            next_two_rows = 1;
 
-        h20 = grid[lower_col - 1][lower_row + 1].height;
-        h21 = grid[lower_col][lower_row + 1].height;
-        h22 = grid[lower_col + 1][lower_row + 1].height;
-        h23 = grid[lower_col + 2][lower_row + 1].height;
+        }
 
-        h30 = grid[lower_col - 1][lower_row + 2].height;
-        h31 = grid[lower_col][lower_row + 2].height;
-        h32 = grid[lower_col + 1][lower_row + 2].height;
-        h33 = grid[lower_col + 2][lower_row + 2].height;
+        if (lower_col == 0) {
+            // we're on the first col
+            previous_col = 0;
+        }
+
+        if (lower_row == 0) {
+            previous_row = 0;
+        }
+
+        if (lower_col == NR_OF_COLUMNS - 1) {
+            // we're on the last col
+            next_col = 0;
+            next_two_cols = 0;
+
+        }
+
+        if (lower_col == NR_OF_COLUMNS - 2) {
+            // we're on the one to last col
+            next_two_cols = 0;
+
+        }
+
+        try {
+            h00 = grid[lower_col - previous_col][lower_row - previous_row].height;
+            h01 = grid[lower_col][lower_row - previous_row].height;
+            h02 = grid[lower_col + next_col][lower_row - previous_row].height;
+            h03 = grid[lower_col + next_two_cols][lower_row - previous_row].height;
+
+            h10 = grid[lower_col - previous_col][lower_row].height;
+            h11 = grid[lower_col][lower_row].height;
+            h12 = grid[lower_col + next_col][lower_row].height;
+            h13 = grid[lower_col + next_two_cols][lower_row].height;
+
+            h20 = grid[lower_col - previous_col][lower_row + next_row].height;
+            h21 = grid[lower_col][lower_row + next_row].height;
+            h22 = grid[lower_col + next_col][lower_row + next_row].height;
+            h23 = grid[lower_col + next_two_cols][lower_row + next_row].height;
+
+            h30 = grid[lower_col - previous_col][lower_row + next_two_rows].height;
+            h31 = grid[lower_col][lower_row + next_two_rows].height;
+            h32 = grid[lower_col + next_col][lower_row + next_two_rows].height;
+            h33 = grid[lower_col + next_two_cols][lower_row + next_two_rows].height;
+
+        } catch (Exception e) {
+            System.out.println();
+        }
 
         neighbors[0][0] = h00;
         neighbors[0][1] = h01;
@@ -539,34 +531,6 @@ public class Main extends JFrame implements MouseWheelListener {
         neighbors[3][3] = h33;
 
         neighbors = transposeMatrix(neighbors);
-
-        //System.out.println();
-
-
-//
-//        for (int i = lower_x - 1; i < lower_x + 5; i++) {
-//            int index_i = 0;
-//            for (int j = lower_y - 1; j < lower_y + 5; j++) {
-//                int index_j = 0;
-//                neighbors[index_i][index_j] = grid[i][j].height;
-//                index_j++;
-//            }
-//            index_i++;
-//        }
-
-//        if (upper_col == NR_OF_COLUMNS) {
-//
-//        }
-//        if (lower_col == 0) {
-//
-//        }
-//        if (upper_row == NR_OF_ROWS) {
-//
-//        }
-//        if (lower_row == 0) {
-//
-//        }
-
 
         CachedBicubicInterpolator cachedBicubicInterpolator = new CachedBicubicInterpolator();
         cachedBicubicInterpolator.updateCoefficients(neighbors);
@@ -651,7 +615,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "T";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_2.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_5.csv";//"./input/1_s_20_t.csv";//"./input/1_s_8_t.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -687,10 +651,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 100;
+        NR_OF_ITERATIONS = 500;
 
-        WIDTHS = new double[]{15};
-        SCALES = new double[]{1000};
+        WIDTHS = new double[]{50};
+        SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -703,7 +667,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         FLOW_ACCUMULATION = false;
 
-        MEMORY_MODE = true;
+        MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
 
         CIRCULAR_MODE = false;
@@ -936,7 +900,15 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            distances_for_paths = compute_angular_distance_with_intersection(grid, gradient_paths);//compute_angular_distance_with_intersection(grid, gradient_paths);
+            if (HORIZONTAL_FLOW_MODE) {
+                distances_for_paths = compute_vertical_distance(grid, gradient_paths);
+
+                //System.out.println();
+                //ArrayList y_coordinates_for_columns = compute_distances_gradient_paths_horizontal_flow(grid, gradientPaths);
+
+            } else {
+                distances_for_paths = compute_angular_distance_with_intersection(grid, gradient_paths);
+            }
 
             Iterator path_it = distances_for_paths.iterator();
 
