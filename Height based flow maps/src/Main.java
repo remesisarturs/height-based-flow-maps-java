@@ -253,7 +253,9 @@ public class Main extends JFrame implements MouseWheelListener {
             distance = Math.sqrt(Math.pow(givenCoordinateAndID.first.first - allPointsAndPathIDs.get(i).first.first, 2) +
                     Math.pow(givenCoordinateAndID.first.second - allPointsAndPathIDs.get(i).first.second, 2));
 
-            if (distance < 2) {
+            double normalizedXFactor = givenCoordinateAndID.first.first / NR_OF_COLUMNS;
+
+            if (distance < 5 * (1 - normalizedXFactor) && allPointsAndPathIDs.get(i).first.first > givenCoordinateAndID.first.first) {
                 // path ID and Coordinate of the closest point ID
                 return new Tuple<>(allPointsAndPathIDs.get(i).second, allPointsAndPathIDs.get(i).first);
             }
@@ -782,7 +784,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -815,7 +817,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 500;
 
-        WIDTHS = new double[]{40};
+        WIDTHS = new double[]{50};
         SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
@@ -832,7 +834,7 @@ public class Main extends JFrame implements MouseWheelListener {
         MEMORY_MODE = false;
         MEMORY_DECAY_RATE = 0.66;
 
-        CIRCULAR_MODE = true;
+        CIRCULAR_MODE = false;
 
         INTERPOLATION = "BICUBIC";
 
