@@ -2,13 +2,13 @@ public class Cell {
 
     //String test;
     double height;
-    int flow_direction;
-    int cell_col;
-    int cell_row;
+    int flowDirection;
+    int cellCol;
+    int cellRow;
     String title;
     double distance;
-    boolean is_obstacle;
+    boolean isObstacle;
 
-    int flow_accumulation;
+    int flowAccumulation;
 
 }

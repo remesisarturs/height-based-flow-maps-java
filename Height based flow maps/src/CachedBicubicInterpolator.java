@@ -38,23 +38,23 @@ public class CachedBicubicInterpolator {
                 (a30 + a31 * y + a32 * y2 + a33 * y3) * x3;
     }
 
-    public Tuple<Double, Double> get_gradient(double x, double y) {
+    public Tuple<Double, Double> getGradient(double x, double y) {
 
         double x2 = x * x;
         double x3 = x2 * x;
         double y2 = y * y;
         double y3 = y2 * y;
 
-        double factor_x = (a10 + a11 * y + a12 * y2 + a13 * y3) +
+        double factorX = (a10 + a11 * y + a12 * y2 + a13 * y3) +
                 (a20 * 2 * x + a21 * 2 * x * y + a22 * 2 * x * y2 + a23 * 2 * x * y3) +
                 (a30 * 3 * x2 + a31 * 3 * x2 * y + a32 * 3 * x2 * y2 + a33 * 3 * x2 * y3);
 
-        double factor_y = (a01 + a02 * 2 * y + a03 * 3 * y2) +
+        double factorY = (a01 + a02 * 2 * y + a03 * 3 * y2) +
                 (a11 * x + a12 * 2 * x * y + a13 * 3 * x * y2) +
                 (a21 * x2 + a22 * 2 * x2 * y + a23 * 3 * x2 * y2) +
                 (a31 * x3 + a32 * 2 * x3 * y + a33 * 3 * x3 * y2);
 
-        Tuple<Double, Double> result = new Tuple<Double, Double>(factor_x, factor_y);
+        Tuple<Double, Double> result = new Tuple<Double, Double>(factorX, factorY);
 
         return result;
 
