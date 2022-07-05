@@ -96,6 +96,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean CIRCULAR_MODE;
 
+    public static boolean OBSTACLES;
+
     public static void main(String[] args) throws IOException {
 
         initializeParameters();
@@ -161,6 +163,10 @@ public class Main extends JFrame implements MouseWheelListener {
                     initializeGridHeightToEdgeSqrt(grid);
                 }
 
+                if (OBSTACLES) {
+                    initializeObstacles(grid, pointsList);
+                }
+
                 computeFlow(grid, 0);
                 //computeFlowAccumulation(grid);
 
@@ -177,7 +183,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    draw(grid, paths, 0, false, iterationLocation, width, scale);
+                    draw(grid, paths, 0, false, iterationLocation, width, scale, pointsList);
                     //drawPaths(grid, paths, 0, false, iterationLocation, width, scale);
                     //drawFlow(grid, paths, 0, false, iterationLocation, width, scale);
                     //drawFlowAccumulation(grid, paths, 0, false, iterationLocation, width, scale);
@@ -231,7 +237,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 paths = result.second;
 
                 // draw final iteration
-                draw(grid, paths, NR_OF_ITERATIONS, false, iterationLocation, width, scale);
+                draw(grid, paths, NR_OF_ITERATIONS, false, iterationLocation, width, scale, pointsList);
                 drawPaths(grid, paths, NR_OF_ITERATIONS, false, iterationLocation, width, scale);
                 //drawFlow(grid, paths, NR_OF_ITERATIONS, false, iterationLocation, width, scale);
                 //drawFlowAccumulation(grid, paths, NR_OF_ITERATIONS, false, iterationLocation, width, scale);
@@ -297,9 +303,33 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static Cell[][] initializeObstacles() {
+    public static void initializeObstacles(Cell[][] grid, ArrayList<Point> pointsList) {
 
-        return null;
+        for (int n = 0; n < pointsList.size(); n++) {
+
+            if (!(pointsList.get(n).name.equals(TARGET_NAME) || pointsList.get(n).name.equals("S"))) {
+
+                Point point = pointsList.get(n);
+
+                for (int col = 0; col < NR_OF_COLUMNS; col++) {
+                    for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                        Cell cell = grid[col][row];
+
+                        double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
+
+                        double width = 20;
+                        double height = 100;
+
+                        double obstacleHeight = gaussian(distance, 0, width);
+
+                        grid[col][row].height = grid[col][row].height + height * obstacleHeight;
+
+                    }
+                }
+            }
+        }
+
     }
 
     public static void computeMinAndMaxHeights(Cell[][] grid) {
@@ -324,7 +354,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_10_3.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_16_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -347,7 +377,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -368,9 +398,9 @@ public class Main extends JFrame implements MouseWheelListener {
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -380,6 +410,8 @@ public class Main extends JFrame implements MouseWheelListener {
         MEMORY_DECAY_RATE = 0.66;
 
         CIRCULAR_MODE = false;
+
+        OBSTACLES = true;
 
     }
 
@@ -598,7 +630,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (saveOutputs == true) {
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    draw(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
+                    draw(grid, paths, i, showIntermediateResults, iterationLocation, width, scale, pointsList);
                     //drawPaths(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
                     //drawFlow(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
                     //drawFlowAccumulation(grid, paths, i, false, iterationLocation, width, scale);
@@ -959,7 +991,7 @@ public class Main extends JFrame implements MouseWheelListener {
         if (x < sigma) {
             result = Math.exp(((Math.pow(-x, 2)) / (2 * Math.pow(sigma, 2))));
         } else if (x < 2 * sigma) {
-            result = Math.exp(-1/2) * (2 - x / sigma);
+            result = Math.exp(-1 / 2) * (2 - x / sigma);
         } else {
             result = 0;
         }
@@ -1207,7 +1239,7 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static double[][] computeHeightUpdate(Cell[][] grid, ArrayList distancesForPaths, ArrayList paths,
-                                                   int iteration, String iterationLocation) throws IOException {
+                                                 int iteration, String iterationLocation) throws IOException {
 
         System.out.println("adjusting height");
         logFileWriter.write("adjusting height" + "\n");
@@ -1367,8 +1399,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void heightUpdateOverlaps(Cell[][] grid, int col, int row, ArrayList paths,
-                                              ArrayList yCoordinatesForColumns, double[][] computedHeight,
-                                              ArrayList distancesForPaths, Map<Pair, List<Cell>> overlaps) {
+                                            ArrayList yCoordinatesForColumns, double[][] computedHeight,
+                                            ArrayList distancesForPaths, Map<Pair, List<Cell>> overlaps) {
 
 
         Cell cell = grid[col][row];
@@ -1420,8 +1452,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void widthsForPaths(Cell[][] grid, int col, int row, ArrayList paths,
-                                        ArrayList yCoordinatesForColumns, double[][] computedHeight,
-                                        ArrayList distancesForPaths) {
+                                      ArrayList yCoordinatesForColumns, double[][] computedHeight,
+                                      ArrayList distancesForPaths) {
 
         Cell cell = grid[col][row];
 
@@ -1501,8 +1533,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
     // this function computes the distances for each pair of adjacent y coordinates and picks the largest one
     public static void widthsForPaths_2(Cell[][] grid, int col, int row, ArrayList paths,
-                                          ArrayList yCoordinatesForColumns, double[][] computedHeight,
-                                          ArrayList distancesForPaths) {
+                                        ArrayList yCoordinatesForColumns, double[][] computedHeight,
+                                        ArrayList distancesForPaths) {
 
         Cell cell = grid[col][row];
 
@@ -1646,7 +1678,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 double influence_1 = heightFunction(distance_1, width_1);
                 double influence_2 = heightFunction(distance_2, width_2);
 
-                update = update + ((influence_1 + influence_2))  * HEIGHT_FUNCTION_SCALE;
+                update = update + ((influence_1 + influence_2)) * HEIGHT_FUNCTION_SCALE;
 
                 //update = update + (influence) * HEIGHT_FUNCTION_SCALE * updateFactor;
 
@@ -1675,8 +1707,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 // only add one overlap
                 if (!pathOverlapped) {
-                update = update + (1 + heightFunction(NR_OF_ROWS, width_1)) * HEIGHT_FUNCTION_SCALE;
-                //update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE;
+                    update = update + (1 + heightFunction(NR_OF_ROWS, width_1)) * HEIGHT_FUNCTION_SCALE;
+                    //update = update + (1 + gaussian_2(NR_OF_ROWS, 0, width_1)) * HEIGHT_FUNCTION_SCALE;
 
                     pathOverlapped = true;
                 }
@@ -1699,8 +1731,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void factorsForPaths(Cell[][] grid, int col, int row, ArrayList paths,
-                                         ArrayList yCoordinatesForColumns, double[][] computedHeight,
-                                         ArrayList distancesForPaths) {
+                                       ArrayList yCoordinatesForColumns, double[][] computedHeight,
+                                       ArrayList distancesForPaths) {
 
         Cell cell = grid[col][row];
 
@@ -2104,8 +2136,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     private static void heightUpdateOverlaps_2(Cell[][] grid, int col, int row, ArrayList paths,
-                                                 ArrayList yCoordinatesForColumns, double[][] computedHeight,
-                                                 ArrayList distancesForPaths, Map<Pair, List<Cell>> overlaps) {
+                                               ArrayList yCoordinatesForColumns, double[][] computedHeight,
+                                               ArrayList distancesForPaths, Map<Pair, List<Cell>> overlaps) {
 
         Cell cell = grid[col][row];
 
@@ -3069,8 +3101,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
     public static Tuple<Double, Double> computeIntersectionOfCircleAndLineSegment(double circlex, double circley, double radius,
-                                                                                        double x1, double y1,
-                                                                                        double x2, double y2) {
+                                                                                  double x1, double y1,
+                                                                                  double x2, double y2) {
 
         //Calculate change in x and y for the segment
         double deltax = x2 - x1;
@@ -3621,8 +3653,8 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static void drawDistances(Cell[][] grid, ArrayList paths, ArrayList distancesForPaths,
-                                      boolean showIntermediateResults, double width, double scale, int imageIndex,
-                                      String iterationLocation) throws
+                                     boolean showIntermediateResults, double width, double scale, int imageIndex,
+                                     String iterationLocation) throws
             IOException {
 
 //        jframe = new JFrame("panel");
@@ -4242,7 +4274,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static void draw(Cell[][] grid, ArrayList paths, int imageIndex, boolean showIntermediateResults, String iterationLocation, double width, double scale)
+    public static void draw(Cell[][] grid, ArrayList paths, int imageIndex, boolean showIntermediateResults, String iterationLocation, double width, double scale, ArrayList<Point> pointsList)
             throws IOException {
 
         jframe = new JFrame("panel");
@@ -4311,6 +4343,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 }
             }
+        }
+
+        for (int i = 0; i < pointsList.size(); i++) {
+
+            image.setRGB((int) pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+
         }
 
 
