@@ -163,10 +163,16 @@ public class Main extends JFrame implements MouseWheelListener {
                     initializeGridHeightToEdgeSqrt(grid);
                 }
 
+                double[][] heightUpdateObstacles;
+
                 if (OBSTACLES.equals("STATIC")) {
-                    initializeObstaclesStatic(grid, pointsList);
+                    heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
+                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
+
                 } else if (OBSTACLES.equals("PROGRESSIVE")) {
-                    initializeObstaclesProgressive(grid, pointsList, 0);
+                    heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, 0);
+                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
+
                 }
 
                 computeFlow(grid, 0);
@@ -305,7 +311,9 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void initializeObstaclesStatic(Cell[][] grid, ArrayList<Point> pointsList) {
+    public static double[][] computeObstaclesStatic(Cell[][] grid, ArrayList<Point> pointsList) {
+
+        double[][] heightUpdate = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         for (int n = 0; n < pointsList.size(); n++) {
 
@@ -325,19 +333,26 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double obstacleHeight = gaussian(distance, 0, width);
 
-                        grid[col][row].height = grid[col][row].height + height * obstacleHeight;
+                        double update = height * obstacleHeight;
+
+                        heightUpdate[col][row] = heightUpdate[col][row] + update;
+
+                        grid[col][row].height = grid[col][row].height + update;
 
                     }
                 }
             }
         }
+        return heightUpdate;
     }
 
-    public static void initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
+    public static double[][] initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
 
         double iterationFactor = (iteration + 1) / NR_OF_ITERATIONS;
 
-        iterationFactor = 1;
+        //iterationFactor = 1;
+
+        double[][] heightUpdate = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
         for (int n = 0; n < pointsList.size(); n++) {
 
@@ -352,17 +367,22 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
-                        double width = 10;
-                        double height = 10;
+                        double width = 30;
+                        double height = 100;
 
                         double obstacleHeight = gaussian(distance, 0, width);
 
-                        grid[col][row].height = grid[col][row].height + iterationFactor * height * obstacleHeight;
+                        double update = iterationFactor * height * obstacleHeight;
+
+                        heightUpdate[col][row] = heightUpdate[col][row] + update;
+
+                        grid[col][row].height = grid[col][row].height + update;
 
                     }
                 }
             }
         }
+        return heightUpdate;
     }
 
     public static void computeMinAndMaxHeights(Cell[][] grid) {
@@ -387,7 +407,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_16_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -444,8 +464,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         CIRCULAR_MODE = false;
 
-        //OBSTACLES = "STATIC";
-        OBSTACLES = "PROGRESSIVE";
+        OBSTACLES = "STATIC";
+        //OBSTACLES = "PROGRESSIVE";
 
     }
 
@@ -748,10 +768,16 @@ public class Main extends JFrame implements MouseWheelListener {
                 updateHeightOverwrite(grid, distancesForPaths, width, scale, paths, iteration, iterationLocation);
             }
 
+            double[][] heightUpdateObstacles;
+
             if (OBSTACLES.equals("STATIC")) {
-                initializeObstaclesStatic(grid, pointsList);
+                heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
+                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation);
+
             } else if (OBSTACLES.equals("PROGRESSIVE")) {
-                initializeObstaclesProgressive(grid, pointsList, iteration);
+                heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, iteration);
+                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation);
+
             }
 
             computeMinAndMaxHeights(grid);
@@ -3973,6 +3999,88 @@ public class Main extends JFrame implements MouseWheelListener {
         Color resultColor = new Color(red, green, blue);
 
         return resultColor;
+    }
+
+    public static void drawObstacles(double[][] matrix, ArrayList paths, int imageIndex, String iterationLocation) throws IOException {
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        double maxHeight = matrix[0][0];
+        double minHieght = matrix[0][0];
+
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                if (matrix[i][j] > maxHeight) {
+                    maxHeight = matrix[i][j];
+                }
+                if (matrix[i][j] < minHieght) {
+                    minHieght = matrix[i][j];
+                }
+            }
+        }
+
+
+        System.out.println("min height update : " + minHieght + " max height update : " + maxHeight);
+        logFileWriter.write("min height update : " + minHieght + " max height update : " + maxHeight + "\n");
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                float value = (float) ((matrix[i][j] - minHieght) / (maxHeight - minHieght));
+
+                Color color = null;
+                if (COLOR_MODE == "GRAY_SCALE") {
+                    color = getValueBetweenTwoFixedColors(value);
+
+                } else if (COLOR_MODE == "MULTIPLE_COLORS") {
+                    float minHue = 210f / 255;//210f / 255; //corresponds to green
+                    float maxHue = 0; //corresponds to red
+                    float hue = value * maxHue + (1 - value) * minHue;
+                    color = new Color(Color.HSBtoRGB(hue, 1f, 1f)); //getHeatMapColor(value);
+                } else if (COLOR_MODE == "RED_BLUE") {
+                    color = getValueBetweenTwoFixedColors(value);
+                }
+
+                // try {
+                image.setRGB(i, j, color.getRGB());
+
+                //  } catch (Exception e) {
+                //      System.out.println();
+                //  }
+
+            }
+        }
+
+        if (DRAW_PATHS) {
+
+            Iterator iter = paths.iterator();
+
+            while (iter.hasNext()) {
+
+                Path path = (Path) iter.next();
+
+                Iterator cellIter = path.cells.iterator();
+
+                while (cellIter.hasNext()) {
+
+                    Cell cell = (Cell) cellIter.next();
+
+                    image.setRGB((int) cell.cellCol, (int) cell.cellRow, new Color(0, 0, 0).getRGB());
+
+                }
+            }
+        }
+        File file;
+        file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/obstacles_" + imageIndex + ".png"));
+
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
     }
 
     public static void drawMatrix(double[][] matrix, ArrayList paths, int imageIndex, String iterationLocation, boolean relativeToTotal) throws IOException {
