@@ -96,7 +96,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static boolean CIRCULAR_MODE;
 
-    public static boolean OBSTACLES;
+    public static String OBSTACLES;
 
     public static void main(String[] args) throws IOException {
 
@@ -163,8 +163,10 @@ public class Main extends JFrame implements MouseWheelListener {
                     initializeGridHeightToEdgeSqrt(grid);
                 }
 
-                if (OBSTACLES) {
-                    initializeObstacles(grid, pointsList);
+                if (OBSTACLES.equals("STATIC")) {
+                    initializeObstaclesStatic(grid, pointsList);
+                } else if (OBSTACLES.equals("PROGRESSIVE")) {
+                    initializeObstaclesProgressive(grid, pointsList, 0);
                 }
 
                 computeFlow(grid, 0);
@@ -303,7 +305,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static void initializeObstacles(Cell[][] grid, ArrayList<Point> pointsList) {
+    public static void initializeObstaclesStatic(Cell[][] grid, ArrayList<Point> pointsList) {
 
         for (int n = 0; n < pointsList.size(); n++) {
 
@@ -329,7 +331,38 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
         }
+    }
 
+    public static void initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
+
+        double iterationFactor = (iteration + 1) / NR_OF_ITERATIONS;
+
+        iterationFactor = 1;
+
+        for (int n = 0; n < pointsList.size(); n++) {
+
+            if (!(pointsList.get(n).name.equals(TARGET_NAME) || pointsList.get(n).name.equals("S"))) {
+
+                Point point = pointsList.get(n);
+
+                for (int col = 0; col < NR_OF_COLUMNS; col++) {
+                    for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                        Cell cell = grid[col][row];
+
+                        double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
+
+                        double width = 10;
+                        double height = 10;
+
+                        double obstacleHeight = gaussian(distance, 0, width);
+
+                        grid[col][row].height = grid[col][row].height + iterationFactor * height * obstacleHeight;
+
+                    }
+                }
+            }
+        }
     }
 
     public static void computeMinAndMaxHeights(Cell[][] grid) {
@@ -390,10 +423,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 100;
+        NR_OF_ITERATIONS = 20;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{100};
+        SCALES = new double[]{10};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -411,7 +444,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         CIRCULAR_MODE = false;
 
-        OBSTACLES = true;
+        //OBSTACLES = "STATIC";
+        OBSTACLES = "PROGRESSIVE";
 
     }
 
@@ -610,11 +644,11 @@ public class Main extends JFrame implements MouseWheelListener {
         //adjustHeightMinDistances(grid, distancesForPaths, width, scale, paths);
 
         // Iterate a number of times:
-        for (int i = 1; i < NR_OF_ITERATIONS; i++) {
-            System.out.println("iteration : " + i);
-            logFileWriter.write("iteration : " + i + "\n");
+        for (int iteration = 1; iteration < NR_OF_ITERATIONS; iteration++) {
+            System.out.println("iteration : " + iteration);
+            logFileWriter.write("iteration : " + iteration + "\n");
 
-            computeFlow(grid, i);
+            computeFlow(grid, iteration);
 
             // computeFlowAccumulation(grid);
 
@@ -630,7 +664,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (saveOutputs == true) {
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    draw(grid, paths, i, showIntermediateResults, iterationLocation, width, scale, pointsList);
+                    draw(grid, paths, iteration, showIntermediateResults, iterationLocation, width, scale, pointsList);
                     //drawPaths(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
                     //drawFlow(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
                     //drawFlowAccumulation(grid, paths, i, false, iterationLocation, width, scale);
@@ -638,7 +672,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (DRAW_DISTANCE_IMAGES) {
-                    drawDistances(grid, paths, distancesForPaths, showIntermediateResults, width, scale, i, iterationLocation);
+                    drawDistances(grid, paths, distancesForPaths, showIntermediateResults, width, scale, iteration, iterationLocation);
                 }
             }
 
@@ -701,7 +735,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (MEMORY_MODE) {
                 // take the global grid height and compute the height update // here we took B + U_1 and computed U_2
-                double[][] heightUpdate = computeHeightUpdate(grid, distancesForPaths, paths, i, iterationLocation); // = U_2
+                double[][] heightUpdate = computeHeightUpdate(grid, distancesForPaths, paths, iteration, iterationLocation); // = U_2
 
                 sumOfPreviousHeights = addHeights(sumOfPreviousHeights, heightUpdate);
 
@@ -711,7 +745,13 @@ public class Main extends JFrame implements MouseWheelListener {
                 grid = addToBaseFunction(grid, baseFunction, sumOfPreviousHeights);
 
             } else {
-                updateHeightOverwrite(grid, distancesForPaths, width, scale, paths, i, iterationLocation);
+                updateHeightOverwrite(grid, distancesForPaths, width, scale, paths, iteration, iterationLocation);
+            }
+
+            if (OBSTACLES.equals("STATIC")) {
+                initializeObstaclesStatic(grid, pointsList);
+            } else if (OBSTACLES.equals("PROGRESSIVE")) {
+                initializeObstaclesProgressive(grid, pointsList, iteration);
             }
 
             computeMinAndMaxHeights(grid);
