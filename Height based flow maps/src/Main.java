@@ -1172,7 +1172,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         INTERPOLATION = "BICUBIC";
 
-        MERGE_CLOSE_PATHS = true;
+        MERGE_CLOSE_PATHS = false;
         CLOSE_PATH_THRESHOLD = 2;
 
     }
@@ -3064,8 +3064,13 @@ public class Main extends JFrame implements MouseWheelListener {
                             if (Double.isNaN(distance)) {
                                 System.out.println();
                             }
+                            if (distance == -1) {
 
-                            sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
+                            } else {
+                                sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
+
+                            }
+
                         }
                     }
 
@@ -3099,7 +3104,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        applyFilter(computedHeight);
+        //applyFilter(computedHeight);
 
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
             for (int row = 0; row < NR_OF_ROWS; row++) {
@@ -3989,7 +3994,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     // index of the first coordinate that is >= col
 
                     if (col < gradientPath.pathCoordinates.get(0).first) {
-                        System.out.println();
+                        distances[col][row] = -1;
+                        //System.out.println();
                         continue;
                     }
 
