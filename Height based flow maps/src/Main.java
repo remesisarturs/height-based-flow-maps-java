@@ -163,17 +163,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     initializeGridHeightToEdgeSqrt(grid);
                 }
 
-                double[][] heightUpdateObstacles;
 
-                if (OBSTACLES.equals("STATIC")) {
-                    heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
-                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
-
-                } else if (OBSTACLES.equals("PROGRESSIVE")) {
-                    heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, 0);
-                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
-
-                }
 
                 computeFlow(grid, 0);
                 //computeFlowAccumulation(grid);
@@ -184,6 +174,17 @@ public class Main extends JFrame implements MouseWheelListener {
                     paths = computePathsToFrameEdge(pointsList, grid);
                 } else {
                     paths = computePaths(pointsList, grid);
+                }
+
+                double[][] heightUpdateObstacles;
+
+                if (OBSTACLES.equals("STATIC")) {
+                    heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
+                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
+
+                } else if (OBSTACLES.equals("PROGRESSIVE")) {
+                    heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, 0);
+                    drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
                 }
 
                 if (paths == null) {
@@ -329,7 +330,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
                         double width = 20;
-                        double height = 100;
+                        double height = 10;
 
                         double obstacleHeight = gaussian(distance, 0, width);
 
@@ -348,7 +349,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static double[][] initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
 
-        double iterationFactor = (iteration + 1) / NR_OF_ITERATIONS;
+        double iterationFactor = (iteration + 1.0) / NR_OF_ITERATIONS;
 
         //iterationFactor = 1;
 
@@ -367,8 +368,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
-                        double width = 30;
-                        double height = 100;
+                        double width = 20;
+                        double height = 500;
 
                         double obstacleHeight = gaussian(distance, 0, width);
 
@@ -445,8 +446,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{10};
+        WIDTHS = new double[]{30};
+        SCALES = new double[]{200};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -464,8 +465,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         CIRCULAR_MODE = false;
 
-        OBSTACLES = "STATIC";
-        //OBSTACLES = "PROGRESSIVE";
+        //OBSTACLES = "STATIC";
+        OBSTACLES = "PROGRESSIVE";
 
     }
 
@@ -772,11 +773,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (OBSTACLES.equals("STATIC")) {
                 heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation);
+                drawObstacles(heightUpdateObstacles, paths, iteration, iterationLocation);
 
             } else if (OBSTACLES.equals("PROGRESSIVE")) {
                 heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, iteration);
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation);
+                drawObstacles(heightUpdateObstacles, paths, iteration, iterationLocation);
 
             }
 
@@ -4012,18 +4013,35 @@ public class Main extends JFrame implements MouseWheelListener {
         double minHieght = matrix[0][0];
 
 
-        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+        maxHeight = MAX_HEIGHT;
+        minHieght = MIN_HEIGHT;
 
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
+
+                if (matrix[i][j] < minHieght) {
+                    minHieght = matrix[i][j];
+                }
 
                 if (matrix[i][j] > maxHeight) {
                     maxHeight = matrix[i][j];
                 }
-                if (matrix[i][j] < minHieght) {
-                    minHieght = matrix[i][j];
-                }
+
             }
         }
+//
+//        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+//
+//            for (int j = 0; j < NR_OF_ROWS; j++) {
+//
+//                if (matrix[i][j] > maxHeight) {
+//                    maxHeight = matrix[i][j];
+//                }
+//                if (matrix[i][j] < minHieght) {
+//                    minHieght = matrix[i][j];
+//                }
+//            }
+//        }
 
 
         System.out.println("min height update : " + minHieght + " max height update : " + maxHeight);
@@ -4057,25 +4075,24 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        if (DRAW_PATHS) {
 
-            Iterator iter = paths.iterator();
+        Iterator iter = paths.iterator();
 
-            while (iter.hasNext()) {
+        while (iter.hasNext()) {
 
-                Path path = (Path) iter.next();
+            Path path = (Path) iter.next();
 
-                Iterator cellIter = path.cells.iterator();
+            Iterator cellIter = path.cells.iterator();
 
-                while (cellIter.hasNext()) {
+            while (cellIter.hasNext()) {
 
-                    Cell cell = (Cell) cellIter.next();
+                Cell cell = (Cell) cellIter.next();
 
-                    image.setRGB((int) cell.cellCol, (int) cell.cellRow, new Color(0, 0, 0).getRGB());
+                image.setRGB((int) cell.cellCol, (int) cell.cellRow, new Color(0, 0, 0).getRGB());
 
-                }
             }
         }
+
         File file;
         file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/obstacles_" + imageIndex + ".png"));
 
