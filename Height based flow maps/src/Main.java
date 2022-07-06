@@ -264,72 +264,119 @@ public class Main extends JFrame implements MouseWheelListener {
         return null;
 
     }
-//
-//    public static double gaussianFilter() {
-//
-//    }
+
+    public static double[][] gaussianKernel(double sigma) {
+
+        int size = 7;
+
+        if (((size % 2) == 0) || (size < 3) || (size > 101)) {
+            try {
+                throw new Exception("Wrong size");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        int r = size / 2;
+        double[][] kernel = new double[size][size];
+
+        // compute kernel
+        double sum = 0;
+        for (int y = -r, i = 0; i < size; y++, i++) {
+            for (int x = -r, j = 0; j < size; x++, j++) {
+                kernel[i][j] = Function2D(x, y, sigma);
+                sum += kernel[i][j];
+            }
+        }
+
+        for (int i = 0; i < kernel.length; i++) {
+            for (int j = 0; j < kernel[0].length; j++) {
+                kernel[i][j] /= sum;
+            }
+        }
+
+        return kernel;
+    }
+
+    public static double Function2D(double x, double y, double sigma) {
+        return Math.exp(-(x * x + y * y) / (2 * sigma * sigma)) / (2 * Math.PI * sigma * sigma);
+    }
 
     public static void applyFilter(double[][] grid) {
 
         int filterSize = 7;
 
-        double[][] filter = new double[filterSize][filterSize];
+//        double[][] filter = new double[filterSize][filterSize];
+//
+//        filter[0][0] = 0;
+//        filter[0][1] = 0;
+//        filter[0][2] = 1;
+//        filter[0][3] = 2;
+//        filter[0][4] = 1;
+//        filter[0][5] = 0;
+//        filter[0][6] = 0;
+//
+//        filter[1][0] = 0;
+//        filter[1][1] = 3;
+//        filter[1][2] = 13;
+//        filter[1][3] = 22;
+//        filter[1][4] = 13;
+//        filter[1][5] = 3;
+//        filter[1][6] = 0;
+//
+//        filter[2][0] = 1;
+//        filter[2][1] = 13;
+//        filter[2][2] = 59;
+//        filter[2][3] = 97;
+//        filter[2][4] = 59;
+//        filter[2][5] = 13;
+//        filter[2][6] = 1;
+//
+//        filter[3][0] = 2;
+//        filter[3][1] = 22;
+//        filter[3][2] = 97;
+//        filter[3][3] = 159;
+//        filter[3][4] = 97;
+//        filter[3][5] = 22;
+//        filter[3][6] = 2;
+//
+//        filter[4][0] = 1;
+//        filter[4][1] = 13;
+//        filter[4][2] = 59;
+//        filter[4][3] = 97;
+//        filter[4][4] = 59;
+//        filter[4][5] = 13;
+//        filter[4][6] = 1;
+//
+//        filter[5][0] = 0;
+//        filter[5][1] = 3;
+//        filter[5][2] = 13;
+//        filter[5][3] = 22;
+//        filter[5][4] = 13;
+//        filter[5][5] = 3;
+//        filter[5][6] = 0;
+//
+//        filter[6][0] = 0;
+//        filter[6][1] = 0;
+//        filter[6][2] = 1;
+//        filter[6][3] = 2;
+//        filter[6][4] = 1;
+//        filter[6][5] = 0;
+//        filter[6][6] = 0;
 
-        filter[0][0] = 0;
-        filter[0][1] = 0;
-        filter[0][2] = 1;
-        filter[0][3] = 2;
-        filter[0][4] = 1;
-        filter[0][5] = 0;
-        filter[0][6] = 0;
+        double sigma = 10;
 
-        filter[1][0] = 0;
-        filter[1][1] = 3;
-        filter[1][2] = 13;
-        filter[1][3] = 22;
-        filter[1][4] = 13;
-        filter[1][5] = 3;
-        filter[1][6] = 0;
+        double[][] filter = gaussianKernel(sigma);
 
-        filter[2][0] = 1;
-        filter[2][1] = 13;
-        filter[2][2] = 59;
-        filter[2][3] = 97;
-        filter[2][4] = 59;
-        filter[2][5] = 13;
-        filter[2][6] = 1;
+        double gaussianSum = 0;
 
-        filter[3][0] = 2;
-        filter[3][1] = 22;
-        filter[3][2] = 97;
-        filter[3][3] = 159;
-        filter[3][4] = 97;
-        filter[3][5] = 22;
-        filter[3][6] = 2;
+        for (int i = 0 ; i < 7; i ++) {
 
-        filter[4][0] = 1;
-        filter[4][1] = 13;
-        filter[4][2] = 59;
-        filter[4][3] = 97;
-        filter[4][4] = 59;
-        filter[4][5] = 13;
-        filter[4][6] = 1;
+            for (int j = 0 ; j < 7; j ++) {
+                gaussianSum = gaussianSum + filter[i][j];
+            }
 
-        filter[5][0] = 0;
-        filter[5][1] = 3;
-        filter[5][2] = 13;
-        filter[5][3] = 22;
-        filter[5][4] = 13;
-        filter[5][5] = 3;
-        filter[5][6] = 0;
-
-        filter[6][0] = 0;
-        filter[6][1] = 0;
-        filter[6][2] = 1;
-        filter[6][3] = 2;
-        filter[6][4] = 1;
-        filter[6][5] = 0;
-        filter[6][6] = 0;
+        }
 
         int nextCol = 1;
         int nextTwoCols = 2;
@@ -589,7 +636,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                 }
 
-                double result = sum / 1003.0;
+                double result = sum / gaussianSum;
 
                 grid[col][row] = result;
 
@@ -1113,12 +1160,12 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "T";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_many.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -1151,7 +1198,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 500;
 
-        WIDTHS = new double[]{50};
+        WIDTHS = new double[]{20};
         SCALES = new double[]{1000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
@@ -3104,7 +3151,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        //applyFilter(computedHeight);
+        applyFilter(computedHeight);
 
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
             for (int row = 0; row < NR_OF_ROWS; row++) {
