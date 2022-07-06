@@ -264,6 +264,340 @@ public class Main extends JFrame implements MouseWheelListener {
         return null;
 
     }
+//
+//    public static double gaussianFilter() {
+//
+//    }
+
+    public static void applyFilter(double[][] grid) {
+
+        int filterSize = 7;
+
+        double[][] filter = new double[filterSize][filterSize];
+
+        filter[0][0] = 0;
+        filter[0][1] = 0;
+        filter[0][2] = 1;
+        filter[0][3] = 2;
+        filter[0][4] = 1;
+        filter[0][5] = 0;
+        filter[0][6] = 0;
+
+        filter[1][0] = 0;
+        filter[1][1] = 3;
+        filter[1][2] = 13;
+        filter[1][3] = 22;
+        filter[1][4] = 13;
+        filter[1][5] = 3;
+        filter[1][6] = 0;
+
+        filter[2][0] = 1;
+        filter[2][1] = 13;
+        filter[2][2] = 59;
+        filter[2][3] = 97;
+        filter[2][4] = 59;
+        filter[2][5] = 13;
+        filter[2][6] = 1;
+
+        filter[3][0] = 2;
+        filter[3][1] = 22;
+        filter[3][2] = 97;
+        filter[3][3] = 159;
+        filter[3][4] = 97;
+        filter[3][5] = 22;
+        filter[3][6] = 2;
+
+        filter[4][0] = 1;
+        filter[4][1] = 13;
+        filter[4][2] = 59;
+        filter[4][3] = 97;
+        filter[4][4] = 59;
+        filter[4][5] = 13;
+        filter[4][6] = 1;
+
+        filter[5][0] = 0;
+        filter[5][1] = 3;
+        filter[5][2] = 13;
+        filter[5][3] = 22;
+        filter[5][4] = 13;
+        filter[5][5] = 3;
+        filter[5][6] = 0;
+
+        filter[6][0] = 0;
+        filter[6][1] = 0;
+        filter[6][2] = 1;
+        filter[6][3] = 2;
+        filter[6][4] = 1;
+        filter[6][5] = 0;
+        filter[6][6] = 0;
+
+        int nextCol = 1;
+        int nextTwoCols = 2;
+        int nextThreeCols = 3;
+
+        int previousCol = 1;
+        int previousTwoCols = 2;
+        int previousThreeCols = 3;
+
+        int nextRow = 1;
+        int nextTwoRows = 2;
+        int nextThreeRows = 3;
+
+        int previousRow = 1;
+        int previousTwoRows = 2;
+        int previousThreeRows = 3;
+
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+
+            for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                double[][] neighbors = new double[filterSize][filterSize];
+
+                if (row == NR_OF_ROWS - 1) {
+                    // we're on the lowest row
+                    nextRow = 0;
+                    nextTwoRows = 0;
+                    nextThreeRows = 0;
+
+                }
+
+                if (row == NR_OF_ROWS - 2) {
+                    // we're on the second to lowest row
+                    nextRow = 1;
+                    nextTwoRows = 1;
+                    nextThreeRows = 1;
+                }
+
+                if (row == NR_OF_ROWS - 3) {
+                    // we're on the third to the lowest row
+                    nextRow = 1;
+                    nextTwoRows = 2;
+                    nextThreeRows = 2;
+
+                }
+
+                if (col == 0) {
+                    // we're on the first col
+                    previousCol = 0;
+                    previousTwoCols = 0;
+                    previousThreeCols = 0;
+                }
+
+                if (col == 1) {
+                    previousCol = 1;
+                    previousTwoCols = 1;
+                    previousTwoCols = 1;
+                }
+
+                if (col == 2) {
+                    previousCol = 1;
+                    previousTwoCols = 2;
+                    previousThreeCols = 2;
+                }
+
+                if (row == 0) {
+                    previousRow = 0;
+                    previousTwoRows = 0;
+                    previousThreeRows = 0;
+                }
+
+                if (row == 1) {
+                    previousRow = 1;
+                    previousTwoRows = 1;
+                    previousThreeRows = 1;
+                }
+
+                if (row == 2) {
+                    previousRow = 1;
+                    previousTwoRows = 2;
+                    previousThreeRows = 2;
+                }
+
+                if (col == NR_OF_COLUMNS - 1) {
+                    // we're on the lowest row
+                    nextCol = 0;
+                    nextTwoCols = 0;
+                    nextThreeCols = 0;
+
+                }
+
+                if (col == NR_OF_COLUMNS - 2) {
+                    // we're on the second to lowest row
+                    nextCol = 1;
+                    nextTwoCols = 1;
+                    nextThreeCols = 1;
+                }
+
+                if (col == NR_OF_COLUMNS - 3) {
+                    // we're on the third to the lowest row
+                    nextCol = 1;
+                    nextTwoCols = 2;
+                    nextThreeCols = 2;
+
+                }
+                double h00 = 0, h01 = 0, h02 = 0, h03 = 0, h04 = 0, h05 = 0, h06 = 0;
+                double h10 = 0, h11 = 0, h12 = 0, h13 = 0, h14 = 0, h15 = 0, h16 = 0;
+                double h20 = 0, h21 = 0, h22 = 0, h23 = 0, h24 = 0, h25 = 0, h26 = 0;
+                double h30 = 0, h31 = 0, h32 = 0, h33 = 0, h34 = 0, h35 = 0, h36 = 0;
+                double h40 = 0, h41 = 0, h42 = 0, h43 = 0, h44 = 0, h45 = 0, h46 = 0;
+                double h50 = 0, h51 = 0, h52 = 0, h53 = 0, h54 = 0, h55 = 0, h56 = 0;
+                double h60 = 0, h61 = 0, h62 = 0, h63 = 0, h64 = 0, h65 = 0, h66 = 0;
+
+                // center = h33
+
+                try {
+                    // row 0
+                    h00 = grid[col - previousThreeCols][row - previousThreeRows];
+                    h01 = grid[col - previousTwoCols][row - previousThreeRows];
+                    h02 = grid[col - previousCol][row - previousThreeRows];
+                    h03 = grid[col][row - previousThreeRows];
+                    h04 = grid[col + nextCol][row - previousThreeRows];
+                    h05 = grid[col + nextTwoCols][row - previousThreeRows];
+                    h06 = grid[col + nextThreeCols][row - previousThreeRows];
+
+                    // row 1
+                    h10 = grid[col - previousThreeCols][row - previousTwoRows];
+                    h11 = grid[col - previousTwoCols][row - previousTwoRows];
+                    h12 = grid[col - previousCol][row - previousTwoRows];
+                    h13 = grid[col][row - previousTwoRows];
+                    h14 = grid[col + nextCol][row - previousTwoRows];
+                    h15 = grid[col + nextTwoCols][row - previousTwoRows];
+                    h16 = grid[col + nextThreeCols][row - previousTwoRows];
+
+                    // row 2
+                    h20 = grid[col - previousThreeCols][row - previousRow];
+                    h21 = grid[col - previousTwoCols][row - previousRow];
+                    h22 = grid[col - previousCol][row - previousRow];
+                    h23 = grid[col][row - previousRow];
+                    h24 = grid[col + nextCol][row - previousRow];
+                    h25 = grid[col + nextTwoCols][row - previousRow];
+                    h26 = grid[col + nextThreeCols][row - previousRow];
+
+                    // row 3
+                    h30 = grid[col - previousThreeCols][row];
+                    h31 = grid[col - previousTwoCols][row];
+                    h32 = grid[col - previousCol][row];
+                    h33 = grid[col][row];
+                    h34 = grid[col + nextCol][row];
+                    h35 = grid[col + nextTwoCols][row];
+                    h36 = grid[col + nextThreeCols][row];
+
+                    // row 4
+                    h40 = grid[col - previousThreeCols][row + nextRow];
+                    h41 = grid[col - previousTwoCols][row + nextRow];
+                    h42 = grid[col - previousCol][row + nextRow];
+                    h43 = grid[col][row + nextRow];
+                    h44 = grid[col + nextCol][row + nextRow];
+                    h45 = grid[col + nextTwoCols][row + nextRow];
+                    h46 = grid[col + nextThreeCols][row + nextRow];
+
+                    // row 5
+                    h50 = grid[col - previousThreeCols][row + nextTwoRows];
+                    h51 = grid[col - previousTwoCols][row + nextTwoRows];
+                    h52 = grid[col - previousCol][row + nextTwoRows];
+                    h53 = grid[col][row + nextTwoRows];
+                    h54 = grid[col + nextCol][row + nextTwoRows];
+                    h55 = grid[col + nextTwoCols][row + nextTwoRows];
+                    h56 = grid[col + nextThreeCols][row + nextTwoRows];
+
+                    // row 6
+                    h60 = grid[col - previousThreeCols][row + nextThreeRows];
+                    h61 = grid[col - previousTwoCols][row + nextThreeRows];
+                    h62 = grid[col - previousCol][row + nextThreeRows];
+                    h63 = grid[col][row + nextThreeRows];
+                    h64 = grid[col + nextCol][row + nextThreeRows];
+                    h65 = grid[col + nextTwoCols][row + nextThreeRows];
+                    h66 = grid[col + nextThreeCols][row + nextThreeRows];
+
+                } catch (Exception e) {
+                    System.out.println();
+                }
+
+                //double[][] neighbors = new double[7][7];
+
+                neighbors[0][0] = h00;
+                neighbors[0][1] = h01;
+                neighbors[0][2] = h02;
+                neighbors[0][3] = h03;
+                neighbors[0][4] = h04;
+                neighbors[0][5] = h05;
+                neighbors[0][6] = h06;
+
+                neighbors[1][0] = h10;
+                neighbors[1][1] = h11;
+                neighbors[1][2] = h12;
+                neighbors[1][3] = h13;
+                neighbors[1][4] = h14;
+                neighbors[1][5] = h15;
+                neighbors[1][6] = h16;
+
+                neighbors[2][0] = h20;
+                neighbors[2][1] = h21;
+                neighbors[2][2] = h22;
+                neighbors[2][3] = h23;
+                neighbors[2][4] = h24;
+                neighbors[2][5] = h25;
+                neighbors[2][6] = h26;
+
+                neighbors[3][0] = h30;
+                neighbors[3][1] = h31;
+                neighbors[3][2] = h32;
+                neighbors[3][3] = h33;
+                neighbors[3][4] = h34;
+                neighbors[3][5] = h35;
+                neighbors[3][6] = h36;
+
+                neighbors[4][0] = h40;
+                neighbors[4][1] = h41;
+                neighbors[4][2] = h42;
+                neighbors[4][3] = h43;
+                neighbors[4][4] = h44;
+                neighbors[4][5] = h45;
+                neighbors[4][6] = h46;
+
+                neighbors[5][0] = h50;
+                neighbors[5][1] = h51;
+                neighbors[5][2] = h52;
+                neighbors[5][3] = h53;
+                neighbors[5][4] = h54;
+                neighbors[5][5] = h55;
+                neighbors[5][6] = h56;
+
+                neighbors[6][0] = h60;
+                neighbors[6][1] = h61;
+                neighbors[6][2] = h62;
+                neighbors[6][3] = h63;
+                neighbors[6][4] = h64;
+                neighbors[6][5] = h65;
+                neighbors[6][6] = h66;
+
+                //neighbors = transposeMatrix(neighbors);
+
+                double[][] mult = new double[7][7];
+
+                for (int i = 0; i < 7; i++) {
+                    for (int j = 0; j < 7; j++) {
+                        mult[i][j] = neighbors[i][j] * filter[i][j];
+                    }
+                }
+
+                double sum = 0;
+                for (int i = 0; i < 7; i++) {
+                    for (int j = 0; j < 7; j++) {
+                        sum = sum + mult[i][j];
+                    }
+                }
+
+                double result = sum / 1003.0;
+
+                grid[col][row] = result;
+
+                //System.out.println();
+
+            }
+        }
+    }
 
     public static ArrayList<GradientPath> computeMergedGradientPaths(Cell[][] grid, ArrayList<Point> pointsList) {
 
@@ -2752,21 +3086,31 @@ public class Main extends JFrame implements MouseWheelListener {
 //                        i = 1;
 //                    }
                         double height = ((-HEIGHT_FUNCTION_SCALE * sum));
-                        grid[col][row].height = grid[col][row].height + ((height));
+                        //grid[col][row].height = grid[col][row].height + ((height));
                         computedHeight[col][row] = height;
 
                     } else {
                         double height = ((-HEIGHT_FUNCTION_SCALE * sum));
                         computedHeight[col][row] = height;
 
-                        grid[col][row].height = grid[col][row].height + ((height));
+                        //grid[col][row].height = grid[col][row].height + ((height));
                     }
                 }
             }
         }
 
+        applyFilter(computedHeight);
+
+        for (int col = 0; col < NR_OF_COLUMNS; col++) {
+            for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                grid[col][row].height = grid[col][row].height + computedHeight[col][row];
+            }
+        }
+
         if (GENERATE_INTERMEDIATE_RESULTS) {
             if (GENERATE_INTERMEDIATE_HEIGHT) {
+
                 computeMinAndMaxHeights(grid);
                 drawMatrix(computedHeight, paths, iteration, iterationLocation, false);
                 drawMatrix(computedHeight, paths, iteration, iterationLocation, true);
