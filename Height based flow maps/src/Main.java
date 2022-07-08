@@ -101,7 +101,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double CLOSE_PATH_THRESHOLD;
     public static String OBSTACLES;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
         initializeParameters();
 
@@ -660,7 +660,7 @@ public class Main extends JFrame implements MouseWheelListener {
         }
     }
 
-    public static ArrayList<GradientPath> computeMergedGradientPaths(Cell[][] grid, ArrayList<Point> pointsList) {
+    public static ArrayList<GradientPath> computeMergedGradientPaths(Cell[][] grid, ArrayList<Point> pointsList) throws Exception {
 
         Iterator pointIterator = pointsList.iterator();
 
@@ -709,11 +709,21 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double previousDistance;
             previousDistance = distanceToTarget;
+
+            int stepCounter = 0;
+
             while (distanceToTarget > 1) {
+
+                stepCounter ++;
+
+                if (stepCounter > 10000) {
+                    throw new Exception("Gaussian path computation took too long");
+                }
+
                 //counter2++;
                 Tuple<Double, Double> gradient = computeInterpolatedGradient(currentCol, currentRow, grid);
 
-                System.out.println("col: " + currentCol + " row: " + currentRow);
+              //  System.out.println("col: " + currentCol + " row: " + currentRow);
 
                 double l = Math.sqrt(gradient.first * gradient.first + gradient.second * gradient.second);
 
@@ -775,7 +785,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
                 gradientPath.pathCoordinates.add(new Tuple<>(currentCol, currentRow));
 
-                System.out.println("distance to target : " + distanceToTarget);
+                //System.out.println("distance to target : " + distanceToTarget);
 
                 //System.out.println();
             }
@@ -785,7 +795,7 @@ public class Main extends JFrame implements MouseWheelListener {
         return gradientPaths;
     }
 
-    public static ArrayList<GradientPath> computeGradientPaths(Cell[][] grid, ArrayList<Point> pointsList) {
+    public static ArrayList<GradientPath> computeGradientPaths(Cell[][] grid, ArrayList<Point> pointsList) throws Exception {
 
         Iterator pointInterator = pointsList.iterator();
 
@@ -823,11 +833,21 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double previousDistance;
             previousDistance = distanceToTarget;
+            int stepCounter = 0;
+
             while (distanceToTarget > 1) {
+
+                stepCounter ++;
+
+                if (stepCounter > 10000) {
+                    throw new Exception("Gaussian path computation took too long");
+                }
+
+
                 //counter2++;
                 Tuple<Double, Double> gradient = computeInterpolatedGradient(currentCol, currentRow, grid);
 
-                System.out.println("col: " + currentCol + " row: " + currentRow);
+               // System.out.println("col: " + currentCol + " row: " + currentRow);
 
                 double l = Math.sqrt(gradient.first * gradient.first + gradient.second * gradient.second);
 
@@ -858,7 +878,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 // TUPLE = col, row
                 gradientPath.pathCoordinates.add(new Tuple<>(currentCol, currentRow));
 
-                System.out.println("distance to target : " + distanceToTarget);
+                //System.out.println("distance to target : " + distanceToTarget);
 
                 //System.out.println();
             }
@@ -1155,24 +1175,20 @@ public class Main extends JFrame implements MouseWheelListener {
                 BufferedImage.TYPE_INT_ARGB);
 
         double maxHeight = matrix[0][0];
-        double minHieght = matrix[0][0];
-
-        maxHeight = MAX_HEIGHT;
-        minHieght = MIN_HEIGHT;
+        double minHeight = matrix[0][0];
 
         if (relativeToGlobal) {
             maxHeight = MAX_HEIGHT;
-            minHieght = MIN_HEIGHT;
+            minHeight = MIN_HEIGHT;
 
             for (int i = 0; i < NR_OF_COLUMNS; i++) {
                 for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                    if (matrix[i][j] < minHieght) {
-                        minHieght = matrix[i][j];
+                    if (matrix[i][j] < minHeight) {
+                        minHeight = matrix[i][j];
                     }
 
                     if (matrix[i][j] > maxHeight) {
-                        maxHeight = matrix[i][j];
                         maxHeight = matrix[i][j];
                     }
 
@@ -1187,21 +1203,21 @@ public class Main extends JFrame implements MouseWheelListener {
                     if (matrix[i][j] > maxHeight) {
                         maxHeight = matrix[i][j];
                     }
-                    if (matrix[i][j] < minHieght) {
-                        minHieght = matrix[i][j];
+                    if (matrix[i][j] < minHeight) {
+                        minHeight = matrix[i][j];
                     }
                 }
             }
         }
 
 
-        System.out.println("min height update : " + minHieght + " max height update : " + maxHeight);
-        logFileWriter.write("min height update : " + minHieght + " max height update : " + maxHeight + "\n");
+        System.out.println("min height update : " + minHeight + " max height update : " + maxHeight);
+        logFileWriter.write("min height update : " + minHeight + " max height update : " + maxHeight + "\n");
 
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                float value = (float) ((matrix[i][j] - minHieght) / (maxHeight - minHieght));
+                float value = (float) ((matrix[i][j] - minHeight) / (maxHeight - minHeight));
 
                 Color color = null;
                 if (COLOR_MODE == "GRAY_SCALE") {
@@ -1227,19 +1243,28 @@ public class Main extends JFrame implements MouseWheelListener {
         }
 
 
-        Iterator iter = paths.iterator();
+        if (DRAW_PATHS) {
 
-        while (iter.hasNext()) {
+            Iterator iter = paths.iterator();
 
-            Path path = (Path) iter.next();
+            while (iter.hasNext()) {
+                int counter = 0;
 
-            Iterator cellIter = path.cells.iterator();
+                GradientPath path = (GradientPath) iter.next();
 
-            while (cellIter.hasNext()) {
+                for (int i = 0; i < path.pathCoordinates.size() - 1; i++) {
 
-                Cell cell = (Cell) cellIter.next();
+                    // draw segment between i and i + 1
+                    Tuple<Double, Double> coordinates = path.pathCoordinates.get(i);
+                    Tuple<Double, Double> next_coordinate = path.pathCoordinates.get(i + 1);
 
-                image.setRGB((int) cell.cellCol, (int) cell.cellRow, new Color(0, 0, 0).getRGB());
+                    Graphics g = image.getGraphics();
+                    g.setColor(Color.BLACK);
+                    g.drawLine(coordinates.first.intValue(), coordinates.second.intValue(),
+                            next_coordinate.first.intValue(), next_coordinate.second.intValue());
+                    g.dispose();
+
+                }
 
             }
         }
@@ -1276,7 +1301,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double obstacleCellHeight = gaussian(distance, 0, width);
 
-                        obstacleHeight[col][row] = height * obstacleCellHeight;
+                        if (distance == 0.0) {
+                            System.out.println();
+                        }
+
+                        obstacleHeight[col][row] = obstacleHeight[col][row] + height * obstacleCellHeight;
 
                         grid[col][row].height = grid[col][row].height + height * obstacleCellHeight;
 
@@ -1289,10 +1318,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static double[][] initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
 
-        double iterationFactor = (iteration + 1) / NR_OF_ITERATIONS;
+        double fX = 1.0 - 1.0 / (1.0 + iteration);//(iteration + 1) / NR_OF_ITERATIONS;
+
+        double fMaxX = 1.0 - 1.0 / (1.0 + NR_OF_ITERATIONS);//(iteration + 1) / NR_OF_ITERATIONS;
+
+
+        double gX = fX / fMaxX;//(iteration + 1) / NR_OF_ITERATIONS;
+
+        System.out.println("factor : " + gX + " ======================= ");
+
         double[][] obstacleHeight = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
-        iterationFactor = 1;
+        //iterationFactor = 1;
 
         for (int n = 0; n < pointsList.size(); n++) {
 
@@ -1308,11 +1345,15 @@ public class Main extends JFrame implements MouseWheelListener {
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
                         double width = 20;
-                        double height = 200;
+                        double height = 500;
 
-                        double obstacleCellHeight =  iterationFactor * height * gaussian(distance, 0, width);
+                        double obstacleCellHeight =  gX * height * gaussian(distance, 0, width);
 
-                        obstacleHeight[col][row] = obstacleCellHeight;
+//                        if (distance < 10) {
+//                            System.out.println();
+//                        }
+
+                        obstacleHeight[col][row] = obstacleHeight[col][row] +  obstacleCellHeight;
                         grid[col][row].height = grid[col][row].height + obstacleCellHeight;
 
                     }
@@ -1345,7 +1386,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "T";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/to_edge_2.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1681,7 +1722,7 @@ public class Main extends JFrame implements MouseWheelListener {
             String BASE_HEIGHT_TYPE, double baseFunctionScale, boolean saveOutputs,
             boolean showIntermediateResults, double width, double scale, String iterationLocation,
             double[][] baseFunction)
-            throws IOException {
+            throws Exception {
 
         double[][] sumOfPreviousHeights = new double[NR_OF_ROWS][NR_OF_COLUMNS];
 
@@ -1815,14 +1856,14 @@ public class Main extends JFrame implements MouseWheelListener {
             if (OBSTACLES.equals("STATIC")) {
                 heightUpdateObstacles = initializeObstaclesStatic(grid, pointsList);
 
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation, true);
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation, false);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
 
             } else if (OBSTACLES.equals("PROGRESSIVE")) {
                 heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, iteration);
 
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation, true);
-                drawObstacles(heightUpdateObstacles, new ArrayList(), iteration, iterationLocation, false);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
             }
 
             computeMinAndMaxHeights(grid);
