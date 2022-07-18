@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -247,10 +248,61 @@ public class Main extends JFrame implements MouseWheelListener {
 //                    generateGif(iterationLocation, "updateGlobalHeight");
 //                }
 
+               // ArrayList overlaps = computeOverlaps(result.second);
+
+                //drawPathsDensity(gradientPaths, 100, iterationLocation, overlaps);
+
                 logFileWriter.close();
 
             }
         }
+    }
+
+    public static ArrayList computeOverlaps(ArrayList<GradientPath> gradientPaths) {
+
+        ArrayList overlapsTotal = new ArrayList();
+
+        for (int i = 0; i < gradientPaths.size(); i++) {
+
+            for (int j = i + 1; j < gradientPaths.size(); j++) {
+
+                GradientPath pathI = gradientPaths.get(i);
+                GradientPath pathJ = gradientPaths.get(j);
+
+                ArrayList overlapsBetweenTwoPaths = new ArrayList();
+
+                if (pathI != pathJ) {
+
+                    for (int n = 0; n < pathI.pathCoordinates.size(); n ++) {
+
+                        Tuple<Double, Double> coordinateI = pathI.pathCoordinates.get(n);
+
+                        for (int m = 0; m < pathJ.pathCoordinates.size(); m ++) {
+
+                            Tuple<Double, Double> coordinateJ = pathJ.pathCoordinates.get(m);
+
+                            Double distance = Math.sqrt(Math.pow(coordinateI.first - coordinateJ.first, 2) +
+                                    Math.pow(coordinateI.second - coordinateJ.second, 2) );
+
+                            if (distance < 1) {
+
+                                Tuple<Tuple, Tuple> overlap = new Tuple(coordinateI, coordinateJ);
+
+                                Tuple<Tuple, Tuple<Integer, Integer>> coordIdAndPathId = new Tuple<>(overlap, new Tuple<>(i, j));
+                                overlapsBetweenTwoPaths.add(coordIdAndPathId);
+
+                            }
+                        }
+                    }
+                }
+
+                overlapsTotal.add(overlapsBetweenTwoPaths);
+
+            }
+        }
+        System.out.println();
+
+        return overlapsTotal;
     }
 
     public static Tuple<Integer, Tuple<Double, Double>> findClosestPath(Tuple<Tuple<Double, Double>, Integer> givenCoordinateAndID,
@@ -1403,8 +1455,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_4_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1463,8 +1515,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         INTERPOLATION = "BICUBIC";
 
-        MERGE_CLOSE_PATHS = false;
-        CLOSE_PATH_THRESHOLD = 2;
+        MERGE_CLOSE_PATHS = true;
+        CLOSE_PATH_THRESHOLD = 1;
 
         //OBSTACLES = "STATIC";
         OBSTACLES = "PROGRESSIVE";
@@ -1888,7 +1940,9 @@ public class Main extends JFrame implements MouseWheelListener {
             computeMinAndMaxHeights(grid);
 
             //adjustHeightMinDistances(grid, distancesForPaths, width, scale, paths);
+            ArrayList overlaps = computeOverlaps(gradientPaths);
 
+            drawPathsDensity(gradientPaths, iteration, iterationLocation, overlaps);
         }
 
 //        if (HORIZONTAL_FLOW_MODE) {
@@ -5773,6 +5827,89 @@ public class Main extends JFrame implements MouseWheelListener {
         //dir = new File(currentWorkingPath.concat("\\" +  storageLocationName + "\\" + iterationLocation + "\\"));
 
         File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/paths_" + imageIndex + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+
+    }
+
+    public static void drawPathsDensity(ArrayList paths, int imageIndex, String iterationLocation, ArrayList overlaps)
+            throws IOException {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+
+        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+                BufferedImage.TYPE_INT_ARGB);
+
+//        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+//            for (int j = 0; j < NR_OF_ROWS; j++) {
+//
+//                Color color = Color.BLACK;
+//
+//                image.setRGB(i, j, color.getRGB());
+//
+//            }
+//        }
+
+        Graphics2D g2d = image.createGraphics();
+        g2d.setComposite(AlphaComposite.Clear);
+        g2d.fillRect(0, 0, NR_OF_COLUMNS, NR_OF_ROWS);
+        if (DRAW_PATHS) {
+
+            Iterator iter = paths.iterator();
+
+            while (iter.hasNext()) {
+                int counter = 0;
+
+                GradientPath path = (GradientPath) iter.next();
+
+                for (int i = 0; i < path.pathCoordinates.size() - 1; i++) {
+
+                    // draw segment between i and i + 1
+                    Tuple<Double, Double> coordinates = path.pathCoordinates.get(i);
+                    Tuple<Double, Double> next_coordinate = path.pathCoordinates.get(i + 1);
+
+                    Graphics g = image.getGraphics();
+                    g.setColor(Color.BLACK);
+                    //drawArrowLine(g, coordinates.first.intValue(), coordinates.second.intValue(), next_coordinate.first.intValue(), next_coordinate.second.intValue(), 1, 3);
+                    g.drawLine(coordinates.first.intValue(), coordinates.second.intValue(),
+                            next_coordinate.first.intValue(), next_coordinate.second.intValue());
+                    g.dispose();
+
+                }
+
+            }
+        }
+
+        for (int i = 0 ; i < overlaps.size(); i ++) {
+
+            ArrayList overlap = (ArrayList) overlaps.get(i);
+
+            for (int j = 0 ; j < overlap.size() - 1; j ++) {
+
+                Tuple<Double, Double> coord = (Tuple) ((Tuple) ((Tuple) overlap.get(j)).first).first;
+                Tuple<Double, Double> nextCoord = (Tuple) ((Tuple) ((Tuple) overlap.get(j + 1)).first).first;
+
+                Graphics2D g2 = (Graphics2D) image.createGraphics();
+                g2.setColor(Color.RED);
+                g2.setStroke(new BasicStroke(10));
+                g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
+                         nextCoord.first.intValue(), nextCoord.second.intValue()));
+
+//                Graphics g = image.getGraphics();
+//                g.setColor(Color.BLACK);
+//                //drawArrowLine(g, coordinates.first.intValue(), coordinates.second.intValue(), next_coordinate.first.intValue(), next_coordinate.second.intValue(), 1, 3);
+//
+//                g.drawLine((Integer) coord.first, (Integer) coord.second,
+//                        (Integer) nextCoord.first, (Integer) nextCoord.second);
+//                g.dispose();
+            }
+
+        }
+
+        //dir = new File(currentWorkingPath.concat("\\" +  storageLocationName + "\\" + iterationLocation + "\\"));
+
+        File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/paths_density" + imageIndex + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
 
