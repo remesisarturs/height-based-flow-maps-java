@@ -164,7 +164,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
 
-
                 computeFlow(grid, 0);
                 //computeFlowAccumulation(grid);
 
@@ -211,6 +210,8 @@ public class Main extends JFrame implements MouseWheelListener {
                     distancesForPaths = computeAnguarWithArcLength(grid, paths);
                 } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
                     distancesForPaths = computeVerticalDistances(grid, paths);
+                } else if (DISTANCE_METRIC.equals("BRUTE_FORCE")) {
+                    distancesForPaths = computeDistancesBruteForce(grid, paths);
                 }
 
                 if (DRAW_DISTANCE_IMAGES) {
@@ -221,16 +222,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 DistanceForPathMatrix d = (DistanceForPathMatrix) distancesForPaths.get(0);
 
-//                for (int r = 0 ; r < NR_OF_ROWS; r ++) {
-//
-//                    for (int c = 0 ; c < NR_OF_COLUMNS; c ++) {
-//
-//                        int value = (int) d.distanceMatrix[r][c];
-//                        System.out.print(value + " & ");
-//
-//                    }
-//                    System.out.println(" \\\\ \\hline");
-//                }
+                for (int r = 0; r < NR_OF_ROWS; r++) {
+
+                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
+
+                        double value = Math.round(d.distanceMatrix[r][c] * 10.0) / 10.0;
+                        System.out.print(value + " & ");
+
+                    }
+                    System.out.println(" \\\\ ");
+                }
 
                 copyHeight(grid, baseFunction);
 
@@ -408,12 +409,12 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -437,6 +438,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
         DISTANCE_METRIC = "DIJKSTRA";
+        DISTANCE_METRIC = "BRUTE_FORCE";
         //DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
@@ -467,6 +469,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         //OBSTACLES = "STATIC";
         OBSTACLES = "PROGRESSIVE";
+        OBSTACLES = "";
 
     }
 
@@ -711,6 +714,8 @@ public class Main extends JFrame implements MouseWheelListener {
                 distancesForPaths = computeAnguarWithArcLength(grid, paths);
             } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
                 distancesForPaths = computeVerticalDistances(grid, paths);
+            } else if (DISTANCE_METRIC.equals("BRUTE_FORCE")) {
+                distancesForPaths = computeDistancesBruteForce(grid, paths);
             }
 
             long endTime = System.currentTimeMillis();
@@ -1360,6 +1365,8 @@ public class Main extends JFrame implements MouseWheelListener {
                         distancesForPaths = computeAnguarWithArcLength(grid, overlappingPaths);
                     } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
                         distancesForPaths = computeVerticalDistances(grid, overlappingPaths);
+                    } else if (DISTANCE_METRIC.equals("BRUTE_FORCE")) {
+                        distancesForPaths = computeDistancesBruteForce(grid, paths);
                     }
                 }
             }
@@ -2064,6 +2071,8 @@ public class Main extends JFrame implements MouseWheelListener {
                         distancesForPaths = computeAnguarWithArcLength(grid, overlappingPaths);
                     } else if (DISTANCE_METRIC.equals("POLAR_SYSTEM")) {
                         distancesForPaths = computeVerticalDistances(grid, overlappingPaths);
+                    } else if (DISTANCE_METRIC.equals("BRUTE_FORCE")) {
+                        distancesForPaths = computeDistancesBruteForce(grid, paths);
                     }
                 }
             }
@@ -3277,6 +3286,47 @@ public class Main extends JFrame implements MouseWheelListener {
         }
         return distancesForPaths;
 
+    }
+
+    public static ArrayList computeDistancesBruteForce(Cell[][] grid, ArrayList<Path> paths) {
+
+        Iterator<Path> pathIterator = paths.iterator();
+        ArrayList distancesForPaths = new ArrayList();
+
+        while (pathIterator.hasNext()) {
+
+            Path path = pathIterator.next();
+            ArrayList<Cell> cells = path.cells;
+
+            DistanceForPathMatrix distanceForPathMatrix = new DistanceForPathMatrix();
+            distanceForPathMatrix.pathId = path.id;
+            distanceForPathMatrix.distanceMatrix = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+            for (int col = 0; col < NR_OF_COLUMNS; col++) {
+                for (int row = 0; row < NR_OF_ROWS; row++) {
+
+                    Cell cell = grid[col][row];
+
+                    double minDistance = Integer.MAX_VALUE;
+
+                    for (int c = 0; c < cells.size(); c++) {
+
+                        Cell pathCell = cells.get(c);
+
+                        double distance = Math.sqrt(Math.pow(cell.cellCol - pathCell.cellCol, 2) + Math.pow(cell.cellRow - pathCell.cellRow, 2));
+
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                        }
+                    }
+                    distanceForPathMatrix.distanceMatrix[col][row] = minDistance;
+                }
+            }
+            double[][] transposed = transposeMatrix(distanceForPathMatrix.distanceMatrix);
+            distanceForPathMatrix.distanceMatrix = transposed;
+            distancesForPaths.add(distanceForPathMatrix);
+        }
+        return distancesForPaths;
     }
 
     public static ArrayList compute_Dijkstra(Cell[][] grid, ArrayList<Path> paths) throws IOException {
