@@ -1053,6 +1053,31 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
+        Iterator iter = gradientPaths.iterator();
+
+        while (iter.hasNext()) {
+            int counter = 0;
+
+            GradientPath path = (GradientPath) iter.next();
+
+            Tuple<Double, Double> start = path.pathCoordinates.get(0);
+            Tuple<Double, Double> end = path.pathCoordinates.get(path.pathCoordinates.size() - 1);
+
+            image.setRGB(start.first.intValue(), start.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(start.first.intValue() - 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(start.first.intValue() + 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(start.first.intValue(), start.second.intValue() - 1, new Color(255, 255, 255).getRGB());
+            image.setRGB(start.first.intValue(), start.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+
+
+
+            image.setRGB(end.first.intValue(), end.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
+            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+
+        }
 
         File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/gradientPath_" + imageIndex + ".png"));
         file.mkdirs();
@@ -1455,8 +1480,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_4_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1515,12 +1540,12 @@ public class Main extends JFrame implements MouseWheelListener {
 
         INTERPOLATION = "BICUBIC";
 
-        MERGE_CLOSE_PATHS = true;
+        MERGE_CLOSE_PATHS = false;
         CLOSE_PATH_THRESHOLD = 1;
 
         //OBSTACLES = "STATIC";
-        OBSTACLES = "PROGRESSIVE";
-        //OBSTACLES = "";
+        //OBSTACLES = "PROGRESSIVE";
+        OBSTACLES = "";
 
     }
 
