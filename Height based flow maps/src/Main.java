@@ -214,6 +214,52 @@ public class Main extends JFrame implements MouseWheelListener {
                     distancesForPaths = computeDistancesBruteForce(grid, paths);
                 }
 
+                ArrayList<DistanceForPathMatrix> distancesForPaths1 = computeDistancesBruteForce(grid, paths);
+                ArrayList<DistanceForPathMatrix> distancesForPaths2 = compute_Dijkstra(grid, paths);
+
+                DistanceForPathMatrix distanceForPathMatrix1 = distancesForPaths1.get(0);
+                DistanceForPathMatrix distanceForPathMatrix2 = distancesForPaths2.get(0);
+
+                double sum1 = 0.0;
+
+                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
+
+                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
+
+                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix2.distanceMatrix[c][r];
+
+                        sum1 = sum1 + Math.abs(difference);
+
+                        //System.out.print(difference + " ");
+                    }
+                   // System.out.println();
+                }
+
+                System.out.println("Sum of differences DIJKSTRA-BRUTE: " + sum1);
+
+                ArrayList<DistanceForPathMatrix> distancesForPaths3 = computeBfs(grid, paths);
+
+                DistanceForPathMatrix distanceForPathMatrix3 = distancesForPaths3.get(0);
+
+                double sum2 = 0.0;
+
+                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
+
+                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
+
+                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix3.distanceMatrix[c][r];
+
+                        sum2 = sum2 + Math.abs(difference);
+
+                        //System.out.print(difference + " ");
+                    }
+                   // System.out.println();
+                }
+
+                System.out.println("Sum of differences BFS-BRUTE: " + sum2);
+
+                System.out.println("BFS is " + sum2 / sum1 + " times less precise than Dijkstra");
+
                 if (DRAW_DISTANCE_IMAGES) {
                     drawDistances(grid, paths, distancesForPaths, false, width, scale, 0, iterationLocation);
                 }
@@ -222,16 +268,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 DistanceForPathMatrix d = (DistanceForPathMatrix) distancesForPaths.get(0);
 
-                for (int r = 0; r < NR_OF_ROWS; r++) {
-
-                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
-
-                        double value = Math.round(d.distanceMatrix[r][c] * 10.0) / 10.0;
-                        System.out.print(value + " & ");
-
-                    }
-                    System.out.println(" \\\\ ");
-                }
+//                for (int r = 0; r < NR_OF_ROWS; r++) {
+//
+//                    for (int c = 0; c < NR_OF_COLUMNS; c++) {
+//
+//                        double value = Math.round(d.distanceMatrix[r][c] * 10.0) / 10.0;
+//                        System.out.print(value + " & ");
+//
+//                    }
+//                    System.out.println(" \\\\ ");
+//                }
 
                 copyHeight(grid, baseFunction);
 
@@ -409,12 +455,12 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_COLUMNS = 500;
 
         TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        INPUT_FILE_NAME = "./input/1_s_16_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -438,7 +484,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
 
         DISTANCE_METRIC = "DIJKSTRA";
-        DISTANCE_METRIC = "BRUTE_FORCE";
+        //DISTANCE_METRIC = "BRUTE_FORCE";
         //DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
