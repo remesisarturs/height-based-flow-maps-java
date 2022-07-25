@@ -214,51 +214,51 @@ public class Main extends JFrame implements MouseWheelListener {
                     distancesForPaths = computeDistancesBruteForce(grid, paths);
                 }
 
-                ArrayList<DistanceForPathMatrix> distancesForPaths1 = computeDistancesBruteForce(grid, paths);
-                ArrayList<DistanceForPathMatrix> distancesForPaths2 = compute_Dijkstra(grid, paths);
-
-                DistanceForPathMatrix distanceForPathMatrix1 = distancesForPaths1.get(0);
-                DistanceForPathMatrix distanceForPathMatrix2 = distancesForPaths2.get(0);
-
-                double sum1 = 0.0;
-
-                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
-
-                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
-
-                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix2.distanceMatrix[c][r];
-
-                        sum1 = sum1 + Math.abs(difference);
-
-                        //System.out.print(difference + " ");
-                    }
-                   // System.out.println();
-                }
-
-                System.out.println("Sum of differences DIJKSTRA-BRUTE: " + sum1);
-
-                ArrayList<DistanceForPathMatrix> distancesForPaths3 = computeBfs(grid, paths);
-
-                DistanceForPathMatrix distanceForPathMatrix3 = distancesForPaths3.get(0);
-
-                double sum2 = 0.0;
-
-                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
-
-                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
-
-                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix3.distanceMatrix[c][r];
-
-                        sum2 = sum2 + Math.abs(difference);
-
-                        //System.out.print(difference + " ");
-                    }
-                   // System.out.println();
-                }
-
-                System.out.println("Sum of differences BFS-BRUTE: " + sum2);
-
-                System.out.println("BFS is " + sum2 / sum1 + " times less precise than Dijkstra");
+//                ArrayList<DistanceForPathMatrix> distancesForPaths1 = computeDistancesBruteForce(grid, paths);
+//                ArrayList<DistanceForPathMatrix> distancesForPaths2 = compute_Dijkstra(grid, paths);
+//
+//                DistanceForPathMatrix distanceForPathMatrix1 = distancesForPaths1.get(0);
+//                DistanceForPathMatrix distanceForPathMatrix2 = distancesForPaths2.get(0);
+//
+//                double sum1 = 0.0;
+//
+//                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
+//
+//                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
+//
+//                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix2.distanceMatrix[c][r];
+//
+//                        sum1 = sum1 + Math.abs(difference);
+//
+//                        //System.out.print(difference + " ");
+//                    }
+//                   // System.out.println();
+//                }
+//
+//                System.out.println("Sum of differences DIJKSTRA-BRUTE: " + sum1);
+//
+//                ArrayList<DistanceForPathMatrix> distancesForPaths3 = computeBfs(grid, paths);
+//
+//                DistanceForPathMatrix distanceForPathMatrix3 = distancesForPaths3.get(0);
+//
+//                double sum2 = 0.0;
+//
+//                for (int c = 0 ; c < NR_OF_COLUMNS; c++) {
+//
+//                    for (int r = 0 ; r < NR_OF_ROWS ; r ++) {
+//
+//                        double difference = distanceForPathMatrix1.distanceMatrix[c][r] - distanceForPathMatrix3.distanceMatrix[c][r];
+//
+//                        sum2 = sum2 + Math.abs(difference);
+//
+//                        //System.out.print(difference + " ");
+//                    }
+//                   // System.out.println();
+//                }
+//
+//                System.out.println("Sum of differences BFS-BRUTE: " + sum2);
+//
+//                System.out.println("BFS is " + sum2 / sum1 + " times less precise than Dijkstra");
 
                 if (DRAW_DISTANCE_IMAGES) {
                     drawDistances(grid, paths, distancesForPaths, false, width, scale, 0, iterationLocation);
@@ -304,7 +304,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    generateGif(iterationLocation, "globalHeight");
+                    generateGif(iterationLocation, "\"/height_w_\" + width + \"_s_\" + scale + \"_\"");
                 }
 
                 if (GENERATE_INTERMEDIATE_HEIGHT) {
@@ -454,16 +454,16 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_16_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
-        DRAW_TEXT_DESCRIPTION = false;
+        DRAW_TEXT_DESCRIPTION = true;
         DRAW_PATHS = true;
 
         //COLOR_MODE = "GRAY_SCALE";
@@ -492,10 +492,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 20;
+        NR_OF_ITERATIONS = 200;
 
-        WIDTHS = new double[]{30};
-        SCALES = new double[]{200};
+        WIDTHS = new double[]{50};
+        SCALES = new double[]{100000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -721,12 +721,15 @@ public class Main extends JFrame implements MouseWheelListener {
             computeFlow(grid, iteration);
 
             // computeFlowAccumulation(grid);
+            ArrayList<Path> oldPaths = paths;
 
             if (HORIZONTAL_FLOW_MODE) {
                 paths = computePathsToFrameEdge(pointsList, grid);
             } else {
                 paths = computePaths(pointsList, grid);
             }
+            boolean converged = testConvergence(oldPaths, paths);
+            System.out.println("Converged : " + converged);
 
             if (paths == null) {
                 return null;
@@ -744,6 +747,9 @@ public class Main extends JFrame implements MouseWheelListener {
                 if (DRAW_DISTANCE_IMAGES) {
                     drawDistances(grid, paths, distancesForPaths, showIntermediateResults, width, scale, iteration, iterationLocation);
                 }
+            }
+            if (converged) {
+                return null;
             }
 
             long startTime = System.currentTimeMillis();
@@ -855,6 +861,32 @@ public class Main extends JFrame implements MouseWheelListener {
 
         return tuple;
 
+    }
+
+    public static boolean testConvergence(ArrayList<Path> oldPaths, ArrayList<Path> newPaths) {
+
+        for (int i = 0; i < oldPaths.size(); i++) {
+
+            Path oldPath = oldPaths.get(i);
+            Path newPath = newPaths.get(i);
+
+            for (int j = 0; j < oldPath.cells.size(); j++) {
+
+                Cell oldCell = (Cell) oldPath.cells.get(j);
+                Cell newCell = (Cell) newPath.cells.get(j);
+
+                if (oldCell.cellRow == newCell.cellRow && oldCell.cellCol == newCell.cellCol) {
+                    // cells were the same
+                } else {
+                    System.out.println("did not converge");
+                    return false;
+                }
+
+            }
+
+        }
+        System.out.println("Converged");
+        return true;
     }
 
     public static ArrayList computeY_coordinatesForColumns(Cell[][] grid, ArrayList paths) {
@@ -2123,25 +2155,6 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
         }
-        int minFlowAccumulation = Integer.MAX_VALUE;
-        int maxFlowAccumulation = Integer.MIN_VALUE;
-        if (FLOW_ACCUMULATION) {
-
-            for (int i = 0; i < NR_OF_COLUMNS; i++) {
-
-                for (int j = 0; j < NR_OF_ROWS; j++) {
-
-                    if (grid[i][j].flowAccumulation < minFlowAccumulation) {
-                        minFlowAccumulation = grid[i][j].flowAccumulation;
-                    }
-
-                    if (grid[i][j].flowAccumulation > maxFlowAccumulation) {
-                        maxFlowAccumulation = grid[i][j].flowAccumulation;
-                    }
-                }
-            }
-
-        }
 
         for (int row = 0; row < NR_OF_ROWS; row++) { // i is the row id
             //System.out.println();
@@ -2161,18 +2174,7 @@ public class Main extends JFrame implements MouseWheelListener {
                                 yCoordinatesForColumns, computedHeight,
                                 distancesForPaths);
 
-                    } else if (SCALING_MODE.equals("OVERLAPS")) {
-
-                        heightUpdateOverlaps(grid, col, row, paths,
-                                yCoordinatesForColumns, computedHeight,
-                                distancesForPaths, overlaps);
-
-                    } else if (SCALING_MODE.equals("OVERLAPS_2")) {
-                        heightUpdateOverlaps_2(grid, col, row, paths,
-                                yCoordinatesForColumns, computedHeight,
-                                distancesForPaths, overlaps);
                     }
-
 
                     // =================== PATH SCALING = FALSE
                     // ===================
@@ -2197,17 +2199,17 @@ public class Main extends JFrame implements MouseWheelListener {
                     double sum = 0;
 
                     if (FLOW_ACCUMULATION) {
-                        int flowAccumulationForCell = grid[col][row].flowAccumulation;
-                        double flowAccNormalized = (flowAccumulationForCell - minFlowAccumulation) / (minFlowAccumulation - maxFlowAccumulation);
-                        double factor = 1 - flowAccNormalized;
-                        factor = 1;
-
-                        for (int k = 0; k < distancesForCell.size(); k++) {
-
-                            double distance = (double) distancesForCell.get(k);
-
-                            sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH) * factor;
-                        }
+//                        int flowAccumulationForCell = grid[col][row].flowAccumulation;
+//                        double flowAccNormalized = (flowAccumulationForCell - minFlowAccumulation) / (minFlowAccumulation - maxFlowAccumulation);
+//                        double factor = 1 - flowAccNormalized;
+//                        factor = 1;
+//
+//                        for (int k = 0; k < distancesForCell.size(); k++) {
+//
+//                            double distance = (double) distancesForCell.get(k);
+//
+//                            sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH) * factor;
+//                        }
                     } else {
                         for (int k = 0; k < distancesForCell.size(); k++) {
 
@@ -3481,6 +3483,22 @@ public class Main extends JFrame implements MouseWheelListener {
         return distancesForPaths;
     }
 
+    public static Cell[][] transposeGrid(Cell[][] grid) {
+        // TODO: figure out how to assign these without transpose
+        int m = grid.length;
+        int n = grid[0].length;
+
+        Cell[][] transposedMatrix = new Cell[n][m];
+
+        for (int x = 0; x < n; x++) {
+            for (int y = 0; y < m; y++) {
+                transposedMatrix[x][y] = grid[y][x];
+            }
+        }
+
+        return transposedMatrix;
+    }
+
     public static double[][] transposeMatrix(double[][] matrix) {
         // TODO: figure out how to assign these without transpose
         int m = matrix.length;
@@ -3988,7 +4006,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         if (DRAW_TEXT_DESCRIPTION) {
             Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-            String s = "width: " + width + " scale: " + scale + " i: " + imageIndex;
+            //String s = "width: " + width + " scale: " + scale + " i: " + imageIndex;
+            String s = "width: " + width + " i: " + imageIndex;
             Graphics g = image.getGraphics();
             g.setColor(Color.BLUE);
             g.setFont(f);
@@ -4237,6 +4256,9 @@ public class Main extends JFrame implements MouseWheelListener {
                     }
                 }
             }
+            double temp = minHieght;
+            minHieght = maxHeight;
+            maxHeight = temp;
         }
 
         System.out.println("min height update : " + minHieght + " max height update : " + maxHeight);
@@ -4610,14 +4632,27 @@ public class Main extends JFrame implements MouseWheelListener {
 
             image.setRGB((int) pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
 
+            if (pointsList.get(i).gridCol - 1 >= 0) {
+                image.setRGB(pointsList.get(i).gridCol - 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+            }
+            if (pointsList.get(i).gridCol + 1 <= NR_OF_COLUMNS - 1) {
+                image.setRGB(pointsList.get(i).gridCol + 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+            }
+            if ((int) pointsList.get(i).gridRow - 1 >= 0) {
+                image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow - 1, new Color(255, 255, 255).getRGB());
+            }
+            if ((int) pointsList.get(i).gridRow + 1 <= NR_OF_ROWS - 1) {
+                image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow + 1, new Color(255, 255, 255).getRGB());
+            }
+
         }
 
 
         // draw string in image:
-
         if (DRAW_TEXT_DESCRIPTION) {
             Font f = new Font(Font.MONOSPACED, Font.PLAIN, 20);
-            String s = "width: " + width + " scale: " + scale + " i: " + imageIndex;
+            //String s = "width: " + width + " scale: " + scale + " i: " + imageIndex;
+            String s = "width: " + width + " i: " + imageIndex;
             Graphics g = image.getGraphics();
             g.setColor(Color.BLUE);
             g.setFont(f);
@@ -4646,7 +4681,10 @@ public class Main extends JFrame implements MouseWheelListener {
         }
         //dir = new File(currentWorkingPath.concat("\\" +  storageLocationName + "\\" + iterationLocation + "\\"));
 
-        File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/globalHeight_" + imageIndex + ".png"));
+        int w = (int) width;
+        int s = (int) scale;
+
+        File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/height_w_" + w + "_s_" + s + "_" + imageIndex + ".png"));
         file.mkdirs();
         ImageIO.write(image, "png", file);
 
