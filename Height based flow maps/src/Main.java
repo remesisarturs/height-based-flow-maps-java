@@ -304,12 +304,12 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    generateGif(iterationLocation, "\"/height_w_\" + width + \"_s_\" + scale + \"_\"");
+                    //generateGif(iterationLocation, "\"/height_w_\" + width + \"_s_\" + scale + \"_\"");
                 }
 
                 if (GENERATE_INTERMEDIATE_HEIGHT) {
-                    generateGif(iterationLocation, "updateLocalHeight");
-                    generateGif(iterationLocation, "updateGlobalHeight");
+                  //  generateGif(iterationLocation, "updateLocalHeight");
+                 //   generateGif(iterationLocation, "updateGlobalHeight");
                 }
 
                 logFileWriter.close();
@@ -454,16 +454,16 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
+        TARGET_NAME = "NE";//"FL";
         INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
-        BASE_SCALE = 0.05;
+        BASE_SCALE = 0.05;//1.0;//0.05;//1.0;//0.05;
 
         RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
-        DRAW_TEXT_DESCRIPTION = true;
+        DRAW_TEXT_DESCRIPTION = false;
         DRAW_PATHS = true;
 
         //COLOR_MODE = "GRAY_SCALE";
@@ -475,7 +475,7 @@ public class Main extends JFrame implements MouseWheelListener {
         ARC_RADIUS = 20;
 
         BASE_HEIGHT_TYPE = "EUCLID";
-        //BASE_HEIGHT_TYPE = "chebyshev";
+        BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
         //BASE_HEIGHT_TYPE = "TO_EDGE";
@@ -483,19 +483,19 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
 
-        DISTANCE_METRIC = "DIJKSTRA";
+        //DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BRUTE_FORCE";
-        //DISTANCE_METRIC = "BFS";
+        DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 200;
+        NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{50};
-        SCALES = new double[]{100000};
+        WIDTHS = new double[]{20};
+        SCALES = new double[]{200};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -514,7 +514,7 @@ public class Main extends JFrame implements MouseWheelListener {
         CIRCULAR_MODE = false;
 
         //OBSTACLES = "STATIC";
-        OBSTACLES = "PROGRESSIVE";
+        //OBSTACLES = "PROGRESSIVE";
         OBSTACLES = "";
 
     }
@@ -749,7 +749,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
             if (converged) {
-                return null;
+                //return null;
             }
 
             long startTime = System.currentTimeMillis();
@@ -1683,7 +1683,6 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    // this function computes the distances for each pair of adjacent y coordinates and picks the largest one
     public static void widthsForPaths_2(Cell[][] grid, int col, int row, ArrayList paths,
                                         ArrayList yCoordinatesForColumns, double[][] computedHeight,
                                         ArrayList distancesForPaths) {
@@ -2214,7 +2213,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         for (int k = 0; k < distancesForCell.size(); k++) {
 
                             double distance = (double) distancesForCell.get(k);
-
+                            //sum = sum + heightFunction(distance, HEIGHT_FUNCTION_WIDTH);
                             sum = sum + gaussian(distance, 0, HEIGHT_FUNCTION_WIDTH);
                         }
                     }
@@ -4626,25 +4625,28 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 }
             }
-        }
+            for (int i = 0; i < pointsList.size(); i++) {
 
-        for (int i = 0; i < pointsList.size(); i++) {
+                if (pointsList.get(i).name.equals("S")) {
+                    continue;
+                }
 
-            image.setRGB((int) pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+                image.setRGB((int) pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
 
-            if (pointsList.get(i).gridCol - 1 >= 0) {
-                image.setRGB(pointsList.get(i).gridCol - 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
-            }
-            if (pointsList.get(i).gridCol + 1 <= NR_OF_COLUMNS - 1) {
-                image.setRGB(pointsList.get(i).gridCol + 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
-            }
-            if ((int) pointsList.get(i).gridRow - 1 >= 0) {
-                image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow - 1, new Color(255, 255, 255).getRGB());
-            }
-            if ((int) pointsList.get(i).gridRow + 1 <= NR_OF_ROWS - 1) {
-                image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow + 1, new Color(255, 255, 255).getRGB());
-            }
+                if (pointsList.get(i).gridCol - 1 >= 0) {
+                    image.setRGB(pointsList.get(i).gridCol - 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+                }
+                if (pointsList.get(i).gridCol + 1 <= NR_OF_COLUMNS - 1) {
+                    image.setRGB(pointsList.get(i).gridCol + 1, (int) pointsList.get(i).gridRow, new Color(255, 255, 255).getRGB());
+                }
+                if ((int) pointsList.get(i).gridRow - 1 >= 0) {
+                    image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow - 1, new Color(255, 255, 255).getRGB());
+                }
+                if ((int) pointsList.get(i).gridRow + 1 <= NR_OF_ROWS - 1) {
+                    image.setRGB(pointsList.get(i).gridCol, (int) pointsList.get(i).gridRow + 1, new Color(255, 255, 255).getRGB());
+                }
 
+            }
         }
 
 
@@ -5205,7 +5207,7 @@ public class Main extends JFrame implements MouseWheelListener {
             Point point = new Point();
             point.name = components.get(0);
             point.col = Float.parseFloat(components.get(1));
-            point.row = Float.parseFloat(components.get(2));
+            point.row = -Float.parseFloat(components.get(2));
 
             pointList.add(point);
 
