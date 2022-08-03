@@ -206,7 +206,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    drawHeightAndGradientPaths(grid, gradientPaths, 0, false, iterationLocation, width, scale);
+                    drawHeightAndGradientPaths(grid, gradientPaths, 0, false, iterationLocation, width, scale, pointsList);
                 }
 
                 for (int k = 0; k < NR_OF_COLUMNS; k++) {
@@ -248,7 +248,7 @@ public class Main extends JFrame implements MouseWheelListener {
 //                    generateGif(iterationLocation, "updateGlobalHeight");
 //                }
 
-               // ArrayList overlaps = computeOverlaps(result.second);
+                // ArrayList overlaps = computeOverlaps(result.second);
 
                 //drawPathsDensity(gradientPaths, 100, iterationLocation, overlaps);
 
@@ -273,16 +273,16 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 if (pathI != pathJ) {
 
-                    for (int n = 0; n < pathI.pathCoordinates.size(); n ++) {
+                    for (int n = 0; n < pathI.pathCoordinates.size(); n++) {
 
                         Tuple<Double, Double> coordinateI = pathI.pathCoordinates.get(n);
 
-                        for (int m = 0; m < pathJ.pathCoordinates.size(); m ++) {
+                        for (int m = 0; m < pathJ.pathCoordinates.size(); m++) {
 
                             Tuple<Double, Double> coordinateJ = pathJ.pathCoordinates.get(m);
 
                             Double distance = Math.sqrt(Math.pow(coordinateI.first - coordinateJ.first, 2) +
-                                    Math.pow(coordinateI.second - coordinateJ.second, 2) );
+                                    Math.pow(coordinateI.second - coordinateJ.second, 2));
 
                             if (distance < 1) {
 
@@ -978,7 +978,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void drawHeightAndGradientPaths(Cell[][] grid, ArrayList<GradientPath> gradientPaths,
                                                   int imageIndex, boolean showIntermediateResults,
-                                                  String iterationLocation, double width, double scale) throws IOException {
+                                                  String iterationLocation, double width, double scale, ArrayList<Point> pointsList) throws IOException {
         jframe = new JFrame("panel");
         jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
 
@@ -1053,31 +1053,53 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
         }
-        Iterator iter = gradientPaths.iterator();
+        for (int i = 0; i < pointsList.size(); i++) {
 
-        while (iter.hasNext()) {
-            int counter = 0;
+            Point point = pointsList.get(i);
 
-            GradientPath path = (GradientPath) iter.next();
+            image.setRGB(point.gridCol, point.gridRow, new Color(255, 255, 255).getRGB());
 
-            Tuple<Double, Double> start = path.pathCoordinates.get(0);
-            Tuple<Double, Double> end = path.pathCoordinates.get(path.pathCoordinates.size() - 1);
+            if (point.gridRow != 0) {
+                image.setRGB(point.gridCol, point.gridRow - 1, new Color(255, 255, 255).getRGB());
+            }
+            if (point.gridCol != 0) {
+                image.setRGB(point.gridCol - 1, point.gridRow, new Color(255, 255, 255).getRGB());
 
-            image.setRGB(start.first.intValue(), start.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(start.first.intValue() - 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(start.first.intValue() + 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(start.first.intValue(), start.second.intValue() - 1, new Color(255, 255, 255).getRGB());
-            image.setRGB(start.first.intValue(), start.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+            }
+            if (point.gridCol != NR_OF_COLUMNS -1) {
+                image.setRGB(point.gridCol + 1, point.gridRow, new Color(255, 255, 255).getRGB());
 
+            }
+            if (point.gridRow != NR_OF_ROWS - 1) {
+                image.setRGB(point.gridCol, point.gridRow + 1, new Color(255, 255, 255).getRGB());
 
-
-            image.setRGB(end.first.intValue(), end.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
-            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
-            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+            }
 
         }
+
+//        while (iter.hasNext()) {
+//            int counter = 0;
+//
+//            GradientPath path = (GradientPath) iter.next();
+//
+//            Tuple<Double, Double> start = path.pathCoordinates.get(0);
+//            Tuple<Double, Double> end = path.pathCoordinates.get(path.pathCoordinates.size() - 1);
+//
+//            image.setRGB(start.first.intValue(), start.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(start.first.intValue() - 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(start.first.intValue() + 1, start.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(start.first.intValue(), start.second.intValue() - 1, new Color(255, 255, 255).getRGB());
+//            image.setRGB(start.first.intValue(), start.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+//
+//
+//
+//            image.setRGB(end.first.intValue(), end.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(end.first.intValue() - 1, end.second.intValue(), new Color(255, 255, 255).getRGB());
+//            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+//            image.setRGB(end.first.intValue(), end.second.intValue() + 1, new Color(255, 255, 255).getRGB());
+//
+//        }
 
         File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/gradientPath_" + imageIndex + ".png"));
         file.mkdirs();
@@ -1480,8 +1502,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1517,10 +1539,10 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{30};
-        SCALES = new double[]{50};
+        WIDTHS = new double[]{20};
+        SCALES = new double[]{400};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -1868,7 +1890,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             if (saveOutputs == true) {
                 if (GENERATE_INTERMEDIATE_RESULTS) {
-                    drawHeightAndGradientPaths(grid, gradientPaths, iteration, false, iterationLocation, width, scale);
+                    drawHeightAndGradientPaths(grid, gradientPaths, iteration, false, iterationLocation, width, scale, pointsList);
                     //draw(grid, gradientPaths, i, showIntermediateResults, iterationLocation, width, scale);
                     drawPaths(grid, gradientPaths, iteration, showIntermediateResults, iterationLocation, width, scale);
                     //drawFlow(grid, paths, i, showIntermediateResults, iterationLocation, width, scale);
@@ -3494,7 +3516,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        applyFilter(computedHeight);
+        //applyFilter(computedHeight);
 
         for (int col = 0; col < NR_OF_COLUMNS; col++) {
             for (int row = 0; row < NR_OF_ROWS; row++) {
@@ -5906,11 +5928,11 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        for (int i = 0 ; i < overlaps.size(); i ++) {
+        for (int i = 0; i < overlaps.size(); i++) {
 
             ArrayList overlap = (ArrayList) overlaps.get(i);
 
-            for (int j = 0 ; j < overlap.size() - 1; j ++) {
+            for (int j = 0; j < overlap.size() - 1; j++) {
 
                 Tuple<Double, Double> coord = (Tuple) ((Tuple) ((Tuple) overlap.get(j)).first).first;
                 Tuple<Double, Double> nextCoord = (Tuple) ((Tuple) ((Tuple) overlap.get(j + 1)).first).first;
@@ -5919,7 +5941,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 g2.setColor(Color.RED);
                 g2.setStroke(new BasicStroke(10));
                 g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
-                         nextCoord.first.intValue(), nextCoord.second.intValue()));
+                        nextCoord.first.intValue(), nextCoord.second.intValue()));
 
 //                Graphics g = image.getGraphics();
 //                g.setColor(Color.BLACK);
@@ -6639,7 +6661,7 @@ public class Main extends JFrame implements MouseWheelListener {
             Point point = new Point();
             point.name = components.get(0);
             point.col = Float.parseFloat(components.get(1));
-            point.row = Float.parseFloat(components.get(2));
+            point.row = -Float.parseFloat(components.get(2));
 
             pointList.add(point);
 
