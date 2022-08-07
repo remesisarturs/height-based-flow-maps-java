@@ -454,8 +454,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "NE";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "S";//"FL";
+        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;//1.0;//0.05;//1.0;//0.05;
@@ -474,18 +474,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ARC_RADIUS = 20;
 
-        BASE_HEIGHT_TYPE = "EUCLID";
-        BASE_HEIGHT_TYPE = "chebyshev";
+        //BASE_HEIGHT_TYPE = "EUCLID";
+        //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
 
-        //DISTANCE_METRIC = "DIJKSTRA";
+        DISTANCE_METRIC = "DIJKSTRA";
         //DISTANCE_METRIC = "BRUTE_FORCE";
-        DISTANCE_METRIC = "BFS";
+        //DISTANCE_METRIC = "BFS";
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
@@ -495,14 +495,14 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 20;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{200};
+        SCALES = new double[]{100};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = false;
+        HORIZONTAL_FLOW_MODE = true;
 
-        PATH_SCALING = false;
+        PATH_SCALING = true;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -3097,7 +3097,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
-    public static ArrayList computeAngularDistanceWithIntersection(Cell[][] grid, ArrayList paths) throws IOException {
+    public static ArrayList computeAngularDistanceWithIntersection(Cell[][] grid, ArrayList<Path> paths) throws IOException {
 
         System.out.println("computing angular intersections distance");
         logFileWriter.write("computing angular intersections distance" + "\n");
@@ -3106,14 +3106,21 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ArrayList distancesForPaths = new ArrayList();
 
+
         // for all paths
         while (pathIterator.hasNext()) {
 
-            ArrayList path = (ArrayList) pathIterator.next();
+            Path path = (Path) pathIterator.next();
 
-            Collections.reverse(path);
+            ArrayList pathCells = path.cells;
 
-            double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+            Collections.reverse(pathCells);
+
+            //double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+            DistanceForPathMatrix distanceForPathMatrix = new DistanceForPathMatrix();
+            distanceForPathMatrix.distanceMatrix = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+            distanceForPathMatrix.pathId = path.id;
 
             // for each cell in the grid
             for (int i = 0; i < NR_OF_COLUMNS; i++) {
@@ -3124,23 +3131,23 @@ public class Main extends JFrame implements MouseWheelListener {
                     double radius = (Math.sqrt(Math.pow(sourceCell.cellCol - cell.cellCol, 2) +
                             Math.pow(sourceCell.cellRow - cell.cellRow, 2)));
 
-                    int indexOfCell = binarySearch_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+                    int indexOfCell = binarySearch_2(pathCells, radius);//binarySearch(path, 0, path.size(), radius);
 
-                    Cell intersectionCell = (Cell) path.get(indexOfCell);
+                    Cell intersectionCell = (Cell) pathCells.get(indexOfCell);
 
                     double dist = (Math.sqrt(Math.pow(sourceCell.cellCol - intersectionCell.cellCol, 2) +
                             Math.pow(sourceCell.cellRow - intersectionCell.cellRow, 2)));
 
                     // TODO: check index out of bounds
-                    if (indexOfCell + 1 < path.size() && indexOfCell - 1 > 0) {
+                    if (indexOfCell + 1 < pathCells.size() && indexOfCell - 1 > 0) {
                         Cell nextCell = null;
                         //try {
-                        nextCell = (Cell) path.get(indexOfCell + 1);
+                        nextCell = (Cell) pathCells.get(indexOfCell + 1);
 
                         //} catch (Exception e) {
                         //    System.out.println();
                         // }
-                        Cell previousCell = (Cell) path.get(indexOfCell - 1);
+                        Cell previousCell = (Cell) pathCells.get(indexOfCell - 1);
 
                         double dist_1 = (Math.sqrt(Math.pow(sourceCell.cellCol - nextCell.cellCol, 2) +
                                 Math.pow(sourceCell.cellRow - nextCell.cellRow, 2)));
@@ -3187,7 +3194,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         double angle = Math.acos((Math.pow(radius, 2) + Math.pow(distanceFromSourceToIntersection, 2) - Math.pow(distanceFromCellToIntersection, 2)) /
                                 (2.0 * radius * distanceFromSourceToIntersection));
 
-                        distances[i][j] = angle;
+                        distanceForPathMatrix.distanceMatrix[i][j] = angle;
 
                     } else {
 
@@ -3197,25 +3204,30 @@ public class Main extends JFrame implements MouseWheelListener {
                         double angle = Math.acos((Math.pow(radius, 2) + Math.pow(dist, 2) - Math.pow(distanceFromCellToIntersection, 2)) /
                                 (2.0 * radius * radius));
 
-                        distances[i][j] = angle;
+                        distanceForPathMatrix.distanceMatrix[i][j] = angle;
 
                     }
 
                 }
             }
 
-            Iterator pathCellIter = path.iterator();
+            Iterator pathCellIter = pathCells.iterator();
 
             while (pathCellIter.hasNext()) {
 
                 Cell cell = (Cell) pathCellIter.next();
 
-                distances[cell.cellCol][cell.cellRow] = 0.0;
+                distanceForPathMatrix.distanceMatrix[cell.cellCol][cell.cellRow] = 0.0;
+                //distances[cell.cellCol][cell.cellRow] = 0.0;
 
             }
 
             //distancesForPaths.add(distances);
-            distancesForPaths.add(transposeMatrix(distances));
+            double[][] transposedMatrix = transposeMatrix(distanceForPathMatrix.distanceMatrix);
+            distanceForPathMatrix.distanceMatrix = transposedMatrix;
+            distanceForPathMatrix.pathId = path.id;
+
+            distancesForPaths.add(distanceForPathMatrix);
         }
         return distancesForPaths;
 
