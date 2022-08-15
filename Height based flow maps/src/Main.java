@@ -145,6 +145,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                 ArrayList<Point> pointsList = processInput(items);
 
+                ArrayList targetFlowValues = getTargetFlowValues(items);
+
                 Bounds bounds;
 
                 if (HORIZONTAL_FLOW_MODE) {
@@ -237,7 +239,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 System.out.println();
 
                 Tuple<Cell[][], ArrayList<GradientPath>> result = iterate(grid, pointsList, gradientPaths, distancesForPaths, NR_OF_ITERATIONS,
-                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iterationLocation, baseFunction);
+                        BASE_HEIGHT_TYPE, BASE_SCALE, true, false, width, scale, iterationLocation, baseFunction, targetFlowValues);
 
 //                if (GENERATE_INTERMEDIATE_RESULTS) {
 //                    generateGif(iterationLocation, "globalHeight");
@@ -976,13 +978,172 @@ public class Main extends JFrame implements MouseWheelListener {
         return result;
     }
 
+    public static void drawCellOverlaps(ArrayList paths, int imageIndex, String iterationLocation, ArrayList[][] overlaps, ArrayList targetFlowValues)
+            throws IOException {
+
+        jframe = new JFrame("panel");
+        jframe.setSize(NR_OF_COLUMNS, NR_OF_ROWS);
+
+        BufferedImage image = new BufferedImage(NR_OF_COLUMNS, NR_OF_ROWS,
+                BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g2d = image.createGraphics();
+        g2d.setComposite(AlphaComposite.Clear);
+        g2d.fillRect(0, 0, NR_OF_COLUMNS, NR_OF_ROWS);
+
+        int[][] flowForCell = new int[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0; i < NR_OF_COLUMNS; i++) {
+
+            for (int j = 0; j < NR_OF_ROWS; j++) {
+
+
+                if (overlaps[i][j] != null) {
+
+                    ArrayList overlappedPaths = overlaps[i][j];
+
+                    int sum = 0;
+
+                    for (int k = 0 ; k < overlappedPaths.size(); k ++) {
+
+                        int overlapPathID = (int) overlappedPaths.get(k);
+                        int flowValue = (int) targetFlowValues.get(overlapPathID);
+
+                        sum = sum + flowValue;
+                    }
+                    flowForCell[i][j] = sum;
+
+                } else {
+                    // draw white pixel
+                }
+
+            }
+        }
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        for (int i = 0 ; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0 ; j < NR_OF_ROWS; j++) {
+                if (min > flowForCell[i][j]) {
+                    min = flowForCell[i][j];
+                }
+                if (max < flowForCell[i][j]) {
+                    max = flowForCell[i][j];
+                }
+            }
+        }
+
+        double[][] flowForCellNormalized = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0 ; i < NR_OF_COLUMNS; i++) {
+            for (int j = 0 ; j < NR_OF_ROWS; j++) {
+                flowForCellNormalized[i][j] = (20 - 0)*((flowForCell[i][j] * 1.0 - min) / (max - min)) + 0;
+            }
+        }
+        boolean[][] drawn = new boolean[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0 ; i < NR_OF_COLUMNS; i ++) {
+            for (int j = 0 ; j < NR_OF_ROWS; j ++) {
+                drawn[i][j] = false;
+            }
+        }
+
+        for (int i = 0; i < paths.size(); i ++) {
+
+            GradientPath path = (GradientPath) paths.get(i);
+
+            for (int j = 0 ; j < path.pathCoordinates.size() - 1; j ++) {
+
+                Tuple<Double, Double> coord = path.pathCoordinates.get(j);
+                Tuple<Double, Double> nextCoord = path.pathCoordinates.get(j + 1);
+
+                int thickness = (int) flowForCellNormalized[coord.first.intValue()][coord.second.intValue()];
+
+                double fX = 1.0 - 1.0 / (1.0 + thickness);//(iteration + 1) / NR_OF_ITERATIONS;
+                double fMaxX = 1.0 - 1.0 / (1.0 + max);//(iteration + 1) / NR_OF_ITERATIONS;
+                double gX = fX / fMaxX;
+
+                if (drawn[coord.first.intValue()][coord.second.intValue()] == false) {
+                    drawn[coord.first.intValue()][coord.second.intValue()] = true;
+
+                    Graphics2D g2 = (Graphics2D) image.createGraphics();
+                    g2.setColor(Color.RED);
+                    thickness = (int) (thickness * gX);
+                    g2.setStroke(new BasicStroke(thickness));
+                    g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
+                            nextCoord.first.intValue(), nextCoord.second.intValue()));
+                }
+            }
+        }
+
+//        for (int i = 0 ; i < NR_OF_COLUMNS; i++) {
+//            for (int j = 0 ; j < NR_OF_ROWS; j++) {
+//
+//                if (flowForCellNormalized[i][j] != 0.0) {
+//
+//                    double value = flowForCellNormalized[i][j];
+//                    int thickness = (int) value;
+//                    //System.out.println(thickness);
+//
+//                    Graphics2D g2 = (Graphics2D) image.createGraphics();
+//                    g2.setColor(Color.RED);
+//                    g2.setStroke(new BasicStroke(thickness));
+//                    g2.drawLine(i, j, i, j);
+//                    //g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
+//                    //        nextCoord.first.intValue(), nextCoord.second.intValue()));
+//                }
+//            }
+//        }
+
+        File file = new File(currentWorkingPath.concat("/" + storageLocationName + "/" + iterationLocation + "/cell_overlaps" + imageIndex + ".png"));
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
+
+    }
+
+    public static void computeGridCellOverlaps(ArrayList<GradientPath> gradientPaths, int index, String iterationLocation, ArrayList targetFlowValues) throws IOException {
+
+        ArrayList[][] table = new ArrayList[NR_OF_COLUMNS][NR_OF_ROWS];
+
+        for (int i = 0; i < gradientPaths.size(); i++) {
+
+            GradientPath gradientPath = gradientPaths.get(i);
+
+            for (int j = 0; j < gradientPath.pathCoordinates.size(); j++) {
+
+                Tuple<Double, Double> coord = gradientPath.pathCoordinates.get(j);
+
+                if (table[coord.first.intValue()][coord.second.intValue()] == null) {
+                    table[coord.first.intValue()][coord.second.intValue()] = new ArrayList();
+                }
+
+                table[coord.first.intValue()][coord.second.intValue()].add(gradientPath.id);
+            }
+        }
+        drawCellOverlaps(gradientPaths, index, iterationLocation, table, targetFlowValues);
+
+//        for (int i = 0 ; i < NR_OF_COLUMNS ;  i++) {
+//            for (int j = 0 ; j < NR_OF_ROWS; j ++) {
+//
+//                if (table[i][j] == null) {
+//                    System.out.print("0");
+//                } else {
+//                    System.out.print(table[i][j].size());
+//                }
+//
+//            }
+//            System.out.println();
+//        }
+
+        // System.out.println();
+    }
+
     public static void drawHeightAndGradientPaths(Cell[][] grid, ArrayList<GradientPath> gradientPaths,
                                                   int imageIndex, boolean showIntermediateResults,
                                                   String iterationLocation, double width, double scale, ArrayList<Point> pointsList) throws IOException {
         jframe = new JFrame("panel");
-        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+        jframe.setSize(NR_OF_COLUMNS, NR_OF_ROWS);
 
-        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+        BufferedImage image = new BufferedImage(NR_OF_COLUMNS, NR_OF_ROWS,
                 BufferedImage.TYPE_INT_ARGB);
 
         double maxHeight = grid[0][0].height;
@@ -1066,7 +1227,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 image.setRGB(point.gridCol - 1, point.gridRow, new Color(255, 255, 255).getRGB());
 
             }
-            if (point.gridCol != NR_OF_COLUMNS -1) {
+            if (point.gridCol != NR_OF_COLUMNS - 1) {
                 image.setRGB(point.gridCol + 1, point.gridRow, new Color(255, 255, 255).getRGB());
 
             }
@@ -1499,11 +1660,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void initializeParameters() {
 
-        NR_OF_ROWS = 500;
-        NR_OF_COLUMNS = 500;
+        NR_OF_ROWS = 500;//593;
+        NR_OF_COLUMNS = 500;//953;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_2_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "NE";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1541,8 +1702,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{400};
+        WIDTHS = new double[]{30};
+        SCALES = new double[]{1};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -1563,10 +1724,10 @@ public class Main extends JFrame implements MouseWheelListener {
         INTERPOLATION = "BICUBIC";
 
         MERGE_CLOSE_PATHS = false;
-        CLOSE_PATH_THRESHOLD = 1;
+        CLOSE_PATH_THRESHOLD = 2;
 
         //OBSTACLES = "STATIC";
-        //OBSTACLES = "PROGRESSIVE";
+        OBSTACLES = "PROGRESSIVE";
         OBSTACLES = "";
 
     }
@@ -1839,7 +2000,7 @@ public class Main extends JFrame implements MouseWheelListener {
             ArrayList distancesForPaths, int NR_OF_ITERATIONS,
             String BASE_HEIGHT_TYPE, double baseFunctionScale, boolean saveOutputs,
             boolean showIntermediateResults, double width, double scale, String iterationLocation,
-            double[][] baseFunction)
+            double[][] baseFunction, ArrayList targetFlowValues)
             throws Exception {
 
         double[][] sumOfPreviousHeights = new double[NR_OF_ROWS][NR_OF_COLUMNS];
@@ -1987,6 +2148,10 @@ public class Main extends JFrame implements MouseWheelListener {
             computeMinAndMaxHeights(grid);
 
             //adjustHeightMinDistances(grid, distancesForPaths, width, scale, paths);
+            computeGridCellOverlaps(gradientPaths, iteration, iterationLocation, targetFlowValues);
+
+
+
             ArrayList overlaps = computeOverlaps(gradientPaths);
 
             drawPathsDensity(gradientPaths, iteration, iterationLocation, overlaps);
@@ -2353,8 +2518,9 @@ public class Main extends JFrame implements MouseWheelListener {
     }
 
     public static double gaussian(double x, double mu, double sigma) {
+        return (double) Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2);
 
-        return (double) (1.0 / (Math.sqrt(2.0 * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
+        //return (double) (1.0 / (Math.sqrt(2.0 * Math.PI) * sigma) * Math.exp(-Math.pow((x - mu) / sigma, 2.0) / 2));
 
     }
 
@@ -3701,7 +3867,7 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                grid[j][i].height = (BASE_SCALE * Math.sqrt(Math.pow(grid[j][i].cellCol - sourceCol, 2) + Math.pow(grid[j][i].cellRow - sourceRow, 2)));
+                grid[i][j].height = (BASE_SCALE * Math.sqrt(Math.pow(grid[i][j].cellCol - sourceCol, 2) + Math.pow(grid[i][j].cellRow - sourceRow, 2)));
 
             }
         }
@@ -5604,9 +5770,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static void drawMatrix(double[][] matrix, ArrayList paths, int imageIndex, String iterationLocation, boolean relativeToTotal) throws IOException {
         jframe = new JFrame("panel");
-        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+        jframe.setSize(NR_OF_COLUMNS, NR_OF_ROWS);
 
-        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+        BufferedImage image = new BufferedImage(NR_OF_COLUMNS, NR_OF_ROWS,
                 BufferedImage.TYPE_INT_ARGB);
 
         double maxHeight = matrix[0][0];
@@ -5883,9 +6049,9 @@ public class Main extends JFrame implements MouseWheelListener {
             throws IOException {
 
         jframe = new JFrame("panel");
-        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+        jframe.setSize(NR_OF_COLUMNS, NR_OF_ROWS);
 
-        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+        BufferedImage image = new BufferedImage(NR_OF_COLUMNS, NR_OF_ROWS,
                 BufferedImage.TYPE_INT_ARGB);
 
 //        for (int i = 0; i < NR_OF_COLUMNS; i++) {
@@ -5966,9 +6132,9 @@ public class Main extends JFrame implements MouseWheelListener {
             throws IOException {
 
         jframe = new JFrame("panel");
-        jframe.setSize(NR_OF_ROWS, NR_OF_COLUMNS);
+        jframe.setSize(NR_OF_COLUMNS, NR_OF_ROWS);
 
-        BufferedImage image = new BufferedImage(NR_OF_ROWS, NR_OF_COLUMNS,
+        BufferedImage image = new BufferedImage(NR_OF_COLUMNS, NR_OF_ROWS,
                 BufferedImage.TYPE_INT_ARGB);
 
 //        for (int i = 0; i < NR_OF_COLUMNS; i++) {
@@ -6647,6 +6813,26 @@ public class Main extends JFrame implements MouseWheelListener {
 
     }
 
+    public static ArrayList getTargetFlowValues(ArrayList items) {
+
+        Iterator it = items.iterator();
+
+        ArrayList pointList = new ArrayList();
+
+        while (it.hasNext()) {
+
+            String inputLine = it.next().toString();
+            List<String> components = Arrays.asList(inputLine.split(";"));
+
+            int flow = Integer.parseInt(components.get(3).replaceAll("\r", ""));
+
+            pointList.add(flow);
+
+        }
+
+        return pointList;
+    }
+
     public static ArrayList processInput(ArrayList items) {
 
         Iterator it = items.iterator();
@@ -6766,10 +6952,10 @@ public class Main extends JFrame implements MouseWheelListener {
 
     public static Cell[][] initializeGrid(int nrOfRows, int nrOfColumns) {
 
-        Cell[][] grid = new Cell[nrOfRows][nrOfColumns];
+        Cell[][] grid = new Cell[nrOfColumns][nrOfRows];
 
-        for (int i = 0; i < nrOfRows; i++) {
-            for (int j = 0; j < nrOfColumns; j++) {
+        for (int i = 0; i < nrOfColumns; i++) {
+            for (int j = 0; j < nrOfRows; j++) {
 
                 Cell cell = new Cell();
 
