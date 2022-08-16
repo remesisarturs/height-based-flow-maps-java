@@ -454,13 +454,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "S";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_5_2.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;//1.0;//0.05;//1.0;//0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -474,11 +474,11 @@ public class Main extends JFrame implements MouseWheelListener {
 
         ARC_RADIUS = 20;
 
-        //BASE_HEIGHT_TYPE = "EUCLID";
+        BASE_HEIGHT_TYPE = "EUCLID";
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -489,20 +489,20 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ANGULAR"; //  OLD!!!
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
-        //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
+        DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
         //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 20;
+        NR_OF_ITERATIONS = 50;
 
-        WIDTHS = new double[]{20};
-        SCALES = new double[]{100};
+        WIDTHS = new double[]{10};
+        SCALES = new double[]{10000};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -2884,10 +2884,15 @@ public class Main extends JFrame implements MouseWheelListener {
         // for all paths
         while (pathIterator.hasNext()) {
 
-            ArrayList path = (ArrayList) pathIterator.next();
+            Path path = (Path) pathIterator.next();
 
-            Collections.reverse(path);
+            ArrayList pathCells = path.cells;
 
+            Collections.reverse(pathCells);
+
+            DistanceForPathMatrix distanceForPathMatrix = new DistanceForPathMatrix();
+            distanceForPathMatrix.distanceMatrix = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+            distanceForPathMatrix.pathId = path.id;
             double[][] distances = new double[NR_OF_COLUMNS][NR_OF_ROWS];
 
             // for each cell in the grid
@@ -2899,21 +2904,21 @@ public class Main extends JFrame implements MouseWheelListener {
                     double radius = (Math.sqrt(Math.pow(sourceCell.cellCol - cell.cellCol, 2) +
                             Math.pow(sourceCell.cellRow - cell.cellRow, 2)));
 
-                    if (radius > ARC_RADIUS) {
+                    if (false){//(radius > ARC_RADIUS) {
 
                         // Binary search finds the first cell for which the distance to this cell is >= than radius
-                        int indexOfCell = binarySearch_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+                        int indexOfCell = binarySearch_2(pathCells, radius);//binarySearch(path, 0, path.size(), radius);
 
-                        Cell intersectionCell = (Cell) path.get(indexOfCell);
+                        Cell intersectionCell = (Cell) pathCells.get(indexOfCell);
 
                         double dist = (Math.sqrt(Math.pow(sourceCell.cellCol - intersectionCell.cellCol, 2) +
                                 Math.pow(sourceCell.cellRow - intersectionCell.cellRow, 2)));
 
                         // TODO: check index out of bounds
-                        if (indexOfCell + 1 < path.size() && indexOfCell - 1 > 0) {
+                        if (indexOfCell + 1 < pathCells.size() && indexOfCell - 1 > 0) {
 
-                            Cell nextCell = (Cell) path.get(indexOfCell + 1);
-                            Cell previousCell = (Cell) path.get(indexOfCell - 1);
+                            Cell nextCell = (Cell) pathCells.get(indexOfCell + 1);
+                            Cell previousCell = (Cell) pathCells.get(indexOfCell - 1);
 
                             double dist_1 = (Math.sqrt(Math.pow(sourceCell.cellCol - nextCell.cellCol, 2) +
                                     Math.pow(sourceCell.cellRow - nextCell.cellRow, 2)));
@@ -2980,18 +2985,18 @@ public class Main extends JFrame implements MouseWheelListener {
 
                     } else {
 
-                        int indexOfCell = binarySearch_2(path, radius);//binarySearch(path, 0, path.size(), radius);
+                        int indexOfCell = binarySearch_2(pathCells, radius);//binarySearch(path, 0, path.size(), radius);
 
-                        Cell intersectionCell = (Cell) path.get(indexOfCell);
+                        Cell intersectionCell = (Cell) pathCells.get(indexOfCell);
 
                         double dist = (Math.sqrt(Math.pow(sourceCell.cellCol - intersectionCell.cellCol, 2) +
                                 Math.pow(sourceCell.cellRow - intersectionCell.cellRow, 2)));
 
                         // TODO: check index out of bounds
-                        if (indexOfCell + 1 < path.size() && indexOfCell - 1 > 0) {
+                        if (indexOfCell + 1 < pathCells.size() && indexOfCell - 1 > 0) {
 
-                            Cell nextCell = (Cell) path.get(indexOfCell + 1);
-                            Cell previousCell = (Cell) path.get(indexOfCell - 1);
+                            Cell nextCell = (Cell) pathCells.get(indexOfCell + 1);
+                            Cell previousCell = (Cell) pathCells.get(indexOfCell - 1);
 
                             double dist_1 = (Math.sqrt(Math.pow(sourceCell.cellCol - nextCell.cellCol, 2) +
                                     Math.pow(sourceCell.cellRow - nextCell.cellRow, 2)));
@@ -3058,7 +3063,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            Iterator pathCellIter = path.iterator();
+            Iterator pathCellIter = pathCells.iterator();
 
             while (pathCellIter.hasNext()) {
 
@@ -3070,7 +3075,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
             double[][] transposedMatrix = transposeMatrix(distances);
 
-            distancesForPaths.add(transposedMatrix);
+            distanceForPathMatrix.distanceMatrix = transposedMatrix;
+            distancesForPaths.add(distanceForPathMatrix);
 
 //            for (int i = 0; i < NR_OF_COLUMNS; i++) {
 //                for (int j = 0; j < NR_OF_ROWS; j++) {
