@@ -1047,53 +1047,53 @@ public class Main extends JFrame implements MouseWheelListener {
             }
         }
 
-        for (int i = 0; i < paths.size(); i ++) {
-            GradientPath path = (GradientPath) paths.get(i);
-
-            ArrayList<Tuple<Double, Double>> coordinates = path.pathCoordinates;
-            int[] x = new int[path.pathCoordinates.size()];
-            int[] y = new int[path.pathCoordinates.size()];
-            for (int c = 0 ; c < coordinates.size(); c ++) {
-                x[c] = coordinates.get(c).first.intValue();
-                y[c] = coordinates.get(c).second.intValue();
-            }
-
-            Graphics2D g2 = (Graphics2D) image.createGraphics();
-            g2.setColor(Color.RED);
-
-            g2.drawPolyline(x, y, x.length);
-
-        }
-
 //        for (int i = 0; i < paths.size(); i ++) {
-//
 //            GradientPath path = (GradientPath) paths.get(i);
 //
-//            for (int j = 0 ; j < path.pathCoordinates.size() - 1; j ++) {
-//
-//                Tuple<Double, Double> coord = path.pathCoordinates.get(j);
-//                Tuple<Double, Double> nextCoord = path.pathCoordinates.get(j + 1);
-//
-//                int thickness = (int) flowForCellNormalized[coord.first.intValue()][coord.second.intValue()];
-//
-//                double fX = 1.0 - 1.0 / (1.0 + thickness);//(iteration + 1) / NR_OF_ITERATIONS;
-//                double fMaxX = 1.0 - 1.0 / (1.0 + max);//(iteration + 1) / NR_OF_ITERATIONS;
-//                double gX = fX / fMaxX;
-//
-//                if (drawn[coord.first.intValue()][coord.second.intValue()] == false) {
-//                    drawn[coord.first.intValue()][coord.second.intValue()] = true;
-//
-//                    Graphics2D g2 = (Graphics2D) image.createGraphics();
-//                    g2.setColor(Color.RED);
-//                    thickness = (int) 1;//(thickness * gX);
-//                    g2.setStroke(new BasicStroke(thickness));
-//                    g2.draw(new );
-//                    //g2.drawRect(coord.first.intValue(), coord.second.intValue(), nextCoord.first.intValue(), coord.second.intValue());
-//                    //g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
-//                            //nextCoord.first.intValue(), nextCoord.second.intValue()));
-//                }
+//            ArrayList<Tuple<Double, Double>> coordinates = path.pathCoordinates;
+//            int[] x = new int[path.pathCoordinates.size()];
+//            int[] y = new int[path.pathCoordinates.size()];
+//            for (int c = 0 ; c < coordinates.size(); c ++) {
+//                x[c] = coordinates.get(c).first.intValue();
+//                y[c] = coordinates.get(c).second.intValue();
 //            }
+//
+//            Graphics2D g2 = (Graphics2D) image.createGraphics();
+//            g2.setColor(Color.RED);
+//
+//            g2.drawPolyline(x, y, x.length);
+//
 //        }
+
+        for (int i = 0; i < paths.size(); i ++) {
+
+            GradientPath path = (GradientPath) paths.get(i);
+
+            for (int j = 0 ; j < path.pathCoordinates.size() - 1; j ++) {
+
+                Tuple<Double, Double> coord = path.pathCoordinates.get(j);
+                Tuple<Double, Double> nextCoord = path.pathCoordinates.get(j + 1);
+
+                int thickness = (int) flowForCellNormalized[coord.first.intValue()][coord.second.intValue()];
+
+                double fX = 1.0 - 1.0 / (1.0 + thickness);//(iteration + 1) / NR_OF_ITERATIONS;
+                double fMaxX = 1.0 - 1.0 / (1.0 + max);//(iteration + 1) / NR_OF_ITERATIONS;
+                double gX = fX / fMaxX;
+
+                if (drawn[coord.first.intValue()][coord.second.intValue()] == false) {
+                    drawn[coord.first.intValue()][coord.second.intValue()] = true;
+
+                    Graphics2D g2 = (Graphics2D) image.createGraphics();
+                    g2.setColor(Color.RED);
+                    thickness = (int) (thickness * gX);
+                    g2.setStroke(new BasicStroke(thickness));
+                    //g2.draw(new );
+                    //g2.drawRect(coord.first.intValue(), coord.second.intValue(), nextCoord.first.intValue(), coord.second.intValue());
+                    g2.draw(new Line2D.Float(coord.first.intValue(), coord.second.intValue(),
+                            nextCoord.first.intValue(), nextCoord.second.intValue()));
+                }
+            }
+        }
 
 //        for (int i = 0 ; i < NR_OF_COLUMNS; i++) {
 //            for (int j = 0 ; j < NR_OF_ROWS; j++) {
@@ -1683,13 +1683,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;//593;
         NR_OF_COLUMNS = 500;//953;
 
-        TARGET_NAME = "A";//"FL";
-        INPUT_FILE_NAME = "./input/1_s_8_t.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "FL";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = true;
+        RESET_HEIGHTS = false;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
