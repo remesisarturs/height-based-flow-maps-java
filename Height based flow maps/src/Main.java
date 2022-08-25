@@ -1683,13 +1683,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;//593;
         NR_OF_COLUMNS = 500;//953;
 
-        TARGET_NAME = "FL";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "S";//"FL";
+        INPUT_FILE_NAME = "./input/to_edge_2.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -1707,7 +1707,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        //BASE_HEIGHT_TYPE = "TO_EDGE";
+        BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -1718,19 +1718,19 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
-        //DISTANCE_METRIC = "POLAR_SYSTEM";
+        DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 20;
+        NR_OF_ITERATIONS = 10;
 
-        WIDTHS = new double[]{30};
-        SCALES = new double[]{1};
+        WIDTHS = new double[]{50};
+        SCALES = new double[]{5};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = false;
+        HORIZONTAL_FLOW_MODE = true;
 
-        PATH_SCALING = false;
+        PATH_SCALING = true;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -6844,7 +6844,9 @@ public class Main extends JFrame implements MouseWheelListener {
             String inputLine = it.next().toString();
             List<String> components = Arrays.asList(inputLine.split(";"));
 
-            int flow = Integer.parseInt(components.get(3).replaceAll("\r", ""));
+            //int flow = Integer.parseInt(components.get(3).replaceAll("\r", ""));
+
+            int flow = 1;
 
             pointList.add(flow);
 
