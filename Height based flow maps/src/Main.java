@@ -463,13 +463,13 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
 
-        TARGET_NAME = "A";//"FL";
+        TARGET_NAME = "NE";//"FL";
         INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;//1.0;//0.05;//1.0;//0.05;
 
-        RESET_HEIGHTS = false;
+        RESET_HEIGHTS = true;
         REMOVE_DIAGONAL_BIAS = false;
 
         DRAW_TEXT_DESCRIPTION = false;
@@ -487,7 +487,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -498,17 +498,17 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
-        DISTANCE_METRIC = "POLAR_SYSTEM";
+        //DISTANCE_METRIC = "POLAR_SYSTEM";
 
         NR_OF_ITERATIONS = 100;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{2000};
+        SCALES = new double[]{5};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
         PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
@@ -522,11 +522,11 @@ public class Main extends JFrame implements MouseWheelListener {
         CIRCULAR_MODE = false;
 
         OBSTACLES = "STATIC";
-        OBSTACLES = "PROGRESSIVE";
-        OBSTACLES = "";
+        //OBSTACLES = "PROGRESSIVE";
+        //OBSTACLES = "";
 
         OBSTACLE_RATE = 1;
-        OBSTACLE_WIDTH = 3;
+        OBSTACLE_WIDTH = 10;
         OBSTACLE_SCALE = 3; //10
 
     }
