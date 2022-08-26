@@ -1598,8 +1598,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
-                        double width = 10;
-                        double height = 150;
+                        double width = 7;
+                        double height = 0.7;
 
                         double obstacleCellHeight = gaussian(distance, 0, width);
 
@@ -1617,10 +1617,7 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double[][] initializeObstaclesProgressive(Cell[][] grid, ArrayList<Point> pointsList, int iteration) {
 
         double fX = 1.0 - 1.0 / (1.0 + iteration);//(iteration + 1) / NR_OF_ITERATIONS;
-
         double fMaxX = 1.0 - 1.0 / (1.0 + NR_OF_ITERATIONS);//(iteration + 1) / NR_OF_ITERATIONS;
-
-
         double gX = fX / fMaxX;//(iteration + 1) / NR_OF_ITERATIONS;
 
         System.out.println("factor : " + gX + " ======================= ");
@@ -1643,7 +1640,7 @@ public class Main extends JFrame implements MouseWheelListener {
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
                         double width = 10;
-                        double height = 10;
+                        double height = 1;
 
                         double obstacleCellHeight = gX * height * gaussian(distance, 0, width);
 
@@ -1683,8 +1680,8 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;//593;
         NR_OF_COLUMNS = 500;//953;
 
-        TARGET_NAME = "S";//"FL";
-        INPUT_FILE_NAME = "./input/to_edge_2.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        TARGET_NAME = "TX";//"FL";
+        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;
@@ -1707,7 +1704,7 @@ public class Main extends JFrame implements MouseWheelListener {
         //BASE_HEIGHT_TYPE = "chebyshev";
         //BASE_HEIGHT_TYPE = "EUCLID_SQRT";
         //BASE_HEIGHT_TYPE = "EUCLID_SQUARED"; // previously known as default
-        BASE_HEIGHT_TYPE = "TO_EDGE";
+        //BASE_HEIGHT_TYPE = "TO_EDGE";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQUARED";
         //BASE_HEIGHT_TYPE = "TO_EDGE_SQRT";
 
@@ -1718,19 +1715,19 @@ public class Main extends JFrame implements MouseWheelListener {
         //DISTANCE_METRIC = "ARC";
         //DISTANCE_METRIC = "ANGULAR_INTERSECTION";
         //DISTANCE_METRIC = "ANGULAR_WITH_ARC_LENGTH";
-        DISTANCE_METRIC = "POLAR_SYSTEM";
+        //DISTANCE_METRIC = "POLAR_SYSTEM";
 
-        NR_OF_ITERATIONS = 10;
+        NR_OF_ITERATIONS = 20;
 
-        WIDTHS = new double[]{50};
-        SCALES = new double[]{5};
+        WIDTHS = new double[]{20};
+        SCALES = new double[]{1};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
 
-        HORIZONTAL_FLOW_MODE = true;
+        HORIZONTAL_FLOW_MODE = false;
 
-        PATH_SCALING = true;
+        PATH_SCALING = false;
         SCALING_MODE = "WIDTHS";
         //SCALING_MODE = "OVERLAPS";
 
@@ -1746,9 +1743,11 @@ public class Main extends JFrame implements MouseWheelListener {
         MERGE_CLOSE_PATHS = false;
         CLOSE_PATH_THRESHOLD = 2;
 
+
+
         //OBSTACLES = "STATIC";
         OBSTACLES = "PROGRESSIVE";
-        OBSTACLES = "";
+        //OBSTACLES = "";
 
     }
 
@@ -6186,7 +6185,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     Tuple<Double, Double> next_coordinate = path.pathCoordinates.get(i + 1);
 
                     Graphics g = image.getGraphics();
-                    g.setColor(Color.BLACK);
+                    g.setColor(Color.RED);
                     //drawArrowLine(g, coordinates.first.intValue(), coordinates.second.intValue(), next_coordinate.first.intValue(), next_coordinate.second.intValue(), 1, 3);
                     g.drawLine(coordinates.first.intValue(), coordinates.second.intValue(),
                             next_coordinate.first.intValue(), next_coordinate.second.intValue());
