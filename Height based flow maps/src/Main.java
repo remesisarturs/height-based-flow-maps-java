@@ -102,6 +102,8 @@ public class Main extends JFrame implements MouseWheelListener {
     public static int OBSTACLE_SCALE;
     public static int OBSTACLE_RATE;
 
+    public static double [][] HEIGHT_UPDATE;
+
     public static void main(String[] args) throws IOException {
 
         initializeParameters();
@@ -168,7 +170,7 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
 
                 double[][] heightUpdateObstacles;
-
+                computeMinAndMaxHeights(grid);
                 if (OBSTACLES.equals("STATIC")) {
                     heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
                     drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
@@ -178,6 +180,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     drawObstacles(heightUpdateObstacles, new ArrayList(), 0, iterationLocation);
                 }
                 computeMinAndMaxHeights(grid);
+                //computeMinAndMaxHeights(grid);
 
                 computeFlow(grid, 0);
                 //computeFlowAccumulation(grid);
@@ -462,9 +465,9 @@ public class Main extends JFrame implements MouseWheelListener {
 
         NR_OF_ROWS = 500;
         NR_OF_COLUMNS = 500;
-
-        TARGET_NAME = "NE";//"FL";
-        INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
+        HEIGHT_UPDATE = new double[NR_OF_COLUMNS][NR_OF_ROWS];
+        TARGET_NAME = "A";//"FL";
+        INPUT_FILE_NAME = "./input/obstacles.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
         BASE_SCALE = 0.05;//1.0;//0.05;//1.0;//0.05;
@@ -503,7 +506,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ITERATIONS = 100;
 
         WIDTHS = new double[]{20};
-        SCALES = new double[]{5};
+        SCALES = new double[]{10};
 
         GENERATE_INTERMEDIATE_RESULTS = true;
         GENERATE_INTERMEDIATE_HEIGHT = true;
@@ -527,7 +530,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
         OBSTACLE_RATE = 1;
         OBSTACLE_WIDTH = 10;
-        OBSTACLE_SCALE = 3; //10
+        OBSTACLE_SCALE = 100; //10
 
     }
 
@@ -842,6 +845,7 @@ public class Main extends JFrame implements MouseWheelListener {
             }
 
             double[][] heightUpdateObstacles;
+            computeMinAndMaxHeights(grid);
 
             if (OBSTACLES.equals("STATIC")) {
                 heightUpdateObstacles = computeObstaclesStatic(grid, pointsList);
@@ -853,7 +857,7 @@ public class Main extends JFrame implements MouseWheelListener {
 
             }
 
-            computeMinAndMaxHeights(grid);
+           // computeMinAndMaxHeights(grid);
 
             //adjustHeightMinDistances(grid, distancesForPaths, width, scale, paths);
 
@@ -2256,6 +2260,7 @@ public class Main extends JFrame implements MouseWheelListener {
                     } else {
                         double height = ((-HEIGHT_FUNCTION_SCALE * sum));
                         computedHeight[col][row] = height;
+                        HEIGHT_UPDATE[col][row] = height;
 
                         grid[col][row].height = grid[col][row].height + ((height));
                     }
@@ -4263,12 +4268,12 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                if (matrix[i][j] < minHieght) {
-                    minHieght = matrix[i][j];
+                if ( HEIGHT_UPDATE[i][j] + matrix[i][j] < minHieght) {
+                    minHieght = HEIGHT_UPDATE[i][j] +  matrix[i][j];
                 }
 
-                if (matrix[i][j] > maxHeight) {
-                    maxHeight = matrix[i][j];
+                if ( HEIGHT_UPDATE[i][j] + matrix[i][j] > maxHeight) {
+                    maxHeight = HEIGHT_UPDATE[i][j] +  matrix[i][j];
                 }
 
             }
@@ -4280,7 +4285,9 @@ public class Main extends JFrame implements MouseWheelListener {
         for (int i = 0; i < NR_OF_COLUMNS; i++) {
             for (int j = 0; j < NR_OF_ROWS; j++) {
 
-                float value = (float) ((matrix[i][j] - minHieght) / (maxHeight - minHieght));
+                double heightUpdate = HEIGHT_UPDATE[i][j];
+
+                float value = (float) ((heightUpdate + matrix[i][j] - minHieght) / (maxHeight - minHieght));
 
                 Color color = null;
                 if (COLOR_MODE == "GRAY_SCALE") {
