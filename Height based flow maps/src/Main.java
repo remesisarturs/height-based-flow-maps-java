@@ -102,6 +102,9 @@ public class Main extends JFrame implements MouseWheelListener {
     public static double CLOSE_PATH_THRESHOLD;
     public static String OBSTACLES;
 
+    public static double OBSTACLE_WIDTH;
+    public static double OBSTACLE_SCALE;
+
     public static void main(String[] args) throws Exception {
 
         initializeParameters();
@@ -1598,8 +1601,8 @@ public class Main extends JFrame implements MouseWheelListener {
 
                         double distance = Math.sqrt(Math.pow(grid[col][row].cellCol - point.gridCol, 2) + Math.pow(grid[col][row].cellRow - point.gridRow, 2));
 
-                        double width = 7;
-                        double height = 0.7;
+                        double width = OBSTACLE_WIDTH;
+                        double height = OBSTACLE_SCALE;
 
                         double obstacleCellHeight = gaussian(distance, 0, width);
 
@@ -1680,7 +1683,7 @@ public class Main extends JFrame implements MouseWheelListener {
         NR_OF_ROWS = 500;//593;
         NR_OF_COLUMNS = 500;//953;
 
-        TARGET_NAME = "TX";//"FL";
+        TARGET_NAME = "CA";//"FL";
         INPUT_FILE_NAME = "./input/USPos.csv";//"./input/1S_20T.csv";//"./input/1S_8T.csv";//"./input/USPos.csv";
         GIF_DELAY = 500; // 1000 - 1 FRAME PER SEC
 
@@ -1743,11 +1746,12 @@ public class Main extends JFrame implements MouseWheelListener {
         MERGE_CLOSE_PATHS = false;
         CLOSE_PATH_THRESHOLD = 2;
 
-
-
-        //OBSTACLES = "STATIC";
-        OBSTACLES = "PROGRESSIVE";
+        OBSTACLES = "STATIC";
+        //OBSTACLES = "PROGRESSIVE";
         //OBSTACLES = "";
+
+        OBSTACLE_WIDTH = 10;
+        OBSTACLE_SCALE = 0.7;
 
     }
 
@@ -2125,6 +2129,24 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
+            double[][] heightUpdateObstacles;
+            computeMinAndMaxHeights(grid);
+
+            if (OBSTACLES.equals("STATIC")) {
+                heightUpdateObstacles = initializeObstaclesStatic(grid, pointsList);
+
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
+
+            } else if (OBSTACLES.equals("PROGRESSIVE")) {
+                heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, iteration);
+
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
+                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
+            }
+
+            computeMinAndMaxHeights(grid);
+
             if (MEMORY_MODE) {
                 // take the global grid height and compute the height update // here we took B + U_1 and computed U_2
                 double[][] heightUpdate = computeHeightUpdate(grid, distancesForPaths, gradientPaths, iteration, iterationLocation); // = U_2
@@ -2148,32 +2170,15 @@ public class Main extends JFrame implements MouseWheelListener {
                 }
             }
 
-            double[][] heightUpdateObstacles;
-            computeMinAndMaxHeights(grid);
-
-            if (OBSTACLES.equals("STATIC")) {
-                heightUpdateObstacles = initializeObstaclesStatic(grid, pointsList);
-
-                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
-                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
-
-            } else if (OBSTACLES.equals("PROGRESSIVE")) {
-                heightUpdateObstacles = initializeObstaclesProgressive(grid, pointsList, iteration);
-
-                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, true);
-                drawObstacles(heightUpdateObstacles, gradientPaths, iteration, iterationLocation, false);
-            }
-
-            computeMinAndMaxHeights(grid);
 
             //adjustHeightMinDistances(grid, distancesForPaths, width, scale, paths);
-            computeGridCellOverlaps(gradientPaths, iteration, iterationLocation, targetFlowValues);
-
-
-
-            ArrayList overlaps = computeOverlaps(gradientPaths);
-
-            drawPathsDensity(gradientPaths, iteration, iterationLocation, overlaps);
+//            computeGridCellOverlaps(gradientPaths, iteration, iterationLocation, targetFlowValues);
+//
+//
+//
+//            ArrayList overlaps = computeOverlaps(gradientPaths);
+//
+//            drawPathsDensity(gradientPaths, iteration, iterationLocation, overlaps);
         }
 
 //        if (HORIZONTAL_FLOW_MODE) {
